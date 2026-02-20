@@ -1,0 +1,47 @@
+[
+  {
+    "id": "headline-dodge-2026-02-20",
+    "slug": "headline-dodge",
+    "title": "Headline Dodge",
+    "releaseDate": "2026-02-20",
+    "description": "Dodge incoming buzzwords and survive the breaking-news storm.",
+    "newsTopic": "AI policy debate",
+    "tags": ["Action", "Arcade", "News"],
+    "thumbnailUrl": "gradient://headline-dodge",
+    "bannerUrl": "",
+    "gamePath": "/games/headline-dodge/index.html",
+    "featured": true,
+    "status": "published",
+    "durationEstimate": "3 min"
+  },
+  {
+    "id": "market-maze-2026-02-18",
+    "slug": "market-maze",
+    "title": "Market Maze",
+    "releaseDate": "2026-02-18",
+    "description": "Route supply chains around daily tariff shifts.",
+    "newsTopic": "Global trade volatility",
+    "tags": ["Puzzle", "Strategy"],
+    "thumbnailUrl": "gradient://market-maze",
+    "bannerUrl": "",
+    "gamePath": "/games/coming-soon.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "6 min"
+  },
+  {
+    "id": "reef-rescue-2026-02-15",
+    "slug": "reef-rescue",
+    "title": "Reef Rescue",
+    "releaseDate": "2026-02-15",
+    "description": "Balance temperature and cleanup drones to save coral zones.",
+    "newsTopic": "Ocean climate report",
+    "tags": ["Simulation", "Story"],
+    "thumbnailUrl": "gradient://reef-rescue",
+    "bannerUrl": "",
+    "gamePath": "/games/coming-soon.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "7 min"
+  }
+]
