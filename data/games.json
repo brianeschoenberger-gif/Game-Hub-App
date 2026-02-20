@@ -72,5 +72,24 @@
     "featured": false,
     "status": "published",
     "durationEstimate": "4 min"
+  },
+  {
+    "id": "silent-hollow-2026-02-17",
+    "slug": "silent-hollow-17feb26",
+    "title": "Silent Hollow",
+    "releaseDate": "2026-02-17",
+    "description": "Fight through misty ruins, recover the relic, and reach the gate before your masks run out.",
+    "newsTopic": "Urban safety and blackout anxiety",
+    "tags": [
+      "Action",
+      "Platformer",
+      "Story"
+    ],
+    "thumbnailUrl": "gradient://silent-hollow",
+    "bannerUrl": "",
+    "gamePath": "/games/Silent-Hollow-17Feb26/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "8 min"
   }
 ]
