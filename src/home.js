@@ -11,8 +11,8 @@ async function renderHome() {
     }
 
     const featured = games.find((game) => game.featured) ?? games[0];
-    const todays = games.slice(0, 1);
-    const newThisWeek = games.slice(0, 4);
+    const todays = [featured];
+    const newThisWeek = games.filter((game) => game.slug !== featured.slug).slice(0, 4);
 
     featuredNode.innerHTML = hero(featured);
     document.querySelector('#today-row').innerHTML = todays.map(gameCard).join('');
