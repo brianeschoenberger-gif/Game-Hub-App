@@ -11,6 +11,7 @@ A static, metadata-driven web hub built with vanilla HTML/CSS/ES modules to keep
 - `data/games.json`: source of truth for game metadata.
 - `src/data.js`: metadata loading, sorting, and lookup helpers.
 - `src/ui.js`: reusable renderers (hero, card, empty state).
+- `src/paths.js`: relative URL helpers for static-host subpaths.
 - `src/*.js`: per-page orchestration logic.
 - `games/`: playable game artifacts.
 
@@ -28,6 +29,11 @@ Each game entry includes:
 2. **Detail** receives slug query parameter and renders full metadata.
 3. **Play** receives slug query parameter and embeds `gamePath` in an iframe.
 4. **Archive** shows all published entries in one grid.
+
+## Deployment Notes
+- All page links are relative (`index.html`, `archive.html`, etc.) to work from root hosting and nested subpaths.
+- Metadata is loaded via module-relative URL resolution, not hardcoded absolute `/data/...` paths.
+- Local game embeds resolve from module location, so `/games/...` and `games/...` metadata paths both work.
 
 ## Why This Architecture
 - **Fast iteration:** no build step required for basic content updates.

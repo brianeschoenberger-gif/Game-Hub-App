@@ -17,7 +17,7 @@ Ship a deployment-ready vertical slice that demonstrates the core Daily Arcade l
 3. Implement responsive dark premium styling.
 4. Integrate first playable mini-game under `/games/headline-dodge/`.
 5. Seed metadata with 3 sample entries for realistic browse density.
-6. Validate route flow and player embedding locally.
+6. Validate route flow, subpath-safe linking, and player embedding locally.
 
 ## Creator Workflow (Add a New Game)
 1. Add game build/page under `games/<slug>/index.html` (or external URL).
@@ -31,3 +31,4 @@ Ship a deployment-ready vertical slice that demonstrates the core Daily Arcade l
 - Play action launches embedded game iframe.
 - Archive shows all published games sorted by newest.
 - New metadata entry appears without UI code changes.
+- App routes and metadata loading work on static-host subpaths (not only domain root).

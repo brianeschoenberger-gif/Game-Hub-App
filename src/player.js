@@ -1,4 +1,5 @@
 import { findGame, loadGames } from './data.js';
+import { resolveGamePath } from './paths.js';
 import { emptyState } from './ui.js';
 
 async function renderPlayer() {
@@ -11,20 +12,25 @@ async function renderPlayer() {
     return;
   }
 
-  const games = await loadGames();
-  const game = findGame(games, slug);
-  if (!game) {
-    root.innerHTML = emptyState('Game not found.');
-    return;
-  }
+  try {
+    const games = await loadGames();
+    const game = findGame(games, slug);
+    if (!game) {
+      root.innerHTML = emptyState('Game not found.');
+      return;
+    }
 
-  root.innerHTML = `
-    <section class="player-layout">
-      <h1>Now Playing: ${game.title}</h1>
-      <p class="meta">${game.newsTopic}</p>
-      <iframe class="player-frame" src="${game.gamePath}" title="${game.title}" loading="eager" allowfullscreen></iframe>
-    </section>
-  `;
+    document.title = `Play ${game.title} · Daily Arcade`;
+    root.innerHTML = `
+      <section class="player-layout">
+        <h1>Now Playing: ${game.title}</h1>
+        <p class="meta">${game.newsTopic}</p>
+        <iframe class="player-frame" src="${resolveGamePath(game.gamePath)}" title="${game.title}" loading="eager" allowfullscreen></iframe>
+      </section>
+    `;
+  } catch (error) {
+    root.innerHTML = emptyState(error.message);
+  }
 }
 
 renderPlayer();

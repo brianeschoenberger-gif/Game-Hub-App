@@ -21,7 +21,8 @@
 - [x] Integrate one playable mini-game (`Headline Dodge`).
 - [x] Seed additional placeholder titles for row depth.
 
-## Phase 5: Validation
-- [ ] Add smoke checks for route rendering.
-- [ ] Verify mobile view and interaction polish.
-- [ ] Prepare deployment notes and hosting config.
+## Phase 5: Validation + Deployment Readiness
+- [x] Add smoke checks for metadata and JS syntax.
+- [x] Verify responsive behavior with browser screenshot.
+- [x] Ensure subpath-safe links and metadata fetches for static hosting.
+- [ ] Add hosting-specific CI deploy workflow (optional post-MVP).

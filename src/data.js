@@ -1,8 +1,11 @@
+import { metadataUrl } from './paths.js';
+
 export async function loadGames() {
-  const response = await fetch('/data/games.json');
+  const response = await fetch(metadataUrl(), { cache: 'no-store' });
   if (!response.ok) {
     throw new Error('Failed to load game metadata.');
   }
+
   const games = await response.json();
   return games
     .filter((game) => game.status === 'published')
