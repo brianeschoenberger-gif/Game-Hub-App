@@ -1,11 +1,14 @@
 import { formatDate } from './data.js';
-import { gameUrl, playUrl } from './paths.js';
+import { gameUrl, playUrl, resolveGamePath } from './paths.js';
 
 export function gameCard(game) {
   const tags = game.tags.slice(0, 2).map((tag) => `<span class="tag">${tag}</span>`).join('');
+  const thumbnailSrc = game.thumbnailUrl ? resolveGamePath(game.thumbnailUrl) : '';
   return `
     <a class="game-card" href="${gameUrl(game.slug)}" aria-label="View details for ${game.title}">
-      <div class="game-thumb" aria-hidden="true"></div>
+      <div class="game-thumb">
+        ${thumbnailSrc ? `<img src="${thumbnailSrc}" alt="${game.title} gameplay preview" loading="lazy" decoding="async">` : ''}
+      </div>
       <div class="card-content">
         <h3>${game.title}</h3>
         <p>${game.description}</p>

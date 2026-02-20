@@ -11,7 +11,7 @@
       "Arcade",
       "News"
     ],
-    "thumbnailUrl": "gradient://headline-dodge",
+    "thumbnailUrl": "/assets/thumbnails/headline-dodge.svg",
     "bannerUrl": "",
     "gamePath": "/games/headline-dodge/index.html",
     "featured": true,
@@ -29,7 +29,7 @@
       "Puzzle",
       "Strategy"
     ],
-    "thumbnailUrl": "gradient://market-maze",
+    "thumbnailUrl": "/assets/thumbnails/market-maze.svg",
     "bannerUrl": "",
     "gamePath": "/games/coming-soon.html",
     "featured": false,
@@ -47,7 +47,7 @@
       "Simulation",
       "Story"
     ],
-    "thumbnailUrl": "gradient://reef-rescue",
+    "thumbnailUrl": "/assets/thumbnails/reef-rescue.svg",
     "bannerUrl": "",
     "gamePath": "/games/coming-soon.html",
     "featured": false,
@@ -66,7 +66,7 @@
       "Strategy",
       "News"
     ],
-    "thumbnailUrl": "gradient://tariff-panic",
+    "thumbnailUrl": "/assets/thumbnails/tariff-panic.svg",
     "bannerUrl": "",
     "gamePath": "/games/Tariff-Panic-20Feb26/index.html",
     "featured": false,
@@ -85,7 +85,7 @@
       "Platformer",
       "Story"
     ],
-    "thumbnailUrl": "gradient://silent-hollow",
+    "thumbnailUrl": "/assets/thumbnails/silent-hollow.svg",
     "bannerUrl": "",
     "gamePath": "/games/Silent-Hollow-17Feb26/index.html",
     "featured": false,

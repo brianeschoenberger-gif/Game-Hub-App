@@ -117,6 +117,14 @@ nav a {
   aspect-ratio: 16 / 9;
   background: linear-gradient(130deg, #324168, #1a2640);
   width: 100%;
+  overflow: hidden;
+}
+
+.game-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .card-content {
