@@ -6,7 +6,11 @@
     "releaseDate": "2026-02-20",
     "description": "Dodge incoming buzzwords and survive the breaking-news storm.",
     "newsTopic": "AI policy debate",
-    "tags": ["Action", "Arcade", "News"],
+    "tags": [
+      "Action",
+      "Arcade",
+      "News"
+    ],
     "thumbnailUrl": "gradient://headline-dodge",
     "bannerUrl": "",
     "gamePath": "/games/headline-dodge/index.html",
@@ -21,7 +25,10 @@
     "releaseDate": "2026-02-18",
     "description": "Route supply chains around daily tariff shifts.",
     "newsTopic": "Global trade volatility",
-    "tags": ["Puzzle", "Strategy"],
+    "tags": [
+      "Puzzle",
+      "Strategy"
+    ],
     "thumbnailUrl": "gradient://market-maze",
     "bannerUrl": "",
     "gamePath": "/games/coming-soon.html",
@@ -36,12 +43,34 @@
     "releaseDate": "2026-02-15",
     "description": "Balance temperature and cleanup drones to save coral zones.",
     "newsTopic": "Ocean climate report",
-    "tags": ["Simulation", "Story"],
+    "tags": [
+      "Simulation",
+      "Story"
+    ],
     "thumbnailUrl": "gradient://reef-rescue",
     "bannerUrl": "",
     "gamePath": "/games/coming-soon.html",
     "featured": false,
     "status": "published",
     "durationEstimate": "7 min"
+  },
+  {
+    "id": "tariff-panic-2026-02-20",
+    "slug": "tariff-panic-20feb26",
+    "title": "Tariff Panic",
+    "releaseDate": "2026-02-20",
+    "description": "Sort cargo lanes under changing tariff rules before strikes shut you down.",
+    "newsTopic": "Tariff escalation alerts",
+    "tags": [
+      "Arcade",
+      "Strategy",
+      "News"
+    ],
+    "thumbnailUrl": "gradient://tariff-panic",
+    "bannerUrl": "",
+    "gamePath": "/games/Tariff-Panic-20Feb26/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "4 min"
   }
 ]
