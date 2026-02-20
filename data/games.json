@@ -91,5 +91,24 @@
     "featured": false,
     "status": "published",
     "durationEstimate": "8 min"
+  },
+  {
+    "id": "first-person-maze-2026-02-17",
+    "slug": "first-person-maze-17feb26",
+    "title": "First Person Maze",
+    "releaseDate": "2026-02-17",
+    "description": "Navigate layered corridors, master ramps and jumps, and clear both compounds in first-person view.",
+    "newsTopic": "Infrastructure security drill",
+    "tags": [
+      "Puzzle",
+      "FPS",
+      "Maze"
+    ],
+    "thumbnailUrl": "/assets/thumbnails/first-person-maze.svg",
+    "bannerUrl": "",
+    "gamePath": "/games/First-Person-Maze-17Feb26/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "9 min"
   }
 ]

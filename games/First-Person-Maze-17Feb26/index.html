@@ -1,0 +1,743 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>First Person Maze</title>
+  <style>
+    :root {
+      --bg: #0f1226;
+      --panel: rgba(9, 12, 26, 0.76);
+      --text: #f2f5ff;
+      --accent: #53f2c0;
+      --danger: #ff6f7f;
+      --line: rgba(255, 255, 255, 0.22);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 50% -10%, #2b2f62 0%, #15183a 42%, #0b0e1f 100%);
+    }
+
+    #game {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(3px);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    #crosshair {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%);
+      opacity: 0.85;
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+      content: "";
+      position: absolute;
+      background: #f8faff;
+    }
+
+    #crosshair::before {
+      width: 24px;
+      height: 2px;
+      top: 11px;
+      left: 0;
+    }
+
+    #crosshair::after {
+      width: 2px;
+      height: 24px;
+      top: 0;
+      left: 11px;
+    }
+
+    #minimap {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      width: 190px;
+      height: 190px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(3px);
+      pointer-events: none;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(8, 10, 24, 0.78), rgba(6, 8, 20, 0.9));
+      padding: 20px;
+      text-align: center;
+      pointer-events: auto;
+    }
+
+    .card {
+      max-width: 620px;
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(24px, 4vw, 36px);
+      letter-spacing: 0.03em;
+    }
+
+    p {
+      margin: 8px 0;
+      line-height: 1.45;
+      color: rgba(241, 246, 255, 0.93);
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      font-family: inherit;
+    }
+
+    button {
+      margin-top: 14px;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #0a132a;
+      background: linear-gradient(135deg, #67ffd2, #7ec4ff);
+      cursor: pointer;
+    }
+
+    .hint {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 8px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      .topbar {
+        top: 8px;
+        font-size: 10px;
+        padding: 8px 10px;
+      }
+
+      #minimap {
+        width: 142px;
+        height: 142px;
+        right: 8px;
+        bottom: 8px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div class="hud">
+    <div class="topbar">
+      <div id="state">Find the exit</div>
+      <div id="time">00:00.0</div>
+    </div>
+    <div id="crosshair"></div>
+    <canvas id="minimap" width="190" height="190"></canvas>
+  </div>
+
+  <div class="overlay" id="menu">
+    <div class="card">
+      <h1>First Person Maze</h1>
+      <p>Clear level 1, then breach level 2's secure compound and reach the holding wing.</p>
+      <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move, <kbd>Mouse</kbd> look, <kbd>Shift</kbd> sprint, <kbd>Space</kbd> jump.</p>
+      <p><kbd>R</kbd> resets, <kbd>Esc</kbd> releases mouse lock.</p>
+      <button id="startBtn">Start Game</button>
+      <div class="hint">Click in the game to re-capture mouse if needed.</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="winScreen">
+    <div class="card">
+      <h1 id="winTitle">Mission Complete</h1>
+      <p id="winTime">Time: 00:00.0</p>
+      <button id="retryBtn">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    const levels = [
+      {
+        name: "Level 1",
+        objective: "Maze Exit",
+        elevatedExit: true,
+        map: [
+          "################",
+          "#S....#........#",
+          "#.##..#.######.#",
+          "#....##......#.#",
+          "####....####.#.#",
+          "#......##....#.#",
+          "#.####....##.#.#",
+          "#....####.##.#.#",
+          "#.##....#.##.#.#",
+          "#.#..##.#..>>U.#",
+          "#.#.###.#..##E.#",
+          "#...#...#......#",
+          "################"
+        ]
+      },
+      {
+        name: "Level 2",
+        objective: "Holding Wing",
+        map: [
+          "##################################",
+          "#................................#",
+          "#.##############################.#",
+          "#.#..............R............M#.#",
+          "#.#.#######...#######..........#.#",
+          "#.#.#AAAAA#...#BBBBB#..........#.#",
+          "#.#.#AA1AA#...#BYYYB#..........#.#",
+          "#.#.###.###...###.###..........#.#",
+          "#.#...#.#.......#.#............#.#",
+          "#.#.###.###...###.###..........#.#",
+          "#.#.#CCCCC#...#DDDDD#..........#.#",
+          "#.#.#CC2CC#...#DDDDD#..........#.#",
+          "#.#.###.###...###.###..........#.#",
+          "#.#...#...........#............#.#",
+          "#.#.###.###########.#######....#.#",
+          "#.#.#FFF#.........#.#GGGGG#....#.#",
+          "#.#.#FFF#.#######.#.#GGGGG#....#.#",
+          "#.#.#...#.#HHHHH#.#.#.....#....#.#",
+          "#.#.###.#.#H###H#.#.#######....#.#",
+          "#.#.#III#.#HHEHH..#............#.#",
+          "#.#.#III#.#HHHHH.....S.........#.#",
+          "#.##############################.#",
+          "#................................#",
+          "##################################"
+        ]
+      }
+    ];
+
+    const FOV = Math.PI / 3;
+    const MAX_DEPTH = 26;
+    const MOVE_SPEED = 2.4;
+    const SPRINT_MULT = 1.65;
+    const ROT_SPEED = 0.0026;
+    const GRAVITY = 11.5;
+    const JUMP_VELOCITY = 4.2;
+    const STEP_HEIGHT = 0.48;
+    const RAMP_HEIGHT = 0.9;
+
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const minimap = document.getElementById("minimap");
+    const mctx = minimap.getContext("2d");
+    const menu = document.getElementById("menu");
+    const winScreen = document.getElementById("winScreen");
+    const stateEl = document.getElementById("state");
+    const timeEl = document.getElementById("time");
+    const winTitleEl = document.getElementById("winTitle");
+    const winTimeEl = document.getElementById("winTime");
+    const startBtn = document.getElementById("startBtn");
+    const retryBtn = document.getElementById("retryBtn");
+
+    const keys = new Set();
+    let currentLevelIndex = 0;
+    let map = levels[0].map;
+    let rampMarkers = [];
+    let running = false;
+    let won = false;
+    let startMs = 0;
+    let elapsedMs = 0;
+    let lastTs = 0;
+
+    const player = { x: 1.5, y: 1.5, z: 0, vz: 0, onGround: true, angle: 0 };
+    const startPos = { x: 1.5, y: 1.5 };
+    const exitPos = { x: 1.5, y: 1.5 };
+
+    function getLevelLabel() {
+      const level = levels[currentLevelIndex];
+      return `${level.name}: ${level.objective}`;
+    }
+
+    function loadLevel(index) {
+      currentLevelIndex = index;
+      map = levels[index].map;
+      locateSpecialTiles();
+      player.angle = 0;
+    }
+
+    function locateSpecialTiles() {
+      rampMarkers = [];
+      for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[y].length; x++) {
+          const c = map[y][x];
+          if (c === "S") {
+            startPos.x = x + 0.5;
+            startPos.y = y + 0.5;
+          }
+          if (c === "E") {
+            exitPos.x = x + 0.5;
+            exitPos.y = y + 0.5;
+          }
+          if ("<>^vU".includes(c)) {
+            rampMarkers.push({ x: x + 0.5, y: y + 0.5, tile: c });
+          }
+        }
+      }
+    }
+
+    function tileAt(x, y) {
+      const mx = Math.floor(x);
+      const my = Math.floor(y);
+      if (my < 0 || my >= map.length || mx < 0 || mx >= map[0].length) return "#";
+      return map[my][mx];
+    }
+
+    function floorHeightAt(x, y) {
+      const tile = tileAt(x, y);
+      const fx = x - Math.floor(x);
+      const fy = y - Math.floor(y);
+      if (tile === "U") return RAMP_HEIGHT;
+      if (tile === "E" && levels[currentLevelIndex].elevatedExit) return RAMP_HEIGHT;
+      if (tile === ">") return fx * RAMP_HEIGHT;
+      if (tile === "<") return (1 - fx) * RAMP_HEIGHT;
+      if (tile === "v") return fy * RAMP_HEIGHT;
+      if (tile === "^") return (1 - fy) * RAMP_HEIGHT;
+      return 0;
+    }
+
+    locateSpecialTiles();
+
+    function resetPlayer() {
+      player.x = startPos.x;
+      player.y = startPos.y;
+      player.z = floorHeightAt(player.x, player.y);
+      player.vz = 0;
+      player.onGround = true;
+      player.angle = 0;
+      won = false;
+      elapsedMs = 0;
+      startMs = performance.now();
+      stateEl.textContent = getLevelLabel();
+    }
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function isWall(x, y) {
+      return tileAt(x, y) === "#";
+    }
+
+    function isExit(x, y) {
+      return Math.floor(x) === Math.floor(exitPos.x) && Math.floor(y) === Math.floor(exitPos.y);
+    }
+
+    function castRay(angle) {
+      const sin = Math.sin(angle);
+      const cos = Math.cos(angle);
+
+      let depth = 0;
+      while (depth < MAX_DEPTH) {
+        depth += 0.02;
+        const x = player.x + cos * depth;
+        const y = player.y + sin * depth;
+        if (isWall(x, y)) {
+          const fx = x - Math.floor(x);
+          const fy = y - Math.floor(y);
+          const edge = Math.min(fx, 1 - fx, fy, 1 - fy);
+          return { depth, edge };
+        }
+      }
+      return { depth: MAX_DEPTH, edge: 0 };
+    }
+
+    function hasLineOfSight(dist, angle) {
+      const ray = castRay(angle);
+      return ray.depth >= dist - 0.05;
+    }
+
+    function drawMarker(worldX, worldY, color, sizeScale = 1, minDist = 0.2, maxDist = 9) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const dx = worldX - player.x;
+      const dy = worldY - player.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < minDist || dist > maxDist) return;
+      const rel = Math.atan2(dy, dx) - player.angle;
+      const wrapped = Math.atan2(Math.sin(rel), Math.cos(rel));
+      if (Math.abs(wrapped) >= FOV / 2) return;
+      if (!hasLineOfSight(dist, player.angle + wrapped)) return;
+      const screenX = (wrapped / FOV + 0.5) * w;
+      const size = Math.min(h * 0.5, (h / dist) * sizeScale);
+      const y = h / 2 - size / 2 + (player.z * 72 - player.vz * 8);
+      ctx.fillStyle = color;
+      ctx.fillRect(screenX - size * 0.08, y, size * 0.16, size);
+    }
+
+    function drawRampDecal(marker, horizon) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const dx = marker.x - player.x;
+      const dy = marker.y - player.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.45 || dist > 9) return;
+
+      const rel = Math.atan2(dy, dx) - player.angle;
+      const wrapped = Math.atan2(Math.sin(rel), Math.cos(rel));
+      if (Math.abs(wrapped) >= FOV / 2) return;
+      if (!hasLineOfSight(dist, player.angle + wrapped)) return;
+
+      const screenX = (wrapped / FOV + 0.5) * w;
+      const y = horizon + Math.min(h * 0.44, h / (dist * 1.8));
+      const s = Math.max(8, Math.min(48, h / (dist * 2.9)));
+
+      ctx.save();
+      ctx.translate(screenX, y);
+      ctx.fillStyle = "rgba(240,186,96,0.9)";
+      ctx.strokeStyle = "rgba(45,30,10,0.45)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      if (marker.tile === ">") {
+        ctx.moveTo(-0.52 * s, -0.2 * s);
+        ctx.lineTo(0.1 * s, -0.2 * s);
+        ctx.lineTo(0.1 * s, -0.42 * s);
+        ctx.lineTo(0.56 * s, 0);
+        ctx.lineTo(0.1 * s, 0.42 * s);
+        ctx.lineTo(0.1 * s, 0.2 * s);
+        ctx.lineTo(-0.52 * s, 0.2 * s);
+      } else if (marker.tile === "<") {
+        ctx.moveTo(0.52 * s, -0.2 * s);
+        ctx.lineTo(-0.1 * s, -0.2 * s);
+        ctx.lineTo(-0.1 * s, -0.42 * s);
+        ctx.lineTo(-0.56 * s, 0);
+        ctx.lineTo(-0.1 * s, 0.42 * s);
+        ctx.lineTo(-0.1 * s, 0.2 * s);
+        ctx.lineTo(0.52 * s, 0.2 * s);
+      } else if (marker.tile === "^") {
+        ctx.moveTo(-0.2 * s, 0.52 * s);
+        ctx.lineTo(-0.2 * s, -0.1 * s);
+        ctx.lineTo(-0.42 * s, -0.1 * s);
+        ctx.lineTo(0, -0.56 * s);
+        ctx.lineTo(0.42 * s, -0.1 * s);
+        ctx.lineTo(0.2 * s, -0.1 * s);
+        ctx.lineTo(0.2 * s, 0.52 * s);
+      } else if (marker.tile === "v") {
+        ctx.moveTo(-0.2 * s, -0.52 * s);
+        ctx.lineTo(-0.2 * s, 0.1 * s);
+        ctx.lineTo(-0.42 * s, 0.1 * s);
+        ctx.lineTo(0, 0.56 * s);
+        ctx.lineTo(0.42 * s, 0.1 * s);
+        ctx.lineTo(0.2 * s, 0.1 * s);
+        ctx.lineTo(0.2 * s, -0.52 * s);
+      } else {
+        ctx.moveTo(-0.46 * s, 0.12 * s);
+        ctx.lineTo(0, -0.46 * s);
+        ctx.lineTo(0.46 * s, 0.12 * s);
+        ctx.lineTo(0.18 * s, 0.12 * s);
+        ctx.lineTo(0.18 * s, 0.46 * s);
+        ctx.lineTo(-0.18 * s, 0.46 * s);
+        ctx.lineTo(-0.18 * s, 0.12 * s);
+      }
+
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw3D() {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cameraShift = player.z * 72 - player.vz * 8;
+      const horizon = h * 0.5 + cameraShift;
+
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, horizon);
+      skyGrad.addColorStop(0, "#7ec4ff");
+      skyGrad.addColorStop(1, "#264c93");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, Math.max(0, horizon));
+
+      const floorGrad = ctx.createLinearGradient(0, horizon, 0, h);
+      floorGrad.addColorStop(0, "#181a28");
+      floorGrad.addColorStop(1, "#0a0d19");
+      ctx.fillStyle = floorGrad;
+      ctx.fillRect(0, Math.max(0, horizon), w, h - Math.max(0, horizon));
+
+      for (let x = 0; x < w; x++) {
+        const camX = (x / w - 0.5) * FOV;
+        const ray = castRay(player.angle + camX);
+        const corrected = ray.depth * Math.cos(camX);
+        const wallH = Math.min(h, (h / Math.max(corrected, 0.001)) * 0.85);
+        const y1 = (h - wallH) / 2 + cameraShift;
+
+        const shade = Math.max(0.14, 1 - corrected / 12);
+        const edgeBoost = ray.edge < 0.06 ? 0.84 : 1;
+        const r = Math.floor(72 * shade * edgeBoost);
+        const g = Math.floor(110 * shade * edgeBoost);
+        const b = Math.floor(170 * shade * edgeBoost);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(x, y1, 1, wallH);
+      }
+
+      if (currentLevelIndex === 0) {
+        for (const marker of rampMarkers) {
+          drawRampDecal(marker, horizon);
+        }
+      }
+
+      drawMarker(exitPos.x, exitPos.y, "rgba(83,242,192,0.92)", 1.0, 0.2, MAX_DEPTH);
+    }
+
+    function drawMinimap() {
+      const mw = minimap.width;
+      const mh = minimap.height;
+      const scale = Math.min(mw / map[0].length, mh / map.length);
+
+      mctx.clearRect(0, 0, mw, mh);
+      mctx.fillStyle = "rgba(8,10,20,0.82)";
+      mctx.fillRect(0, 0, mw, mh);
+
+      for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[y].length; x++) {
+          const c = map[y][x];
+          if (c === "#") mctx.fillStyle = "#88a1d6";
+          else if (c === "E") mctx.fillStyle = "#53f2c0";
+          else if (c === "S") mctx.fillStyle = "#ff9f7b";
+          else if ("<>^v".includes(c)) mctx.fillStyle = "#d3b27b";
+          else if (c === "U") mctx.fillStyle = "#9ad2ff";
+          else if (/[A-Z0-9]/.test(c)) mctx.fillStyle = "#38528f";
+          else mctx.fillStyle = "#1b2548";
+          mctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
+        }
+      }
+
+      mctx.fillStyle = "#ffdd78";
+      mctx.beginPath();
+      mctx.arc(player.x * scale, player.y * scale, Math.max(2.8, scale * 0.2), 0, Math.PI * 2);
+      mctx.fill();
+
+      mctx.strokeStyle = "#ffdd78";
+      mctx.lineWidth = 2;
+      mctx.beginPath();
+      mctx.moveTo(player.x * scale, player.y * scale);
+      mctx.lineTo(
+        (player.x + Math.cos(player.angle) * 0.65) * scale,
+        (player.y + Math.sin(player.angle) * 0.65) * scale
+      );
+      mctx.stroke();
+    }
+
+    function canOccupy(x, y) {
+      const radius = 0.16;
+      const points = [
+        [x - radius, y - radius],
+        [x + radius, y - radius],
+        [x - radius, y + radius],
+        [x + radius, y + radius]
+      ];
+      for (const [px, py] of points) {
+        if (isWall(px, py)) return false;
+        if (floorHeightAt(px, py) > player.z + STEP_HEIGHT) return false;
+      }
+      return true;
+    }
+
+    function moveWithCollision(nextX, nextY) {
+      if (canOccupy(nextX, player.y)) {
+        player.x = nextX;
+      }
+      if (canOccupy(player.x, nextY)) {
+        player.y = nextY;
+      }
+    }
+
+    function update(dt) {
+      if (!running || won) return;
+
+      const forward = (keys.has("KeyW") ? 1 : 0) - (keys.has("KeyS") ? 1 : 0);
+      const strafe = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0);
+      const moving = forward !== 0 || strafe !== 0;
+      const speed = MOVE_SPEED * (keys.has("ShiftLeft") || keys.has("ShiftRight") ? SPRINT_MULT : 1);
+
+      if (moving) {
+        const norm = 1 / Math.hypot(forward, strafe);
+        const f = forward * norm;
+        const s = strafe * norm;
+
+        const vx = (Math.cos(player.angle) * f + Math.cos(player.angle + Math.PI / 2) * s) * speed * dt;
+        const vy = (Math.sin(player.angle) * f + Math.sin(player.angle + Math.PI / 2) * s) * speed * dt;
+        moveWithCollision(player.x + vx, player.y + vy);
+      }
+
+      player.vz -= GRAVITY * dt;
+      player.z += player.vz * dt;
+      const ground = floorHeightAt(player.x, player.y);
+      if (player.z <= ground) {
+        player.z = ground;
+        player.vz = 0;
+        player.onGround = true;
+      } else {
+        player.onGround = false;
+      }
+
+      elapsedMs = performance.now() - startMs;
+      timeEl.textContent = formatTime(elapsedMs);
+
+      if (isExit(player.x, player.y)) {
+        if (currentLevelIndex < levels.length - 1) {
+          loadLevel(currentLevelIndex + 1);
+          resetPlayer();
+          canvas.requestPointerLock();
+        } else {
+          won = true;
+          running = false;
+          stateEl.textContent = "Objective complete";
+          winTitleEl.textContent = "Mission Complete";
+          winTimeEl.textContent = `Time: ${formatTime(elapsedMs)}`;
+          winScreen.classList.remove("hidden");
+          document.exitPointerLock();
+        }
+      }
+    }
+
+    function formatTime(ms) {
+      const total = ms / 1000;
+      const min = Math.floor(total / 60).toString().padStart(2, "0");
+      const sec = Math.floor(total % 60).toString().padStart(2, "0");
+      const tenth = Math.floor((total * 10) % 10);
+      return `${min}:${sec}.${tenth}`;
+    }
+
+    function loop(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(0.05, (ts - lastTs) / 1000);
+      lastTs = ts;
+
+      update(dt);
+      draw3D();
+      drawMinimap();
+      requestAnimationFrame(loop);
+    }
+
+    function startGame() {
+      menu.classList.add("hidden");
+      winScreen.classList.add("hidden");
+      running = true;
+      loadLevel(0);
+      resetPlayer();
+      canvas.requestPointerLock();
+    }
+
+    function resetGame(fullReset = false) {
+      running = true;
+      won = false;
+      if (fullReset) loadLevel(0);
+      winScreen.classList.add("hidden");
+      resetPlayer();
+      canvas.requestPointerLock();
+    }
+
+    document.addEventListener("keydown", (e) => {
+      keys.add(e.code);
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (running && !won && player.onGround) {
+          player.vz = JUMP_VELOCITY;
+          player.onGround = false;
+        }
+      }
+      if (e.code === "KeyR") {
+        resetGame();
+      }
+    });
+
+    document.addEventListener("keyup", (e) => keys.delete(e.code));
+
+    document.addEventListener("mousemove", (e) => {
+      if (document.pointerLockElement === canvas && running && !won) {
+        player.angle += e.movementX * ROT_SPEED;
+      }
+    });
+
+    document.addEventListener("pointerlockchange", () => {
+      if (document.pointerLockElement !== canvas && running && !won) {
+        stateEl.textContent = "Click game to resume";
+      } else if (!won) {
+        stateEl.textContent = getLevelLabel();
+      }
+    });
+
+    canvas.addEventListener("click", () => {
+      if (!menu.classList.contains("hidden") || !running || won) return;
+      if (document.pointerLockElement !== canvas) canvas.requestPointerLock();
+    });
+
+    startBtn.addEventListener("click", startGame);
+    retryBtn.addEventListener("click", () => resetGame(true));
+
+    window.addEventListener("resize", resize);
+
+    resize();
+    resetPlayer();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
