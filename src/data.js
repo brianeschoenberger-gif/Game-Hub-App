@@ -5,7 +5,6 @@ export async function loadGames() {
   if (!response.ok) {
     throw new Error('Failed to load game metadata.');
   }
-
   const games = await response.json();
   return games
     .filter((game) => game.status === 'published')

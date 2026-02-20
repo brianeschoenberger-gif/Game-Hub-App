@@ -20,7 +20,7 @@ async function renderPlayer() {
       return;
     }
 
-    document.title = `Play ${game.title} · Daily Arcade`;
+    document.title = `Play ${game.title} - Daily Arcade`;
     root.innerHTML = `
       <section class="player-layout">
         <h1>Now Playing: ${game.title}</h1>

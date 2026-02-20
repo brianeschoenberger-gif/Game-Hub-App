@@ -20,10 +20,10 @@ async function renderDetail() {
       return;
     }
 
-    document.title = `${game.title} · Daily Arcade`;
+    document.title = `${game.title} - Daily Arcade`;
     root.innerHTML = `
       <article class="details-layout">
-        <p class="meta">${formatDate(game.releaseDate)} · ${game.durationEstimate} · ${game.newsTopic}</p>
+        <p class="meta">${formatDate(game.releaseDate)} - ${game.durationEstimate} - ${game.newsTopic}</p>
         <h1>${game.title}</h1>
         <p>${game.description}</p>
         <p>${game.tags.map((tag) => `<span class="tag">${tag}</span>`).join(' ')}</p>

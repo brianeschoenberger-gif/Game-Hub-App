@@ -18,7 +18,7 @@ export function gameCard(game) {
 export function hero(game) {
   return `
     <div>
-      <p class="meta">Today · ${formatDate(game.releaseDate)} · ${game.durationEstimate}</p>
+      <p class="meta">Today - ${formatDate(game.releaseDate)} - ${game.durationEstimate}</p>
       <h1>${game.title}</h1>
       <p>${game.description}</p>
       <p>${game.newsTopic}</p>
