@@ -1,5 +1,5 @@
 import { loadGames } from './data.js';
-import { emptyState, gameCard } from './ui.js';
+import { emptyState, gameCard } from './ui.js?v=20260221-1';
 
 async function renderArchive() {
   const root = document.querySelector('#archive-page');
