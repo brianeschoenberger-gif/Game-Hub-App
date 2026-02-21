@@ -27,33 +27,41 @@
   const LEVEL_CONFIGS = {
     [LEVEL_1_ID]: {
       name: 'Level 1 - Reactor Sweep',
-      worldWidth: 3600,
+      worldWidth: 4300,
       spawn: { x: 90, y: 380 },
       finishGate: { x: 2580, y: 300, w: 45, h: 170 },
       blocks: [
         { x: 0, y: 470, w: 620, h: 70 },
         { x: 760, y: 470, w: 520, h: 70 },
         { x: 1360, y: 470, w: 450, h: 70 },
+        { x: 1720, y: 390, w: 130, h: 20 },
         { x: 1930, y: 470, w: 280, h: 70 },
+        { x: 2100, y: 360, w: 120, h: 20 },
         { x: 2280, y: 470, w: 340, h: 70 },
-        { x: 2660, y: 470, w: 760, h: 70 },
+        { x: 2440, y: 340, w: 140, h: 20 },
+        { x: 2660, y: 470, w: 1320, h: 70 },
         { x: 2740, y: 360, w: 120, h: 20 },
-        { x: 3020, y: 330, w: 120, h: 20 }
+        { x: 3020, y: 330, w: 120, h: 20 },
+        { x: 3330, y: 310, w: 130, h: 20 },
+        { x: 3600, y: 340, w: 130, h: 20 }
       ],
       enemySpawns: [
         { x: 900, y: 418, minX: 790, maxX: 1210, hp: 3, speed: 90 },
         { x: 1500, y: 418, minX: 1400, maxX: 1750, hp: 3, speed: 90 },
+        { x: 1825, y: 338, minX: 1730, maxX: 1860, hp: 3, speed: 96 },
+        { x: 2140, y: 418, minX: 1980, maxX: 2240, hp: 4, speed: 102 },
+        { x: 2480, y: 288, minX: 2440, maxX: 2565, hp: 4, speed: 106 },
         { x: 2360, y: 418, minX: 2310, maxX: 2570, hp: 3, speed: 95 }
       ],
       boss: {
-        x: 3160,
+        x: 3430,
         y: 330,
         w: 118,
         h: 130,
         hp: 60,
         speed: 95,
         moveMinX: 2860,
-        moveMaxX: 3320,
+        moveMaxX: 3780,
         attackInterval: 1.2,
         projectileSpeeds: [260, 300, 340],
         spread: [-0.24, 0, 0.24],
