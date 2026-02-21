@@ -36,41 +36,75 @@
       name: 'Level 1 - Reactor Sweep',
       mode: '2d',
       visualThemeId: 'level1',
-      worldWidth: 4300,
+      worldWidth: 8600,
       spawn: { x: 90, y: 380 },
-      finishGate: { x: 2580, y: 300, w: 45, h: 170 },
+      finishGate: { x: 7280, y: 150, w: 50, h: 250 },
       blocks: [
-        { x: 0, y: 470, w: 620, h: 70 },
-        { x: 760, y: 470, w: 520, h: 70 },
-        { x: 1360, y: 470, w: 450, h: 70 },
-        { x: 1720, y: 390, w: 130, h: 20 },
-        { x: 1930, y: 470, w: 280, h: 70 },
-        { x: 2100, y: 360, w: 120, h: 20 },
-        { x: 2280, y: 470, w: 340, h: 70 },
-        { x: 2440, y: 340, w: 140, h: 20 },
-        { x: 2660, y: 470, w: 1320, h: 70 },
-        { x: 2740, y: 360, w: 120, h: 20 },
-        { x: 3020, y: 330, w: 120, h: 20 },
-        { x: 3330, y: 310, w: 130, h: 20 },
-        { x: 3600, y: 340, w: 130, h: 20 }
+        { x: 0, y: 470, w: 700, h: 70 },
+        { x: 820, y: 470, w: 640, h: 70 },
+        { x: 1610, y: 470, w: 760, h: 70 },
+        { x: 2520, y: 470, w: 600, h: 70 },
+        { x: 3260, y: 470, w: 760, h: 70 },
+        { x: 4190, y: 470, w: 680, h: 70 },
+        { x: 5080, y: 470, w: 690, h: 70 },
+        { x: 5940, y: 470, w: 520, h: 70 },
+
+        { x: 1120, y: 430, w: 120, h: 20 },
+        { x: 1250, y: 390, w: 120, h: 20 },
+        { x: 1380, y: 350, w: 120, h: 20 },
+
+        { x: 2750, y: 410, w: 130, h: 20 },
+        { x: 2910, y: 370, w: 130, h: 20 },
+        { x: 3070, y: 330, w: 130, h: 20 },
+
+        { x: 4480, y: 410, w: 140, h: 20 },
+        { x: 4650, y: 365, w: 140, h: 20 },
+        { x: 4820, y: 320, w: 140, h: 20 },
+        { x: 4990, y: 275, w: 140, h: 20 },
+
+        { x: 6500, y: 420, w: 160, h: 20 },
+        { x: 6700, y: 370, w: 160, h: 20 },
+        { x: 6900, y: 320, w: 160, h: 20 },
+        { x: 6680, y: 265, w: 190, h: 20 },
+        { x: 6940, y: 220, w: 190, h: 20 },
+        { x: 7210, y: 180, w: 220, h: 20 },
+
+        { x: 7060, y: 250, w: 70, h: 220 },
+        { x: 7320, y: 470, w: 1260, h: 70 }
+      ],
+      crates: [
+        { x: 700, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 736, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 2360, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 3120, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 4020, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 5770, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 6460, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 7130, y: 184, w: 36, h: 36, hp: 3 },
+        { x: 7168, y: 184, w: 36, h: 36, hp: 3 },
+        { x: 7430, y: 434, w: 36, h: 36, hp: 3 }
       ],
       enemySpawns: [
-        { x: 900, y: 418, minX: 790, maxX: 1210, hp: 3, speed: 90 },
-        { x: 1500, y: 418, minX: 1400, maxX: 1750, hp: 3, speed: 90 },
-        { x: 1825, y: 338, minX: 1730, maxX: 1860, hp: 3, speed: 96 },
-        { x: 2140, y: 418, minX: 1980, maxX: 2240, hp: 4, speed: 102 },
-        { x: 2480, y: 288, minX: 2440, maxX: 2565, hp: 4, speed: 106 },
-        { x: 2360, y: 418, minX: 2310, maxX: 2570, hp: 3, speed: 95 }
+        { x: 980, y: 418, minX: 860, maxX: 1380, hp: 3, speed: 94 },
+        { x: 1700, y: 418, minX: 1640, maxX: 2330, hp: 3, speed: 95 },
+        { x: 1410, y: 298, minX: 1385, maxX: 1490, hp: 3, speed: 104 },
+        { x: 2985, y: 278, minX: 2925, maxX: 3160, hp: 4, speed: 106 },
+        { x: 3560, y: 418, minX: 3300, maxX: 3980, hp: 4, speed: 102 },
+        { x: 5000, y: 365, minX: 4860, maxX: 5150, hp: 4, speed: 109 },
+        { x: 5420, y: 418, minX: 5140, maxX: 5730, hp: 4, speed: 110 },
+        { x: 6750, y: 318, minX: 6690, maxX: 6880, hp: 5, speed: 114 },
+        { x: 7050, y: 168, minX: 6960, maxX: 7390, hp: 5, speed: 116 },
+        { x: 7840, y: 418, minX: 7540, maxX: 8480, hp: 5, speed: 118 }
       ],
       boss: {
-        x: 3430,
+        x: 7860,
         y: 330,
         w: 118,
         h: 130,
         hp: 60,
-        speed: 95,
-        moveMinX: 2860,
-        moveMaxX: 3780,
+        speed: 108,
+        moveMinX: 7320,
+        moveMaxX: 8500,
         attackInterval: 1.2,
         projectileSpeeds: [260, 300, 340],
         spread: [-0.24, 0, 0.24],
@@ -97,6 +131,17 @@
         { x: 3460, y: 470, w: 1200, h: 70 },
         { x: 3600, y: 360, w: 130, h: 20 },
         { x: 3900, y: 330, w: 130, h: 20 }
+      ],
+      crates: [
+        { x: 560, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 920, y: 394, w: 36, h: 36, hp: 2 },
+        { x: 1400, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 1720, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 2460, y: 384, w: 36, h: 36, hp: 2 },
+        { x: 2740, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 3380, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 3740, y: 324, w: 36, h: 36, hp: 3 },
+        { x: 4030, y: 434, w: 36, h: 36, hp: 3 }
       ],
       enemySpawns: [
         { x: 760, y: 378, minX: 640, maxX: 880, hp: 4, speed: 115 },
@@ -139,7 +184,7 @@
           '#.###.#.#########.#.##.#',
           '#.#...#....#......#..#.#',
           '#.#.######.#.#######.#.#',
-          '#...#......#.....#...#E#',
+          '#...#.....E#.....#...#.#',
           '########################'
         ],
         moveSpeed: 3.6,
@@ -151,14 +196,14 @@
         enemyShootInterval: 1.1,
         enemySpawns: [
           { x: 3.5, y: 1.5, hp: 3 },
-          { x: 3.5, y: 7.5, hp: 3 },
-          { x: 10.5, y: 4.5, hp: 4 },
-          { x: 8.5, y: 9.5, hp: 4 },
-          { x: 16.5, y: 6.5, hp: 4 },
-          { x: 7.5, y: 11.5, hp: 4 },
-          { x: 20.5, y: 9.5, hp: 5 },
-          { x: 14.5, y: 13.5, hp: 5 },
-          { x: 18.5, y: 13.5, hp: 5 }
+          { x: 2.5, y: 3.5, hp: 3 },
+          { x: 3.5, y: 5.5, hp: 4 },
+          { x: 7.5, y: 5.5, hp: 4 },
+          { x: 3.5, y: 7.5, hp: 4 },
+          { x: 9.5, y: 7.5, hp: 4 },
+          { x: 3.5, y: 9.5, hp: 5 },
+          { x: 8.5, y: 11.5, hp: 5 },
+          { x: 7.5, y: 13.5, hp: 5 }
         ]
       }
     }
@@ -595,6 +640,13 @@
       spawn: { ...config.spawn },
       finishGate: { ...config.finishGate },
       blocks: config.blocks.map((b) => ({ ...b })),
+      crates: (config.crates || []).map((c) => ({
+        ...c,
+        hp: c.hp ?? 2,
+        maxHp: c.hp ?? 2,
+        alive: true,
+        hitFlashUntil: 0
+      })),
       bossTemplate: { ...config.boss },
       cameraX: 0,
       projectiles: [],
@@ -1303,6 +1355,20 @@
       }
       player.vx = 0;
     }
+
+    for (const crate of game.mission.crates || []) {
+      if (!crate.alive || !intersects(player, crate)) {
+        continue;
+      }
+      if (player.vx > 0) {
+        player.x = crate.x - player.w;
+        player.wallDir = 1;
+      } else if (player.vx < 0) {
+        player.x = crate.x + crate.w;
+        player.wallDir = -1;
+      }
+      player.vx = 0;
+    }
   }
 
   function resolveMissionVertical() {
@@ -1320,6 +1386,20 @@
         player.grounded = true;
       } else if (player.vy < 0) {
         player.y = block.y + block.h;
+        player.vy = 0;
+      }
+    }
+
+    for (const crate of game.mission.crates || []) {
+      if (!crate.alive || !intersects(player, crate)) {
+        continue;
+      }
+      if (player.vy > 0) {
+        player.y = crate.y - player.h;
+        player.vy = 0;
+        player.grounded = true;
+      } else if (player.vy < 0) {
+        player.y = crate.y + crate.h;
         player.vy = 0;
       }
     }
@@ -1496,6 +1576,33 @@
       if (projectile._dead) {
         continue;
       }
+      for (const crate of mission.crates || []) {
+        if (!crate.alive || projectile._dead) {
+          continue;
+        }
+        if (circleHitsRect(projectile, crate)) {
+          crate.hp -= projectile.damage;
+          crate.hitFlashUntil = game.now + 0.07;
+          spawnHitSpark(projectile.x, projectile.y, '#d8b98f', 0.9 + projectile.power * 0.6);
+          spawnImpactRing(projectile.x, projectile.y, '#d7ad7f', 0.7 + projectile.power * 0.4);
+          if (projectile.piercing && projectile.pierceRemaining > 0) {
+            projectile.pierceRemaining -= 1;
+            projectile.damage *= 0.84;
+            if (projectile.pierceRemaining <= 0) {
+              projectile._dead = true;
+            }
+          } else {
+            projectile._dead = true;
+          }
+
+          if (crate.hp <= 0) {
+            crate.alive = false;
+            spawnHitSpark(crate.x + crate.w / 2, crate.y + crate.h / 2, '#f2cf96', 1.2);
+            spawnImpactRing(crate.x + crate.w / 2, crate.y + crate.h / 2, '#e8be86', 1.05);
+          }
+        }
+      }
+
       for (const enemy of mission.enemies) {
         if (!enemy.alive || projectile._dead) {
           continue;
@@ -1556,6 +1663,20 @@
     for (const projectile of mission.enemyProjectiles) {
       if (projectile._dead) {
         continue;
+      }
+      for (const crate of mission.crates || []) {
+        if (!crate.alive || projectile._dead) {
+          continue;
+        }
+        if (circleHitsRect(projectile, crate)) {
+          projectile._dead = true;
+          crate.hp -= 0.8;
+          crate.hitFlashUntil = game.now + 0.06;
+          if (crate.hp <= 0) {
+            crate.alive = false;
+            spawnHitSpark(crate.x + crate.w / 2, crate.y + crate.h / 2, '#f2cf96', 1.15);
+          }
+        }
       }
       if (circleHitsRect(projectile, player)) {
         projectile._dead = true;
@@ -2262,6 +2383,29 @@
           ctx.fillRect(block.x + 4, block.y + 16, Math.max(10, block.w * 0.35), 8);
         }
       }
+    }
+
+    for (const crate of mission.crates || []) {
+      if (!crate.alive) {
+        continue;
+      }
+      const crateFlash = crate.hitFlashUntil > game.now;
+      const crateGrad = ctx.createLinearGradient(crate.x, crate.y, crate.x, crate.y + crate.h);
+      crateGrad.addColorStop(0, crateFlash ? '#efcf9c' : '#9a6e3f');
+      crateGrad.addColorStop(1, crateFlash ? '#d3a86f' : '#6a4526');
+      ctx.fillStyle = crateGrad;
+      ctx.fillRect(crate.x, crate.y, crate.w, crate.h);
+      ctx.strokeStyle = crateFlash ? '#f8ddb0' : '#b98a56';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(crate.x + 1, crate.y + 1, crate.w - 2, crate.h - 2);
+      ctx.strokeStyle = crateFlash ? 'rgba(120, 81, 38, 0.45)' : 'rgba(45, 28, 14, 0.5)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(crate.x + 4, crate.y + crate.h * 0.5);
+      ctx.lineTo(crate.x + crate.w - 4, crate.y + crate.h * 0.5);
+      ctx.moveTo(crate.x + crate.w * 0.5, crate.y + 4);
+      ctx.lineTo(crate.x + crate.w * 0.5, crate.y + crate.h - 4);
+      ctx.stroke();
     }
 
     if (!mission.gateTriggered) {
