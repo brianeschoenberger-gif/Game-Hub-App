@@ -419,7 +419,8 @@
     grime1: null,
     grime2: null,
     panelHighlight: null,
-    scanline: null
+    scanline: null,
+    enemySmall: null
   };
   let visualAssetsReady = false;
 
@@ -429,7 +430,8 @@
       ['grime1', 'assets/grime-decal-01.png'],
       ['grime2', 'assets/grime-decal-02.png'],
       ['panelHighlight', 'assets/panel-highlight.png'],
-      ['scanline', 'assets/scanline-soft.png']
+      ['scanline', 'assets/scanline-soft.png'],
+      ['enemySmall', 'assets/matt-enemy.png']
     ];
     let pending = entries.length;
     if (!pending) {
@@ -2642,13 +2644,29 @@
   function drawCrawler(enemy, flash) {
     ctx.save();
     ctx.translate(enemy.x, enemy.y);
-    ctx.fillStyle = flash ? '#ffd1a0' : '#e89a57';
-    ctx.fillRect(2, 6, enemy.w - 4, 18);
-    ctx.fillStyle = '#5e351f';
-    ctx.fillRect(10, 24, enemy.w - 20, enemy.h - 24);
-    ctx.strokeStyle = flash ? 'rgba(255, 221, 176, 0.9)' : 'rgba(255, 183, 111, 0.45)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(2, 6, enemy.w - 4, enemy.h - 8);
+    const img = visualAssets.enemySmall;
+    if (img) {
+      const bob = Math.sin(game.now * 7 + enemy.x * 0.01) * 1.2;
+      const drawY = 2 + bob;
+      ctx.drawImage(img, 0, drawY, enemy.w, enemy.h - 4);
+      ctx.strokeStyle = flash ? 'rgba(255, 203, 203, 0.95)' : 'rgba(128, 186, 255, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, drawY + 1, enemy.w - 2, enemy.h - 6);
+      if (flash) {
+        ctx.fillStyle = 'rgba(255, 182, 182, 0.25)';
+        ctx.fillRect(1, drawY + 1, enemy.w - 2, enemy.h - 6);
+      }
+      ctx.fillStyle = 'rgba(5, 12, 19, 0.45)';
+      ctx.fillRect(4, enemy.h - 6, enemy.w - 8, 5);
+    } else {
+      ctx.fillStyle = flash ? '#ffd1a0' : '#e89a57';
+      ctx.fillRect(2, 6, enemy.w - 4, 18);
+      ctx.fillStyle = '#5e351f';
+      ctx.fillRect(10, 24, enemy.w - 20, enemy.h - 24);
+      ctx.strokeStyle = flash ? 'rgba(255, 221, 176, 0.9)' : 'rgba(255, 183, 111, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(2, 6, enemy.w - 4, enemy.h - 8);
+    }
     ctx.restore();
   }
 
