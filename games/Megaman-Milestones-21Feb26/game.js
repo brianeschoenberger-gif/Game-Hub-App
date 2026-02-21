@@ -124,50 +124,50 @@
         { x: 0, y: 470, w: 620, h: 70 },
         { x: 720, y: 470, w: 640, h: 70 },
         { x: 1490, y: 470, w: 560, h: 70 },
-        { x: 2180, y: 420, w: 260, h: 22 },
-        { x: 2460, y: 365, w: 220, h: 22 },
-        { x: 2730, y: 315, w: 220, h: 20 },
-        { x: 3000, y: 265, w: 220, h: 20 },
-        { x: 3270, y: 220, w: 220, h: 20 },
-        { x: 3540, y: 175, w: 220, h: 20 },
-        { x: 3810, y: 130, w: 260, h: 20 },
-        { x: 3460, y: 250, w: 160, h: 18 },
-        { x: 3240, y: 310, w: 140, h: 18 },
-        { x: 4020, y: 470, w: 760, h: 70 },
-        { x: 4880, y: 470, w: 640, h: 70 },
-        { x: 5640, y: 430, w: 220, h: 20 },
-        { x: 5900, y: 380, w: 220, h: 20 },
-        { x: 6160, y: 330, w: 220, h: 20 },
-        { x: 6420, y: 280, w: 220, h: 20 },
-        { x: 6680, y: 230, w: 220, h: 20 },
-        { x: 6940, y: 185, w: 220, h: 20 },
-        { x: 7200, y: 145, w: 220, h: 20 },
-        { x: 6920, y: 245, w: 160, h: 18 },
-        { x: 6660, y: 305, w: 140, h: 18 },
-        { x: 7420, y: 470, w: 1960, h: 70 },
+        { x: 2360, y: 398, w: 220, h: 22 },
+        { x: 2650, y: 346, w: 210, h: 22 },
+        { x: 2920, y: 298, w: 210, h: 20 },
+        { x: 3190, y: 252, w: 210, h: 20 },
+        { x: 3460, y: 204, w: 220, h: 20 },
+        { x: 3720, y: 160, w: 260, h: 20 },
+        { x: 4020, y: 470, w: 660, h: 70 },
+        { x: 5020, y: 430, w: 210, h: 20 },
+        { x: 5310, y: 382, w: 210, h: 20 },
+        { x: 5580, y: 336, w: 210, h: 20 },
+        { x: 5840, y: 292, w: 220, h: 20 },
+        { x: 6100, y: 248, w: 220, h: 20 },
+        { x: 6360, y: 210, w: 220, h: 20 },
+        { x: 6620, y: 182, w: 220, h: 20 },
+        { x: 6940, y: 156, w: 220, h: 20 },
+        { x: 7420, y: 145, w: 220, h: 20 },
+        { x: 7900, y: 470, w: 1480, h: 70 },
+        { x: 5460, y: 232, w: 140, h: 18 },
         { x: 7600, y: 250, w: 70, h: 220 }
       ],
       crates: [
         { x: 680, y: 434, w: 36, h: 36, hp: 2 },
         { x: 1360, y: 434, w: 36, h: 36, hp: 2 },
-        { x: 2430, y: 329, w: 36, h: 36, hp: 2 },
-        { x: 3005, y: 229, w: 36, h: 36, hp: 2 },
-        { x: 3550, y: 139, w: 36, h: 36, hp: 3 },
-        { x: 4790, y: 434, w: 36, h: 36, hp: 2 },
-        { x: 5610, y: 394, w: 36, h: 36, hp: 2 },
-        { x: 6140, y: 294, w: 36, h: 36, hp: 2 },
-        { x: 6890, y: 149, w: 36, h: 36, hp: 3 },
-        { x: 7390, y: 434, w: 36, h: 36, hp: 3 }
+        { x: 2400, y: 362, w: 36, h: 36, hp: 2 },
+        { x: 2940, y: 262, w: 36, h: 36, hp: 2 },
+        { x: 3470, y: 168, w: 36, h: 36, hp: 3 },
+        { x: 4640, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 5340, y: 346, w: 36, h: 36, hp: 2 },
+        { x: 6110, y: 212, w: 36, h: 36, hp: 2 },
+        { x: 6900, y: 120, w: 36, h: 36, hp: 3 },
+        { x: 7970, y: 434, w: 36, h: 36, hp: 3 }
+      ],
+      pickups: [
+        { x: 5508, y: 194, w: 24, h: 24, credits: 120, xp: 80, label: 'Hidden Air Cache' }
       ],
       enemySpawns: [
         { x: 890, y: 418, minX: 760, maxX: 1320, hp: 4, speed: 115 },
         { x: 1710, y: 418, minX: 1520, maxX: 2030, hp: 4, speed: 112 },
-        { x: 2520, y: 313, minX: 2470, maxX: 2660, hp: 5, speed: 120 },
-        { x: 3300, y: 168, minX: 3280, maxX: 3480, hp: 5, speed: 124 },
+        { x: 2520, y: 344, minX: 2400, maxX: 2860, hp: 5, speed: 120 },
+        { x: 3300, y: 198, minX: 3210, maxX: 3670, hp: 5, speed: 124 },
         { x: 4200, y: 418, minX: 4060, maxX: 4740, hp: 5, speed: 122 },
-        { x: 5750, y: 378, minX: 5660, maxX: 5860, hp: 5, speed: 126 },
-        { x: 6670, y: 178, minX: 6620, maxX: 6880, hp: 6, speed: 130 },
-        { x: 7420, y: 418, minX: 7440, maxX: 8060, hp: 6, speed: 132 }
+        { x: 5750, y: 312, minX: 5600, maxX: 6300, hp: 5, speed: 126 },
+        { x: 6670, y: 158, minX: 6500, maxX: 7160, hp: 6, speed: 130 },
+        { x: 8120, y: 418, minX: 7960, maxX: 9060, hp: 6, speed: 132 }
       ],
       boss: {
         x: 8500,
@@ -270,7 +270,17 @@
     jumpCount: 0,
     maxJumps: 2,
     wallDir: 0,
-    wallJumpLockUntil: 0
+    wallJumpLockUntil: 0,
+    airDashUnlocked: false,
+    isAirDashing: false,
+    airDashDir: 1,
+    airDashUntil: 0,
+    airDashCooldownUntil: 0,
+    airDashCharges: 0,
+    airDashMaxCharges: 1,
+    airDashSpeed: 820,
+    airDashDuration: 0.22,
+    airDashCooldown: 0.45
   };
 
   function createDefaultMissions() {
@@ -286,6 +296,7 @@
       rapidUnlocked: localStorage.getItem(LEGACY_RAPID_KEY) === '1',
       chargeUnlocked: false,
       pierceUnlocked: false,
+      airDashUnlocked: true,
       credits: 0,
       xp: 0,
       level: 1,
@@ -331,6 +342,7 @@
       merged.rapidUnlocked = Boolean(merged.rapidUnlocked || localStorage.getItem(LEGACY_RAPID_KEY) === '1');
       merged.chargeUnlocked = Boolean(merged.chargeUnlocked);
       merged.pierceUnlocked = Boolean(merged.pierceUnlocked);
+      merged.airDashUnlocked = Boolean(merged.airDashUnlocked);
       return merged;
     } catch {
       return fallback;
@@ -347,6 +359,11 @@
   // Migration: if Level 2 was already completed in an older build, ensure Level 3 is unlocked.
   if (profile.missions?.[LEVEL_2_ID]?.completed && !profile.missions?.[LEVEL_3_ID]?.accepted) {
     profile.missions[LEVEL_3_ID].accepted = true;
+  }
+
+  // Migration: if Level 2 was already completed in an older build, grant air dash unlock now.
+  if (!profile.airDashUnlocked) {
+    profile.airDashUnlocked = true;
   }
 
   function saveProfile() {
@@ -678,6 +695,10 @@
         alive: true,
         hitFlashUntil: 0
       })),
+      pickups: (config.pickups || []).map((p) => ({
+        ...p,
+        collected: false
+      })),
       bossTemplate: { ...config.boss },
       cameraX: 0,
       cameraY: 0,
@@ -746,12 +767,16 @@
     profile.rapidUnlocked = false;
     profile.chargeUnlocked = false;
     profile.pierceUnlocked = false;
+    profile.airDashUnlocked = true;
     profile.credits = 0;
     profile.xp = 0;
     profile.level = 1;
     profile.clears = 0;
     profile.missions = createDefaultMissions();
     player.chargeUnlocked = profile.chargeUnlocked;
+    player.airDashUnlocked = profile.airDashUnlocked;
+    player.isAirDashing = false;
+    player.airDashCharges = profile.airDashUnlocked ? player.airDashMaxCharges : 0;
     player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
     localStorage.removeItem(LEGACY_RAPID_KEY);
     saveProfile();
@@ -781,6 +806,8 @@
     player.jumpCount = 0;
     player.wallDir = 0;
     player.wallJumpLockUntil = 0;
+    player.isAirDashing = false;
+    player.airDashCharges = player.airDashUnlocked ? player.airDashMaxCharges : 0;
 
     if (message) {
       setFeedback(message, 2.2);
@@ -814,6 +841,8 @@
     player.jumpCount = 0;
     player.wallDir = 0;
     player.wallJumpLockUntil = 0;
+    player.isAirDashing = false;
+    player.airDashCharges = profile.airDashUnlocked ? player.airDashMaxCharges : 0;
     player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
     mouseLeftDown = false;
 
@@ -1125,6 +1154,10 @@
     return justPressed.has('e') || justPressed.has('E');
   }
 
+  function wantsAirDashPress() {
+    return justPressed.has('Shift') || justPressed.has('l') || justPressed.has('L');
+  }
+
   function tryMissionJump() {
     if (game.scene !== 'mission' || game.mission?.mode === 'fps' || game.phase !== 'mission') {
       return false;
@@ -1155,15 +1188,50 @@
     return false;
   }
 
-  function updateMissionInput(dt) {
-    if (wantsJumpPress()) {
-      tryMissionJump();
+  function tryMissionAirDash() {
+    if (game.scene !== 'mission' || game.mission?.mode === 'fps' || game.phase !== 'mission') {
+      return false;
+    }
+    if (!profile.airDashUnlocked || player.grounded || player.airDashCharges <= 0 || game.now < player.airDashCooldownUntil) {
+      return false;
     }
 
     const moveLeft = isMoveLeft();
     const moveRight = isMoveRight();
-
+    let dir = player.facing || 1;
     if (moveLeft && !moveRight) {
+      dir = -1;
+    } else if (moveRight && !moveLeft) {
+      dir = 1;
+    }
+
+    player.isAirDashing = true;
+    player.airDashDir = dir;
+    player.airDashUntil = game.now + player.airDashDuration;
+    player.airDashCooldownUntil = game.now + player.airDashCooldown;
+    player.airDashCharges -= 1;
+    player.vx = dir * player.airDashSpeed;
+    player.vy = Math.min(player.vy, 25);
+    player.facing = dir;
+    setFeedback('Air Dash', 0.4);
+    return true;
+  }
+
+  function updateMissionInput(dt) {
+    if (wantsJumpPress()) {
+      tryMissionJump();
+    }
+    if (wantsAirDashPress()) {
+      tryMissionAirDash();
+    }
+
+    const moveLeft = isMoveLeft();
+    const moveRight = isMoveRight();
+    const dashing = player.isAirDashing && game.now < player.airDashUntil;
+
+    if (dashing) {
+      player.vx = player.airDashDir * player.airDashSpeed;
+    } else if (moveLeft && !moveRight) {
       player.vx = -player.speed;
       player.facing = -1;
     } else if (!moveLeft && moveRight) {
@@ -1286,7 +1354,7 @@
       } else if (!m2.accepted) {
         m2.accepted = true;
         saveProfile();
-        setDialogue(hub.commander.name, 'Level 2 unlocked: Sky Foundry. Expect heavier resistance.');
+        setDialogue(hub.commander.name, 'Level 2 unlocked: Sky Foundry. Air Dash online, use Shift/L midair to cross wide gaps.');
       } else if (m2.accepted && !m2.completed) {
         setDialogue(hub.commander.name, 'Sky Foundry is live. Hold your cannon charge for bigger impact.');
       } else if (m2.completed && !m2.turnedIn) {
@@ -1384,12 +1452,14 @@
             : 'L3 locked';
 
       const upgrades = profile.pierceUnlocked
-        ? 'Rapid + Charge + Pierce online'
+        ? `Rapid + Charge + Pierce${profile.airDashUnlocked ? ' + Air Dash' : ''} online`
         : profile.chargeUnlocked
-          ? 'Rapid + Charge online'
+          ? `Rapid + Charge${profile.airDashUnlocked ? ' + Air Dash' : ''} online`
           : profile.rapidUnlocked
-            ? 'Rapid online'
-            : 'Base cannon';
+            ? `Rapid${profile.airDashUnlocked ? ' + Air Dash' : ''} online`
+            : profile.airDashUnlocked
+              ? 'Base cannon + Air Dash'
+              : 'Base cannon';
       setDialogue(
         hub.dataTerminal.name,
         `Lvl ${profile.level} | Cr ${profile.credits} | ${missionText1} | ${missionText2} | ${missionText3} | ${upgrades} | Press T to reset save`
@@ -1471,14 +1541,26 @@
       return;
     }
 
-    player.vy += GRAVITY * dt;
+    const dashing = player.isAirDashing && game.now < player.airDashUntil;
+    if (!dashing && player.isAirDashing) {
+      player.isAirDashing = false;
+    }
+
+    player.vy += (dashing ? GRAVITY * 0.22 : GRAVITY) * dt;
     if (player.vy > MAX_FALL_SPEED) {
       player.vy = MAX_FALL_SPEED;
     }
 
     player.wallDir = 0;
+    if (dashing) {
+      player.vx = player.airDashDir * player.airDashSpeed;
+    }
     player.x += player.vx * dt;
     resolveMissionHorizontal();
+    if (player.wallDir !== 0 && player.isAirDashing) {
+      player.isAirDashing = false;
+      player.vx = 0;
+    }
 
     player.y += player.vy * dt;
     player.grounded = false;
@@ -1487,11 +1569,27 @@
     if (player.grounded) {
       player.jumpCount = 0;
       player.wallJumpLockUntil = 0;
+      player.airDashCharges = profile.airDashUnlocked ? player.airDashMaxCharges : 0;
+      player.isAirDashing = false;
     } else if (player.wallDir !== 0 && player.vy > 220) {
       player.vy = 220;
     }
 
     player.x = Math.max(0, Math.min(mission.worldWidth - player.w, player.x));
+
+    for (const pickup of mission.pickups || []) {
+      if (pickup.collected || !intersects(player, pickup)) {
+        continue;
+      }
+      pickup.collected = true;
+      profile.credits += pickup.credits || 0;
+      const leveled = giveXp(pickup.xp || 0);
+      saveProfile();
+      spawnHitSpark(pickup.x + pickup.w / 2, pickup.y + pickup.h / 2, '#9af5ff', 1.35);
+      spawnImpactRing(pickup.x + pickup.w / 2, pickup.y + pickup.h / 2, '#a8f0ff', 1.25);
+      const levelText = leveled ? ` Level ${profile.level} reached.` : '';
+      setFeedback(`${pickup.label || 'Cache'} secured. +${pickup.credits || 0} Cr +${pickup.xp || 0} XP.${levelText}`, 2.8);
+    }
 
     if (player.y > HEIGHT + 240) {
       player.hp = 0;
@@ -1575,6 +1673,9 @@
     ms.completed = true;
     profile.clears += 1;
     let unlockBanner = '';
+    const appendUnlockBanner = (text) => {
+      unlockBanner = unlockBanner ? `${unlockBanner} ${text}` : text;
+    };
 
     if (missionId === LEVEL_1_ID && !profile.rapidUnlocked) {
       profile.rapidUnlocked = true;
@@ -1585,17 +1686,17 @@
     if (missionId === LEVEL_1_ID && !profile.chargeUnlocked) {
       profile.chargeUnlocked = true;
       player.chargeUnlocked = true;
-      unlockBanner = 'Charge Shot Unlocked! Hold K and release to fire.';
+      appendUnlockBanner('Charge Shot Unlocked! Hold K and release to fire.');
     }
 
     if (missionId === LEVEL_2_ID && !m3.accepted) {
       m3.accepted = true;
-      unlockBanner = 'Level 3 Unlocked! Launch Black Site Breach from the lift.';
+      appendUnlockBanner('Level 3 Unlocked! Launch Black Site Breach from the lift.');
     }
 
     if (missionId === LEVEL_3_ID && !profile.pierceUnlocked) {
       profile.pierceUnlocked = true;
-      unlockBanner = 'Tier-3 Unlock: Piercing Rapid Shot online.';
+      appendUnlockBanner('Tier-3 Unlock: Piercing Rapid Shot online.');
     }
 
     saveProfile();
@@ -2044,6 +2145,20 @@
       cooldownFillEl.style.transform = `scaleX(${readiness})`;
       cooldownFillEl.dataset.ready = readiness >= 0.995 ? 'true' : 'false';
 
+      const dashReady =
+        profile.airDashUnlocked &&
+        game.mission?.mode !== 'fps' &&
+        !player.grounded &&
+        player.airDashCharges > 0 &&
+        game.now >= player.airDashCooldownUntil;
+      const dashStateText = !profile.airDashUnlocked
+        ? 'Dash offline'
+        : player.grounded
+          ? `Dash ${player.airDashMaxCharges}/${player.airDashMaxCharges}`
+          : dashReady
+            ? 'Dash ready'
+            : `Dash cd ${Math.max(0, player.airDashCooldownUntil - game.now).toFixed(1)}s`;
+
       if (game.phase === 'mission_failed') {
         setStatusState('fail', 'Mission failed. Press R to retry or H for Hub');
       } else if (game.mission?.mode === 'fps') {
@@ -2057,11 +2172,17 @@
           );
         }
       } else if (game.mission?.bossActive && game.mission?.boss?.alive) {
-        setStatusState('boss', `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))}`);
+        setStatusState('boss', `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))} | ${dashStateText}`);
       } else if (player.isCharging) {
-        setStatusState('charge', `${game.mission?.name || 'Mission'} | Charging ${Math.round(player.currentCharge * 100)}%`);
+        setStatusState('charge', `${game.mission?.name || 'Mission'} | Charging ${Math.round(player.currentCharge * 100)}% | ${dashStateText}`);
       } else {
-        setStatusState('active', `${game.mission?.name || 'Mission'} active: reach and clear mini-boss gate`);
+        const isDashCourse = game.activeMissionId === LEVEL_2_ID && !game.mission?.bossActive;
+        setStatusState(
+          'active',
+          isDashCourse
+            ? `${game.mission?.name || 'Mission'} | Dash course active: cross wide gaps and find hidden cache | ${dashStateText}`
+            : `${game.mission?.name || 'Mission'} active: reach and clear mini-boss gate | ${dashStateText}`
+        );
       }
       return;
     }
@@ -2466,6 +2587,28 @@
       ctx.moveTo(crate.x + crate.w * 0.5, crate.y + 4);
       ctx.lineTo(crate.x + crate.w * 0.5, crate.y + crate.h - 4);
       ctx.stroke();
+    }
+
+    for (const pickup of mission.pickups || []) {
+      if (pickup.collected) {
+        continue;
+      }
+      const pulse = Math.sin(game.now * 6 + pickup.x * 0.01) * 0.5 + 0.5;
+      const cx = pickup.x + pickup.w / 2;
+      const cy = pickup.y + pickup.h / 2;
+      ctx.globalAlpha = 0.4 + pulse * 0.35;
+      ctx.fillStyle = '#6eeeff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, pickup.w * (0.72 + pulse * 0.15), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#bdf6ff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, pickup.w * 0.34, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#e9fdff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(pickup.x, pickup.y, pickup.w, pickup.h);
     }
 
     if (!mission.gateTriggered) {
@@ -3329,6 +3472,8 @@
 
   player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
   player.chargeUnlocked = profile.chargeUnlocked;
+  player.airDashUnlocked = profile.airDashUnlocked;
+  player.airDashCharges = profile.airDashUnlocked ? player.airDashMaxCharges : 0;
   loadVisualAssets();
   saveProfile();
   updateHud();
