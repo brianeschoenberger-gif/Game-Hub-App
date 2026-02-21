@@ -1431,10 +1431,10 @@
       fps.yaw += fps.lookSpeed * 36;
     }
     if (keys.has('ArrowUp')) {
-      fps.pitch = Math.max(-FPS_MAX_PITCH, fps.pitch - fps.lookSpeed * 30);
+      fps.pitch = Math.min(FPS_MAX_PITCH, fps.pitch + fps.lookSpeed * 30);
     }
     if (keys.has('ArrowDown')) {
-      fps.pitch = Math.min(FPS_MAX_PITCH, fps.pitch + fps.lookSpeed * 30);
+      fps.pitch = Math.max(-FPS_MAX_PITCH, fps.pitch - fps.lookSpeed * 30);
     }
 
     const wantsShoot = isRapidShootHeld() || isChargeShootHeld() || mouseLeftDown;
@@ -1784,7 +1784,7 @@
       }
       const sx = (wrapped / fov + 0.5) * w;
       const s = Math.min(h * 0.2, h / Math.max(0.6, dist * 2.3));
-      const y = h / 2 - s * 0.5 + pitchOffset;
+      const y = h / 2;
       ctx.fillStyle = '#8ef5ff';
       ctx.beginPath();
       ctx.arc(sx, y, Math.max(2.5, s * 0.18), 0, Math.PI * 2);
@@ -2126,7 +2126,7 @@
   window.addEventListener('mousemove', (event) => {
     if (game.scene === 'mission' && game.mission?.mode === 'fps' && document.pointerLockElement === canvas) {
       game.mission.fps.yaw += event.movementX * game.mission.fps.lookSpeed;
-      game.mission.fps.pitch += event.movementY * game.mission.fps.lookSpeed;
+      game.mission.fps.pitch -= event.movementY * game.mission.fps.lookSpeed;
       game.mission.fps.pitch = Math.max(-FPS_MAX_PITCH, Math.min(FPS_MAX_PITCH, game.mission.fps.pitch));
     }
   });
