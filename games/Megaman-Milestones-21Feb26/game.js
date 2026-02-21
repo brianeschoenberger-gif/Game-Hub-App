@@ -311,6 +311,7 @@
       vignetteIntensity: 0.28,
       lowHpPulse: 0,
       flashEvents: [],
+      chromaOffset: 0,
       cameraKickX: 0,
       cameraKickY: 0
     }
@@ -555,6 +556,7 @@
         hitSparks: [],
         impactRings: [],
         lightFlashes: [],
+        killPops: [],
         fps: {
           grid: parsed.grid,
           mapWidth: parsed.width,
@@ -592,6 +594,7 @@
       hitSparks: [],
       impactRings: [],
       lightFlashes: [],
+      killPops: [],
       enemies: config.enemySpawns.map((spawn) => createEnemy(spawn)),
       boss: null,
       bossActive: false,
@@ -759,6 +762,27 @@
     game.mission.lightFlashes.push({ x, y, color, radius, life, maxLife: life });
   }
 
+  function spawnKillPop(x, y, color = '#ffd991', size = 1) {
+    if (!game.mission) {
+      return;
+    }
+    if (!Array.isArray(game.mission.killPops)) {
+      game.mission.killPops = [];
+    }
+    game.mission.killPops.push({
+      x,
+      y,
+      color,
+      size,
+      life: 0.24,
+      maxLife: 0.24
+    });
+  }
+
+  function spawnScreenFlash(color, life = 0.12, intensity = 0.2) {
+    game.renderFx.flashEvents.push({ color, life, maxLife: life, intensity });
+  }
+
   function isRapidShootHeld() {
     return keys.has('j') || keys.has('J');
   }
@@ -808,6 +832,13 @@
     game.shakeY = (Math.random() * 2 - 1) * game.shakeMagnitude;
     game.renderFx.cameraKickX *= 0.82;
     game.renderFx.cameraKickY *= 0.82;
+  }
+
+  function updateRenderFx(dt) {
+    for (const flash of game.renderFx.flashEvents) {
+      flash.life -= dt;
+    }
+    game.renderFx.flashEvents = game.renderFx.flashEvents.filter((flash) => flash.life > 0);
   }
 
   function playChargeShotSfx(power) {
@@ -939,6 +970,8 @@
     player.vx = sourceX < player.x ? 240 : -240;
     player.vy = -240;
     spawnHitSpark(player.x + player.w / 2, player.y + player.h / 2, '#ff6b87');
+    spawnScreenFlash('rgba(255, 92, 132, 0.75)', 0.12, 0.22);
+    triggerCameraShake(1.6, 0.1, sourceX < player.x ? -0.9 : 0.9, -0.4);
 
     if (player.hp <= 0) {
       player.hp = 0;
@@ -1023,6 +1056,7 @@
       spawnHitSpark(muzzleX, muzzleY, '#8df6ff', 1 + player.currentCharge * 0.8);
       spawnImpactRing(muzzleX, muzzleY, '#93eeff', 0.9 + chargePower * 1.4);
       spawnLightFlash(muzzleX, muzzleY, 'rgba(124, 242, 255, 0.85)', 55 + chargePower * 70, 0.18);
+      spawnScreenFlash('rgba(109, 221, 255, 0.6)', 0.08 + chargePower * 0.07, 0.12 + chargePower * 0.12);
       playChargeShotSfx(chargePower);
       triggerCameraShake(3 + chargePower * 7, 0.15 + chargePower * 0.2, player.facing * (1.4 + chargePower * 2.1), -0.8);
       player.isCharging = false;
@@ -1427,6 +1461,8 @@
             enemy.alive = false;
             spawnHitSpark(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, '#ffcc66', 1.1);
             spawnImpactRing(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, '#ffbe6d', 1.15);
+            spawnLightFlash(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, 'rgba(255, 204, 114, 0.8)', 54, 0.17);
+            spawnKillPop(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, '#ffd279', 1.05);
           }
         }
       }
@@ -1444,6 +1480,14 @@
           mission.boss.alive = false;
           mission.bossDefeated = true;
           mission.levelComplete = true;
+          spawnKillPop(mission.boss.x + mission.boss.w / 2, mission.boss.y + mission.boss.h / 2, '#ffd1e2', 2.2);
+          spawnLightFlash(
+            mission.boss.x + mission.boss.w / 2,
+            mission.boss.y + mission.boss.h / 2,
+            'rgba(255, 151, 190, 0.78)',
+            120,
+            0.24
+          );
           completeMissionRun();
           return;
         }
@@ -1491,10 +1535,12 @@
     }
     mission.lightFlashes = (mission.lightFlashes || []).filter((flash) => flash.life > 0);
 
-    for (const flash of game.renderFx.flashEvents) {
-      flash.life -= dt;
+    for (const pop of mission.killPops || []) {
+      pop.life -= dt;
+      pop.size += dt * 3.5;
     }
-    game.renderFx.flashEvents = game.renderFx.flashEvents.filter((flash) => flash.life > 0);
+    mission.killPops = (mission.killPops || []).filter((pop) => pop.life > 0);
+
   }
 
   function updateMissionCamera(dt) {
@@ -1793,6 +1839,7 @@
         enterHub('Hub online. Press E near NPCs to interact.');
       }
       updateCameraShake(dt);
+      updateRenderFx(dt);
       updateHud();
       return;
     }
@@ -1800,6 +1847,7 @@
     if (game.scene === 'hub') {
       updateHubInput();
       updateCameraShake(dt);
+      updateRenderFx(dt);
       updateHud();
       return;
     }
@@ -1812,6 +1860,7 @@
         enterHub('Returned to hub after failed sortie.');
       }
       updateCameraShake(dt);
+      updateRenderFx(dt);
       updateHud();
       return;
     }
@@ -1828,6 +1877,7 @@
       updateMissionCamera(dt);
     }
     updateCameraShake(dt);
+    updateRenderFx(dt);
     updateHud();
   }
 
@@ -2257,11 +2307,12 @@
 
     for (const p of game.mission.projectiles) {
       const core = p.color || '#72e8ff';
+      const isCharge = (p.power || 0) > 0.35;
       if (VISUAL_FLAGS.enableBloomLikeGlow) {
         ctx.globalAlpha = 0.16;
-        ctx.fillStyle = '#8ff4ff';
+        ctx.fillStyle = isCharge ? '#c6ffff' : '#8ff4ff';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 2.6, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.r * (isCharge ? 3.1 : 2.6), 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
       }
@@ -2281,6 +2332,9 @@
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = isCharge ? '#f2ffff' : '#b8f8ff';
+      ctx.lineWidth = isCharge ? 2.4 : 1.6;
+      ctx.stroke();
       ctx.fillStyle = '#e9ffff';
       ctx.beginPath();
       ctx.arc(p.x - p.r * 0.3, p.y - p.r * 0.25, Math.max(1.5, p.r * 0.32), 0, Math.PI * 2);
@@ -2311,6 +2365,9 @@
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#ffd1df';
+      ctx.lineWidth = 1.7;
+      ctx.stroke();
       ctx.fillStyle = '#ffd3de';
       ctx.beginPath();
       ctx.arc(p.x - p.r * 0.25, p.y - p.r * 0.25, Math.max(1.2, p.r * 0.26), 0, Math.PI * 2);
@@ -2343,6 +2400,25 @@
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
+
+    for (const pop of game.mission.killPops || []) {
+      const alpha = pop.life / pop.maxLife;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = alpha * 0.8;
+      ctx.fillStyle = pop.color;
+      ctx.beginPath();
+      ctx.arc(pop.x, pop.y, 14 * pop.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#fff2cf';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(pop.x, pop.y, 20 * pop.size, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
   }
 
   function drawMissionLights() {
@@ -2360,6 +2436,26 @@
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(flash.x, flash.y, flash.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (const p of game.mission.projectiles || []) {
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, Math.max(18, p.r * 4.2));
+      grad.addColorStop(0, 'rgba(126, 241, 255, 0.26)');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(18, p.r * 4.2), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (const p of game.mission.enemyProjectiles || []) {
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, Math.max(16, p.r * 3.6));
+      grad.addColorStop(0, 'rgba(255, 129, 167, 0.25)');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(16, p.r * 3.6), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -2500,11 +2596,14 @@
     if (VISUAL_FLAGS.enableVignettePulse) {
       if (game.scene === 'mission' && player.hp > 0 && player.hp <= 35) {
         game.renderFx.lowHpPulse += 0.1;
+        game.renderFx.chromaOffset = Math.min(1, game.renderFx.chromaOffset + 0.08);
       } else {
         game.renderFx.lowHpPulse *= 0.9;
+        game.renderFx.chromaOffset *= 0.88;
       }
     } else {
       game.renderFx.lowHpPulse = 0;
+      game.renderFx.chromaOffset = 0;
     }
 
     const vignette = ctx.createRadialGradient(
@@ -2530,6 +2629,27 @@
     if (game.renderFx.lowHpPulse > 0.01) {
       const pulse = 0.08 + Math.sin(game.now * 8) * 0.04;
       ctx.fillStyle = `rgba(255, 64, 112, ${Math.max(0.04, pulse)})`;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    }
+
+    if (game.renderFx.chromaOffset > 0.02) {
+      const n = game.renderFx.chromaOffset;
+      const left = ctx.createLinearGradient(0, 0, WIDTH * 0.3, 0);
+      left.addColorStop(0, `rgba(80, 224, 255, ${0.06 + n * 0.07})`);
+      left.addColorStop(1, 'rgba(80, 224, 255, 0)');
+      ctx.fillStyle = left;
+      ctx.fillRect(0, 0, WIDTH * 0.3, HEIGHT);
+
+      const right = ctx.createLinearGradient(WIDTH * 0.7, 0, WIDTH, 0);
+      right.addColorStop(0, 'rgba(255, 121, 170, 0)');
+      right.addColorStop(1, `rgba(255, 121, 170, ${0.06 + n * 0.07})`);
+      ctx.fillStyle = right;
+      ctx.fillRect(WIDTH * 0.7, 0, WIDTH * 0.3, HEIGHT);
+    }
+
+    for (const flash of game.renderFx.flashEvents) {
+      const alpha = (flash.life / flash.maxLife) * flash.intensity;
+      ctx.fillStyle = flash.color.replace(/[\d.]+\)$/, `${alpha})`);
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
     }
   }
