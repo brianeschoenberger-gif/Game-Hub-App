@@ -71,7 +71,7 @@
     },
     [LEVEL_2_ID]: {
       name: 'Level 2 - Sky Foundry',
-      worldWidth: 4300,
+      worldWidth: 4700,
       spawn: { x: 110, y: 340 },
       finishGate: { x: 3320, y: 250, w: 48, h: 220 },
       blocks: [
@@ -83,7 +83,7 @@
         { x: 2240, y: 360, w: 220, h: 20 },
         { x: 2520, y: 420, w: 220, h: 20 },
         { x: 2820, y: 470, w: 560, h: 70 },
-        { x: 3460, y: 470, w: 760, h: 70 },
+        { x: 3460, y: 470, w: 1200, h: 70 },
         { x: 3600, y: 360, w: 130, h: 20 },
         { x: 3900, y: 330, w: 130, h: 20 }
       ],
@@ -94,14 +94,14 @@
         { x: 2900, y: 418, minX: 2860, maxX: 3370, hp: 5, speed: 122 }
       ],
       boss: {
-        x: 3820,
+        x: 4040,
         y: 300,
         w: 128,
         h: 142,
         hp: 92,
         speed: 125,
-        moveMinX: 3500,
-        moveMaxX: 4150,
+        moveMinX: 3460,
+        moveMaxX: 4560,
         attackInterval: 0.9,
         projectileSpeeds: [290, 330, 370, 410],
         spread: [-0.33, -0.12, 0.12, 0.33],
@@ -195,6 +195,11 @@
   }
 
   const profile = loadProfile();
+
+  // Migration: if a player already cleared Level 1 in an older build, grant the charge unlock now.
+  if (profile.missions?.[LEVEL_1_ID]?.completed && !profile.chargeUnlocked) {
+    profile.chargeUnlocked = true;
+  }
 
   function saveProfile() {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
@@ -825,7 +830,7 @@
       setFeedback('Rapid Shot unlocked', 2.4);
     }
 
-    if (missionId === LEVEL_2_ID && !profile.chargeUnlocked) {
+    if (missionId === LEVEL_1_ID && !profile.chargeUnlocked) {
       profile.chargeUnlocked = true;
       player.chargeUnlocked = true;
       setFeedback('Charge Blast unlocked: hold fire, release for power', 2.6);
