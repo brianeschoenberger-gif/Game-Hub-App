@@ -2363,7 +2363,7 @@
     ctx.save();
     const cannonY = 19 - armSwing * 0.3 + shotKick * 1.1;
     ctx.translate(-30 - shotKick * 4.1, cannonY);
-    ctx.rotate(-0.015 - armSwing * 0.005);
+    ctx.rotate(0);
     const cannonGrad = ctx.createLinearGradient(-8, -8, 24, 8);
     cannonGrad.addColorStop(0, '#2f8ced');
     cannonGrad.addColorStop(1, '#163f88');
