@@ -3,21 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Robot Cannon Platformer - Milestone 2</title>
+    <title>Robot Cannon Platformer - Visual Overhaul</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <main class="game-shell">
       <header class="hud" aria-label="Player HUD">
-        <div class="hud-item"><span>Health</span><strong id="health-value">100</strong></div>
-        <div class="hud-item"><span>Cannon</span><strong id="cannon-mode">Single Shot</strong></div>
+        <div class="hud-item">
+          <span>Health</span>
+          <strong id="health-value">100</strong>
+        </div>
+        <div class="hud-item">
+          <span>Cannon</span>
+          <strong id="cannon-mode">Single Shot</strong>
+        </div>
         <div class="hud-item cooldown-item">
           <span>Cannon Cooldown</span>
           <div class="cooldown-track" aria-label="Weapon cooldown readiness">
+            <div class="cooldown-segments" aria-hidden="true"></div>
             <div id="cooldown-fill" class="cooldown-fill"></div>
           </div>
         </div>
-        <div class="hud-item"><span>Status</span><strong id="status-text">Press Enter to activate hub</strong></div>
+        <div class="hud-item status-item">
+          <span>Status</span>
+          <strong id="status-text" class="status-chip">Press Enter to activate hub</strong>
+        </div>
       </header>
 
       <section class="viewport-wrap">

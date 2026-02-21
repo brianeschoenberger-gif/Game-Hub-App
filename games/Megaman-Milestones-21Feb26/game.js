@@ -18,6 +18,11 @@
   const LEGACY_RAPID_KEY = 'robotCannonRapidShotUnlocked';
   const PROFILE_KEY = 'robotCannonProfileM2';
   const FPS_MAX_PITCH = 0.75;
+  const VISUAL_FLAGS = {
+    enableBloomLikeGlow: true,
+    enableDecalOverlay: true,
+    enableVignettePulse: true
+  };
 
   const LEVEL_1_ID = 'reactor_sweep';
   const LEVEL_2_ID = 'sky_foundry';
@@ -30,6 +35,7 @@
     [LEVEL_1_ID]: {
       name: 'Level 1 - Reactor Sweep',
       mode: '2d',
+      visualThemeId: 'level1',
       worldWidth: 4300,
       spawn: { x: 90, y: 380 },
       finishGate: { x: 2580, y: 300, w: 45, h: 170 },
@@ -75,6 +81,7 @@
     [LEVEL_2_ID]: {
       name: 'Level 2 - Sky Foundry',
       mode: '2d',
+      visualThemeId: 'level2',
       worldWidth: 4700,
       spawn: { x: 110, y: 340 },
       finishGate: { x: 3320, y: 250, w: 48, h: 220 },
@@ -116,6 +123,7 @@
     [LEVEL_3_ID]: {
       name: 'Level 3 - Black Site Breach',
       mode: 'fps',
+      visualThemeId: 'fps',
       fps: {
         map: [
           '########################',
@@ -152,6 +160,7 @@
   };
 
   const hub = {
+    visualThemeId: 'hub',
     walls: [
       { x: 0, y: 0, w: HUB_WIDTH, h: 44 },
       { x: 0, y: HUB_HEIGHT - 34, w: HUB_WIDTH, h: 34 },
@@ -292,11 +301,112 @@
     shakeMagnitude: 0,
     shakeX: 0,
     shakeY: 0,
-    fpsSafeDt: 1 / 30
+    fpsSafeDt: 1 / 30,
+    renderFx: {
+      vignetteIntensity: 0.28,
+      lowHpPulse: 0,
+      flashEvents: [],
+      cameraKickX: 0,
+      cameraKickY: 0
+    }
   };
 
   let audioContext = null;
   let mouseLeftDown = false;
+  const shellEl = document.querySelector('.game-shell');
+
+  const VISUAL_THEME = {
+    hub: {
+      skyTop: '#123451',
+      skyBottom: '#08111d',
+      haze: 'rgba(76, 162, 177, 0.09)',
+      panelTop: '#1a3553',
+      panelBottom: '#0a1526',
+      edge: '#6db6df',
+      floorAccent: '#2a6074',
+      vignette: 0.32
+    },
+    level1: {
+      skyTop: '#1a3b5b',
+      skyBottom: '#080f1c',
+      haze: 'rgba(85, 214, 180, 0.08)',
+      panelTop: '#20496a',
+      panelBottom: '#101d30',
+      edge: '#76d5db',
+      floorAccent: '#275f77',
+      vignette: 0.3
+    },
+    level2: {
+      skyTop: '#163754',
+      skyBottom: '#090f1a',
+      haze: 'rgba(100, 206, 255, 0.08)',
+      panelTop: '#214767',
+      panelBottom: '#0f1b2d',
+      edge: '#6fd1ff',
+      floorAccent: '#2b6f87',
+      vignette: 0.34
+    },
+    fps: {
+      skyTop: '#3d5885',
+      skyBottom: '#14243f',
+      haze: 'rgba(106, 197, 255, 0.06)',
+      panelTop: '#20334f',
+      panelBottom: '#101a2c',
+      edge: '#88dbff',
+      floorAccent: '#2f5368',
+      vignette: 0.26
+    }
+  };
+
+  const visualAssets = {
+    noise: null,
+    grime1: null,
+    grime2: null,
+    panelHighlight: null,
+    scanline: null
+  };
+  let visualAssetsReady = false;
+
+  function loadVisualAssets() {
+    const entries = [
+      ['noise', 'assets/noise.png'],
+      ['grime1', 'assets/grime-decal-01.png'],
+      ['grime2', 'assets/grime-decal-02.png'],
+      ['panelHighlight', 'assets/panel-highlight.png'],
+      ['scanline', 'assets/scanline-soft.png']
+    ];
+    let pending = entries.length;
+    if (!pending) {
+      visualAssetsReady = true;
+      return;
+    }
+    for (const [key, src] of entries) {
+      const img = new Image();
+      img.onload = () => {
+        visualAssets[key] = img;
+        pending -= 1;
+        if (pending <= 0) {
+          visualAssetsReady = true;
+        }
+      };
+      img.onerror = () => {
+        pending -= 1;
+        if (pending <= 0) {
+          visualAssetsReady = true;
+        }
+      };
+      img.src = src;
+    }
+  }
+
+  function activeTheme() {
+    if (game.scene === 'hub' || game.phase === 'intro') {
+      return VISUAL_THEME[hub.visualThemeId];
+    }
+    const missionId = game.activeMissionId;
+    const themeId = LEVEL_CONFIGS[missionId]?.visualThemeId || 'level1';
+    return VISUAL_THEME[themeId] || VISUAL_THEME.level1;
+  }
 
   function missionState(missionId) {
     return profile.missions[missionId];
@@ -415,6 +525,8 @@
         mode: 'fps',
         cameraX: 0,
         hitSparks: [],
+        impactRings: [],
+        lightFlashes: [],
         fps: {
           grid: parsed.grid,
           mapWidth: parsed.width,
@@ -450,6 +562,8 @@
       projectiles: [],
       enemyProjectiles: [],
       hitSparks: [],
+      impactRings: [],
+      lightFlashes: [],
       enemies: config.enemySpawns.map((spawn) => createEnemy(spawn)),
       boss: null,
       bossActive: false,
@@ -590,6 +704,33 @@
     game.mission.hitSparks.push({ x, y, life: 0.16, maxLife: 0.16, color, scale });
   }
 
+  function spawnImpactRing(x, y, color, size = 1) {
+    if (!game.mission) {
+      return;
+    }
+    if (!Array.isArray(game.mission.impactRings)) {
+      game.mission.impactRings = [];
+    }
+    game.mission.impactRings.push({
+      x,
+      y,
+      life: 0.2,
+      maxLife: 0.2,
+      radius: 8 * size,
+      color
+    });
+  }
+
+  function spawnLightFlash(x, y, color, radius = 64, life = 0.2) {
+    if (!game.mission) {
+      return;
+    }
+    if (!Array.isArray(game.mission.lightFlashes)) {
+      game.mission.lightFlashes = [];
+    }
+    game.mission.lightFlashes.push({ x, y, color, radius, life, maxLife: life });
+  }
+
   function isRapidShootHeld() {
     return keys.has('j') || keys.has('J');
   }
@@ -615,9 +756,11 @@
     return audioContext;
   }
 
-  function triggerCameraShake(magnitude = 0, duration = 0.18) {
+  function triggerCameraShake(magnitude = 0, duration = 0.18, dirX = 0, dirY = 0) {
     game.shakeMagnitude = Math.max(game.shakeMagnitude, magnitude);
     game.shakeTime = Math.max(game.shakeTime, duration);
+    game.renderFx.cameraKickX += dirX;
+    game.renderFx.cameraKickY += dirY;
   }
 
   function updateCameraShake(dt) {
@@ -626,6 +769,8 @@
       game.shakeMagnitude = 0;
       game.shakeX = 0;
       game.shakeY = 0;
+      game.renderFx.cameraKickX *= 0.82;
+      game.renderFx.cameraKickY *= 0.82;
       return;
     }
 
@@ -633,6 +778,8 @@
     game.shakeMagnitude *= 0.88;
     game.shakeX = (Math.random() * 2 - 1) * game.shakeMagnitude;
     game.shakeY = (Math.random() * 2 - 1) * game.shakeMagnitude;
+    game.renderFx.cameraKickX *= 0.82;
+    game.renderFx.cameraKickY *= 0.82;
   }
 
   function playChargeShotSfx(power) {
@@ -718,7 +865,8 @@
       power: normalizedPower,
       color: normalizedPower > 0.35 ? '#b8ffff' : '#72e8ff',
       piercing: forcedDamage === 1 && profile.pierceUnlocked,
-      pierceRemaining: forcedDamage === 1 && profile.pierceUnlocked ? 3 : 0
+      pierceRemaining: forcedDamage === 1 && profile.pierceUnlocked ? 3 : 0,
+      trail: []
     });
 
     player.lastShotAt = game.now;
@@ -745,9 +893,11 @@
         vx: Math.cos(angle) * boss.projectileSpeeds[i],
         vy: Math.sin(angle) * boss.projectileSpeeds[i],
         r: 7,
-        damage: boss.projectileDamage
+        damage: boss.projectileDamage,
+        trail: []
       });
     }
+    spawnLightFlash(sourceX, sourceY, 'rgba(255, 123, 169, 0.7)', 78, 0.2);
   }
 
   function damagePlayer(amount, sourceX) {
@@ -840,9 +990,13 @@
     if (player.isCharging && !chargeHeld) {
       const chargePower = Math.max(0.35, player.currentCharge);
       fireProjectile(chargePower, null, 0.3);
-      spawnHitSpark(player.x + player.w / 2 + player.facing * 14, player.y + 24, '#8df6ff', 1 + player.currentCharge * 0.8);
+      const muzzleX = player.x + player.w / 2 + player.facing * 14;
+      const muzzleY = player.y + 24;
+      spawnHitSpark(muzzleX, muzzleY, '#8df6ff', 1 + player.currentCharge * 0.8);
+      spawnImpactRing(muzzleX, muzzleY, '#93eeff', 0.9 + chargePower * 1.4);
+      spawnLightFlash(muzzleX, muzzleY, 'rgba(124, 242, 255, 0.85)', 55 + chargePower * 70, 0.18);
       playChargeShotSfx(chargePower);
-      triggerCameraShake(3 + chargePower * 7, 0.15 + chargePower * 0.2);
+      triggerCameraShake(3 + chargePower * 7, 0.15 + chargePower * 0.2, player.facing * (1.4 + chargePower * 2.1), -0.8);
       player.isCharging = false;
       player.currentCharge = 0;
     }
@@ -1198,11 +1352,21 @@
     }
 
     for (const projectile of mission.projectiles) {
+      projectile.trail ||= [];
+      projectile.trail.push({ x: projectile.x, y: projectile.y });
+      if (projectile.trail.length > 7) {
+        projectile.trail.shift();
+      }
       projectile.x += projectile.vx * dt;
       projectile.y += projectile.vy * dt;
     }
 
     for (const projectile of mission.enemyProjectiles) {
+      projectile.trail ||= [];
+      projectile.trail.push({ x: projectile.x, y: projectile.y });
+      if (projectile.trail.length > 6) {
+        projectile.trail.shift();
+      }
       projectile.x += projectile.vx * dt;
       projectile.y += projectile.vy * dt;
     }
@@ -1229,9 +1393,12 @@
             projectile._dead = true;
           }
           spawnHitSpark(projectile.x, projectile.y, '#75f3ff', 1 + projectile.power * 0.8);
+          spawnImpactRing(projectile.x, projectile.y, '#9bfbff', 0.8 + projectile.power * 0.9);
+          spawnLightFlash(projectile.x, projectile.y, 'rgba(117, 243, 255, 0.72)', 34 + projectile.power * 22, 0.13);
           if (enemy.hp <= 0) {
             enemy.alive = false;
             spawnHitSpark(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, '#ffcc66', 1.1);
+            spawnImpactRing(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, '#ffbe6d', 1.15);
           }
         }
       }
@@ -1242,6 +1409,8 @@
         playEnemyHitSfx(1.15 + projectile.power * 0.85);
         projectile._dead = true;
         spawnHitSpark(projectile.x, projectile.y, '#9df0ff', 1 + projectile.power);
+        spawnImpactRing(projectile.x, projectile.y, '#9df0ff', 1.2 + projectile.power * 1.1);
+        spawnLightFlash(projectile.x, projectile.y, 'rgba(127, 230, 255, 0.75)', 48 + projectile.power * 40, 0.16);
 
         if (mission.boss.hp <= 0) {
           mission.boss.alive = false;
@@ -1259,6 +1428,7 @@
       }
       if (circleHitsRect(projectile, player)) {
         projectile._dead = true;
+        spawnImpactRing(projectile.x, projectile.y, '#ff97b2', 0.85);
         damagePlayer(projectile.damage || 10, projectile.x);
       }
     }
@@ -1281,6 +1451,22 @@
       spark.life -= dt;
     }
     mission.hitSparks = mission.hitSparks.filter((spark) => spark.life > 0);
+
+    for (const ring of mission.impactRings || []) {
+      ring.life -= dt;
+      ring.radius += dt * 110;
+    }
+    mission.impactRings = (mission.impactRings || []).filter((ring) => ring.life > 0);
+
+    for (const flash of mission.lightFlashes || []) {
+      flash.life -= dt;
+    }
+    mission.lightFlashes = (mission.lightFlashes || []).filter((flash) => flash.life > 0);
+
+    for (const flash of game.renderFx.flashEvents) {
+      flash.life -= dt;
+    }
+    game.renderFx.flashEvents = game.renderFx.flashEvents.filter((flash) => flash.life > 0);
   }
 
   function updateMissionCamera(dt) {
@@ -1478,6 +1664,10 @@
 
     if (game.scene === 'mission') {
       healthEl.textContent = String(Math.max(0, Math.ceil(player.hp)));
+      if (shellEl) {
+        const state = player.hp <= 25 ? 'critical' : player.hp <= 55 ? 'warning' : 'normal';
+        shellEl.dataset.healthState = state;
+      }
 
       if (profile.pierceUnlocked) {
         cannonEl.textContent = 'Rapid + Charge + Pierce';
@@ -1504,18 +1694,23 @@
 
       if (game.phase === 'mission_failed') {
         statusEl.textContent = 'Mission failed. Press R to retry or H for Hub';
+        statusEl.dataset.state = 'fail';
       } else if (game.mission?.mode === 'fps') {
         const alive = game.mission.fps.enemies.filter((enemy) => enemy.alive).length;
         statusEl.textContent =
           alive > 0
             ? `${game.mission.name} | Eliminate hostiles (${alive} left)`
             : `${game.mission.name} | Reach extraction`;
+        statusEl.dataset.state = 'active';
       } else if (game.mission?.bossActive && game.mission?.boss?.alive) {
         statusEl.textContent = `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))}`;
+        statusEl.dataset.state = 'boss';
       } else if (player.isCharging) {
         statusEl.textContent = `${game.mission?.name || 'Mission'} | Charging ${Math.round(player.currentCharge * 100)}%`;
+        statusEl.dataset.state = 'charge';
       } else {
         statusEl.textContent = `${game.mission?.name || 'Mission'} active: reach and clear mini-boss gate`;
+        statusEl.dataset.state = 'active';
       }
       return;
     }
@@ -1529,9 +1724,11 @@
           ? 'Rapid Shot'
           : 'Single Shot';
     cooldownFillEl.style.transform = 'scaleX(1)';
+    statusEl.dataset.state = 'hub';
 
     if (game.phase === 'intro') {
       statusEl.textContent = 'Press Enter to activate hub';
+      statusEl.dataset.state = 'hub';
       return;
     }
 
@@ -1555,6 +1752,10 @@
       statusEl.textContent = 'Turn in Level 3 report with Engineer Vale';
     } else {
       statusEl.textContent = `Campaign complete. Lvl ${profile.level} | Credits ${profile.credits}`;
+      statusEl.dataset.state = 'complete';
+    }
+    if (shellEl) {
+      shellEl.dataset.healthState = 'normal';
     }
   }
 
@@ -1602,43 +1803,82 @@
     updateHud();
   }
 
+  function drawTextureOverlay(img, alpha = 0.16, scale = 1, scrollX = 0, scrollY = 0) {
+    if (!img || !VISUAL_FLAGS.enableDecalOverlay || !visualAssetsReady) {
+      return;
+    }
+    const iw = Math.max(8, Math.floor(img.width * scale));
+    const ih = Math.max(8, Math.floor(img.height * scale));
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    for (let y = -ih; y < HEIGHT + ih; y += ih) {
+      for (let x = -iw; x < WIDTH + iw; x += iw) {
+        ctx.drawImage(img, x + (scrollX % iw), y + (scrollY % ih), iw, ih);
+      }
+    }
+    ctx.restore();
+  }
+
   function drawMissionBackground() {
     const x = game.cameraX;
-
+    const theme = activeTheme();
     const sky = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-    sky.addColorStop(0, '#1a3353');
-    sky.addColorStop(1, '#0a111f');
+    sky.addColorStop(0, theme.skyTop);
+    sky.addColorStop(1, theme.skyBottom);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    ctx.fillStyle = '#0e2138';
-    for (let i = 0; i < 18; i += 1) {
-      const px = (i * 320 - (x * 0.3) % 320) - 40;
-      ctx.fillRect(px, 280, 60, 260);
+    ctx.fillStyle = theme.haze;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    drawTextureOverlay(visualAssets.noise, 0.07, 3.6, -x * 0.18, game.now * 10);
+
+    ctx.fillStyle = 'rgba(14, 40, 58, 0.9)';
+    for (let i = 0; i < 16; i += 1) {
+      const px = (i * 360 - (x * 0.22) % 360) - 50;
+      ctx.fillRect(px, 214, 82, 340);
+      ctx.fillStyle = 'rgba(42, 92, 111, 0.35)';
+      ctx.fillRect(px + 10, 230, 14, 280);
+      ctx.fillStyle = 'rgba(14, 40, 58, 0.9)';
     }
 
-    ctx.fillStyle = '#173456';
-    for (let i = 0; i < 25; i += 1) {
-      const px = (i * 220 - (x * 0.55) % 220) - 80;
-      ctx.fillRect(px, 330, 42, 210);
+    ctx.fillStyle = 'rgba(32, 90, 114, 0.76)';
+    for (let i = 0; i < 22; i += 1) {
+      const px = (i * 248 - (x * 0.52) % 248) - 70;
+      ctx.fillRect(px, 290, 52, 250);
+      ctx.fillRect(px + 8, 318, 36, 8);
+    }
+
+    ctx.strokeStyle = 'rgba(111, 209, 255, 0.21)';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 9; i += 1) {
+      const py = 160 + i * 40;
+      ctx.beginPath();
+      ctx.moveTo(-30 - (x * 0.12) % 120, py);
+      ctx.lineTo(WIDTH + 40, py + 34);
+      ctx.stroke();
     }
   }
 
   function drawHubBackground() {
+    const theme = activeTheme();
     const bg = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-    bg.addColorStop(0, '#10253f');
-    bg.addColorStop(1, '#091524');
+    bg.addColorStop(0, theme.skyTop);
+    bg.addColorStop(1, theme.skyBottom);
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    ctx.strokeStyle = 'rgba(100, 150, 190, 0.18)';
-    for (let x = 0; x <= WIDTH; x += 48) {
+    drawTextureOverlay(visualAssets.noise, 0.09, 3.8, 0, game.now * 6);
+    ctx.fillStyle = theme.haze;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    ctx.strokeStyle = 'rgba(125, 185, 207, 0.12)';
+    for (let x = 0; x <= WIDTH; x += 40) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, HEIGHT);
       ctx.stroke();
     }
-    for (let y = 0; y <= HEIGHT; y += 48) {
+    for (let y = 0; y <= HEIGHT; y += 40) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(WIDTH, y);
@@ -1646,19 +1886,30 @@
     }
 
     for (const wall of hub.walls) {
-      ctx.fillStyle = '#1d2f4a';
+      const wallGrad = ctx.createLinearGradient(wall.x, wall.y, wall.x, wall.y + wall.h);
+      wallGrad.addColorStop(0, theme.panelTop);
+      wallGrad.addColorStop(1, theme.panelBottom);
+      ctx.fillStyle = wallGrad;
       ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
-      ctx.fillStyle = '#5178a4';
-      ctx.fillRect(wall.x, wall.y, wall.w, 5);
+      ctx.fillStyle = 'rgba(184, 237, 255, 0.26)';
+      ctx.fillRect(wall.x, wall.y, wall.w, 4);
+      if (visualAssets.panelHighlight) {
+        ctx.globalAlpha = 0.14;
+        ctx.drawImage(visualAssets.panelHighlight, wall.x, wall.y, wall.w, wall.h);
+        ctx.globalAlpha = 1;
+      }
     }
 
-    drawHubMarker(hub.commander, '#6fd3ff', 'Commander Rho');
-    drawHubMarker(hub.engineer, '#ffbe7d', 'Engineer Vale');
-    drawHubMarker(hub.dataTerminal, '#7cf7d6', 'Log Terminal');
+    drawHubMarker(hub.commander, '#67d7ff', 'Commander Rho');
+    drawHubMarker(hub.engineer, '#ffc175', 'Engineer Vale');
+    drawHubMarker(hub.dataTerminal, '#75ffd8', 'Log Terminal');
 
-    ctx.fillStyle = '#73e1ff';
+    const liftGrad = ctx.createLinearGradient(hub.missionLift.x, hub.missionLift.y, hub.missionLift.x, hub.missionLift.y + hub.missionLift.h);
+    liftGrad.addColorStop(0, '#7eefff');
+    liftGrad.addColorStop(1, '#1b6b8a');
+    ctx.fillStyle = liftGrad;
     ctx.fillRect(hub.missionLift.x, hub.missionLift.y, hub.missionLift.w, hub.missionLift.h);
-    ctx.fillStyle = '#d8f6ff';
+    ctx.fillStyle = '#e7fbff';
     ctx.font = 'bold 18px Segoe UI';
     ctx.fillText('MISSION LIFT', hub.missionLift.x - 8, hub.missionLift.y - 12);
 
@@ -1816,10 +2067,27 @@
     ctx.translate(-camX, 0);
 
     for (const block of mission.blocks) {
-      ctx.fillStyle = '#22384f';
+      const blockGrad = ctx.createLinearGradient(block.x, block.y, block.x, block.y + block.h);
+      blockGrad.addColorStop(0, '#274b63');
+      blockGrad.addColorStop(1, '#162b3f');
+      ctx.fillStyle = blockGrad;
       ctx.fillRect(block.x, block.y, block.w, block.h);
-      ctx.fillStyle = '#4a799d';
+      ctx.fillStyle = '#6dbbcb';
       ctx.fillRect(block.x, block.y, block.w, 8);
+      ctx.fillStyle = 'rgba(32, 67, 87, 0.55)';
+      for (let tx = block.x + 12; tx < block.x + block.w - 8; tx += 24) {
+        ctx.fillRect(tx, block.y + 11, 14, 2);
+      }
+      if (VISUAL_FLAGS.enableDecalOverlay) {
+        if (visualAssets.grime1) {
+          ctx.globalAlpha = 0.12;
+          ctx.drawImage(visualAssets.grime1, block.x, block.y, block.w, block.h);
+          ctx.globalAlpha = 1;
+        } else {
+          ctx.fillStyle = 'rgba(52, 83, 97, 0.23)';
+          ctx.fillRect(block.x + 4, block.y + 16, Math.max(10, block.w * 0.35), 8);
+        }
+      }
     }
 
     if (!mission.gateTriggered) {
@@ -1857,6 +2125,7 @@
     drawPlayer();
     drawProjectiles();
     drawSparks();
+    drawMissionLights();
 
     ctx.restore();
   }
@@ -1922,17 +2191,23 @@
   function drawCrawler(enemy, flash) {
     ctx.save();
     ctx.translate(enemy.x, enemy.y);
-    ctx.fillStyle = flash ? '#ffd3a0' : '#f9b562';
+    ctx.fillStyle = flash ? '#ffd1a0' : '#e89a57';
     ctx.fillRect(2, 6, enemy.w - 4, 18);
-    ctx.fillStyle = '#663c1f';
+    ctx.fillStyle = '#5e351f';
     ctx.fillRect(10, 24, enemy.w - 20, enemy.h - 24);
+    ctx.strokeStyle = flash ? 'rgba(255, 221, 176, 0.9)' : 'rgba(255, 183, 111, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, 6, enemy.w - 4, enemy.h - 8);
     ctx.restore();
   }
 
   function drawBoss(boss, flash) {
     ctx.save();
     ctx.translate(boss.x, boss.y);
-    ctx.fillStyle = flash ? '#ffe8f0' : '#ff7a9f';
+    const body = ctx.createLinearGradient(0, 10, 0, boss.h);
+    body.addColorStop(0, flash ? '#ffe8f0' : '#ff7a9f');
+    body.addColorStop(1, flash ? '#f5b5c7' : '#b84868');
+    ctx.fillStyle = body;
     ctx.fillRect(10, 16, boss.w - 20, boss.h - 18);
     ctx.fillStyle = '#2f1330';
     ctx.fillRect(24, 28, boss.w - 48, 30);
@@ -1941,6 +2216,9 @@
     ctx.fillRect(boss.w - 36, 58, 36, 18);
     ctx.fillStyle = '#fff0a8';
     ctx.fillRect(38, 82, boss.w - 76, 16);
+    ctx.strokeStyle = flash ? 'rgba(255, 232, 244, 0.95)' : 'rgba(255, 135, 173, 0.55)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(10, 16, boss.w - 20, boss.h - 18);
     ctx.restore();
   }
 
@@ -1950,15 +2228,64 @@
     }
 
     for (const p of game.mission.projectiles) {
-      ctx.fillStyle = p.color || '#72e8ff';
+      const core = p.color || '#72e8ff';
+      if (VISUAL_FLAGS.enableBloomLikeGlow) {
+        ctx.globalAlpha = 0.16;
+        ctx.fillStyle = '#8ff4ff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 2.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      if (Array.isArray(p.trail)) {
+        for (let i = 0; i < p.trail.length; i += 1) {
+          const t = p.trail[i];
+          const ratio = (i + 1) / p.trail.length;
+          ctx.globalAlpha = ratio * 0.25;
+          ctx.fillStyle = core;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, Math.max(1, p.r * ratio * 0.8), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      ctx.fillStyle = core;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = '#e9ffff';
+      ctx.beginPath();
+      ctx.arc(p.x - p.r * 0.3, p.y - p.r * 0.25, Math.max(1.5, p.r * 0.32), 0, Math.PI * 2);
+      ctx.fill();
     }
     for (const p of game.mission.enemyProjectiles) {
+      if (VISUAL_FLAGS.enableBloomLikeGlow) {
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = '#ff95bc';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 2.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      if (Array.isArray(p.trail)) {
+        for (let i = 0; i < p.trail.length; i += 1) {
+          const t = p.trail[i];
+          const ratio = (i + 1) / p.trail.length;
+          ctx.globalAlpha = ratio * 0.24;
+          ctx.fillStyle = '#ff91af';
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, Math.max(1, p.r * ratio * 0.7), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
       ctx.fillStyle = '#ff7899';
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffd3de';
+      ctx.beginPath();
+      ctx.arc(p.x - p.r * 0.25, p.y - p.r * 0.25, Math.max(1.2, p.r * 0.26), 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -1977,6 +2304,38 @@
       ctx.fill();
       ctx.globalAlpha = 1;
     }
+
+    for (const ring of game.mission.impactRings || []) {
+      const alpha = ring.life / ring.maxLife;
+      ctx.strokeStyle = ring.color;
+      ctx.globalAlpha = alpha * 0.85;
+      ctx.lineWidth = 2 + alpha * 2.2;
+      ctx.beginPath();
+      ctx.arc(ring.x, ring.y, ring.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawMissionLights() {
+    if (!game.mission || !Array.isArray(game.mission.lightFlashes)) {
+      return;
+    }
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const flash of game.mission.lightFlashes) {
+      const alpha = flash.life / flash.maxLife;
+      const grad = ctx.createRadialGradient(flash.x, flash.y, 0, flash.x, flash.y, flash.radius);
+      grad.addColorStop(0, flash.color);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.globalAlpha = alpha * 0.7;
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(flash.x, flash.y, flash.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
   }
 
   function centeredMessage(title, subtitle) {
@@ -1995,12 +2354,15 @@
   function drawOverlay() {
     if (game.feedbackUntil > game.now) {
       const alpha = Math.min(1, (game.feedbackUntil - game.now) / 0.4);
-      ctx.fillStyle = `rgba(5, 10, 17, ${Math.min(0.78, alpha)})`;
-      ctx.fillRect(0, 0, WIDTH, 74);
-      ctx.fillStyle = '#d8efff';
+      ctx.fillStyle = `rgba(6, 13, 23, ${Math.min(0.82, alpha)})`;
+      ctx.fillRect(0, 0, WIDTH, 78);
+      ctx.strokeStyle = `rgba(124, 216, 255, ${0.55 * alpha})`;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(6, 6, WIDTH - 12, 66);
+      ctx.fillStyle = '#d9f7ff';
       ctx.font = 'bold 24px Segoe UI';
       ctx.textAlign = 'center';
-      ctx.fillText(game.feedbackText, WIDTH / 2, 47);
+      ctx.fillText(game.feedbackText, WIDTH / 2, 49);
       ctx.textAlign = 'left';
     }
 
@@ -2033,34 +2395,150 @@
     }
 
     if (game.scene === 'mission' && game.mission?.mode !== 'fps' && profile.chargeUnlocked) {
-      ctx.fillStyle = 'rgba(10, 18, 30, 0.7)';
-      ctx.fillRect(24, HEIGHT - 40, 280, 16);
-      ctx.fillStyle = '#6adfff';
-      ctx.fillRect(24, HEIGHT - 40, 280 * (player.isCharging ? player.currentCharge : 0), 16);
+      const chargePct = player.isCharging ? player.currentCharge : 0;
+      const chargeX = 24;
+      const chargeY = HEIGHT - 40;
+      const chargeW = 280;
+      const chargeH = 16;
+      ctx.fillStyle = 'rgba(10, 18, 30, 0.76)';
+      ctx.fillRect(chargeX, chargeY, chargeW, chargeH);
+      const chargeGrad = ctx.createLinearGradient(chargeX, chargeY, chargeX + chargeW, chargeY);
+      chargeGrad.addColorStop(0, '#3fb4ff');
+      chargeGrad.addColorStop(0.5, '#6be8ff');
+      chargeGrad.addColorStop(1, '#b2fff4');
+      ctx.fillStyle = chargeGrad;
+      ctx.fillRect(chargeX, chargeY, chargeW * chargePct, chargeH);
       ctx.strokeStyle = '#98dfff';
-      ctx.strokeRect(24, HEIGHT - 40, 280, 16);
+      ctx.strokeRect(chargeX, chargeY, chargeW, chargeH);
+      ctx.strokeStyle = 'rgba(196, 236, 255, 0.28)';
+      for (let sx = chargeX + 20; sx < chargeX + chargeW; sx += 20) {
+        ctx.beginPath();
+        ctx.moveTo(sx, chargeY + 1);
+        ctx.lineTo(sx, chargeY + chargeH - 1);
+        ctx.stroke();
+      }
       ctx.fillStyle = '#bdeeff';
       ctx.font = '14px Segoe UI';
-      ctx.fillText('Charge Blast (hold fire, release to blast)', 24, HEIGHT - 46);
+      ctx.fillText('Charge Blast (hold fire, release to blast)', chargeX, HEIGHT - 46);
     }
+  }
+
+  function drawMidgroundPass() {
+    if (game.scene === 'mission' && game.mission?.mode !== 'fps') {
+      const x = game.cameraX;
+      ctx.save();
+      ctx.globalAlpha = 0.26;
+      ctx.fillStyle = '#183145';
+      for (let i = 0; i < 18; i += 1) {
+        const px = (i * 220 - (x * 0.66) % 220) - 60;
+        ctx.fillRect(px, 360, 120, 110);
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawForegroundPass() {
+    if (game.scene === 'hub' || game.phase === 'intro') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(6, 20, 31, 0.16)';
+      ctx.fillRect(0, HEIGHT - 94, WIDTH, 94);
+      ctx.restore();
+      return;
+    }
+    if (game.mission?.mode === 'fps') {
+      return;
+    }
+    const x = game.cameraX;
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = '#0d2031';
+    for (let i = 0; i < 14; i += 1) {
+      const px = (i * 190 - (x * 1.1) % 190) - 40;
+      ctx.fillRect(px, 418, 34, 130);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(117, 196, 215, 0.18)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, 422);
+    ctx.lineTo(WIDTH, 422);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPostFxPass() {
+    const theme = activeTheme();
+    game.renderFx.vignetteIntensity = theme.vignette;
+    if (VISUAL_FLAGS.enableVignettePulse) {
+      if (game.scene === 'mission' && player.hp > 0 && player.hp <= 35) {
+        game.renderFx.lowHpPulse += 0.1;
+      } else {
+        game.renderFx.lowHpPulse *= 0.9;
+      }
+    } else {
+      game.renderFx.lowHpPulse = 0;
+    }
+
+    const vignette = ctx.createRadialGradient(
+      WIDTH / 2,
+      HEIGHT / 2,
+      HEIGHT * 0.18,
+      WIDTH / 2,
+      HEIGHT / 2,
+      HEIGHT * 0.82
+    );
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, `rgba(0, 0, 0, ${game.renderFx.vignetteIntensity})`);
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    if (visualAssets.scanline) {
+      ctx.save();
+      ctx.globalAlpha = 0.06;
+      ctx.drawImage(visualAssets.scanline, 0, 0, WIDTH, HEIGHT);
+      ctx.restore();
+    }
+
+    if (game.renderFx.lowHpPulse > 0.01) {
+      const pulse = 0.08 + Math.sin(game.now * 8) * 0.04;
+      ctx.fillStyle = `rgba(255, 64, 112, ${Math.max(0.04, pulse)})`;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    }
+  }
+
+  function drawBackdropPass() {
+    if (game.scene === 'hub' || game.phase === 'intro') {
+      drawHubBackground();
+      return;
+    }
+    if (game.mission?.mode === 'fps') {
+      drawFpsMissionWorld();
+      return;
+    }
+    drawMissionBackground();
+  }
+
+  function drawGameplayPass() {
+    if (game.scene === 'hub' || game.phase === 'intro') {
+      drawHubWorld();
+      return;
+    }
+    if (game.mission?.mode === 'fps') {
+      return;
+    }
+    drawMissionWorld();
   }
 
   function render() {
     ctx.save();
     if (game.scene === 'mission' && game.shakeTime > 0) {
-      ctx.translate(game.shakeX, game.shakeY);
+      ctx.translate(game.shakeX + game.renderFx.cameraKickX, game.shakeY + game.renderFx.cameraKickY);
     }
-
-    if (game.scene === 'hub' || game.phase === 'intro') {
-      drawHubBackground();
-      drawHubWorld();
-    } else if (game.mission?.mode === 'fps') {
-      drawFpsMissionWorld();
-    } else {
-      drawMissionBackground();
-      drawMissionWorld();
-    }
-
+    drawBackdropPass();
+    drawMidgroundPass();
+    drawGameplayPass();
+    drawForegroundPass();
+    drawPostFxPass();
     drawOverlay();
     ctx.restore();
   }
@@ -2139,6 +2617,7 @@
 
   player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
   player.chargeUnlocked = profile.chargeUnlocked;
+  loadVisualAssets();
   saveProfile();
   updateHud();
   requestAnimationFrame(frame);
