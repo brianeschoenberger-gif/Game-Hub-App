@@ -29,6 +29,7 @@
   const LEVEL_2_ID = 'sky_foundry';
   const LEVEL_3_ID = 'black_site_breach';
   const LEVEL_3_CLEAR_VIDEO = 'assets/20260220_2235_01khzefgdhes6bhs7sbhjhgrw7.mp4';
+  const LEVEL_3_MUSIC_MP3 = '../../assets/Mega-Man vs Mike.mp3';
 
   const keys = new Set();
   const justPressed = new Set();
@@ -471,7 +472,8 @@
     step: 0,
     nextNoteAt: 0,
     beat: 0.34,
-    gain: null
+    gain: null,
+    level3Audio: null
   };
 
   const MUSIC_TRACKS = {
@@ -490,6 +492,11 @@
       lead: [45, null, 48, 50, null, 52, 53, null, 50, null, 48, 45, null, 43, 41, null],
       bass: [33, null, null, 36, null, null, 31, null, null, 33, null, null, 29, null, null, 31]
     }
+  };
+  const MUSIC_LEVELS = {
+    level1: 0.1,
+    level2: 0.095,
+    level3: 0.34
   };
 
   const VISUAL_THEME = {
@@ -1215,19 +1222,23 @@
       return 'level1';
     }
     if (missionId === LEVEL_2_ID) {
-      return 'level2';
+      return 'level3';
     }
     if (missionId === LEVEL_3_ID) {
-      return 'level3';
+      return 'level2';
     }
     return null;
   }
 
   function stopBackgroundMusic() {
+    if (musicState.level3Audio) {
+      musicState.level3Audio.pause();
+      musicState.level3Audio.currentTime = 0;
+    }
     if (musicState.gain && audioContext) {
       const now = audioContext.currentTime;
       musicState.gain.gain.cancelScheduledValues(now);
-      musicState.gain.gain.setTargetAtTime(0.0001, now, 0.04);
+      musicState.gain.gain.setTargetAtTime(0.0001, now, 0.03);
     }
     musicState.trackId = null;
     musicState.step = 0;
@@ -1250,6 +1261,29 @@
       musicState.gain.connect(ctxAudio.destination);
     }
 
+    if (trackId === 'level3') {
+      if (!musicState.level3Audio) {
+        musicState.level3Audio = new Audio(LEVEL_3_MUSIC_MP3);
+        musicState.level3Audio.loop = true;
+        musicState.level3Audio.preload = 'auto';
+        musicState.level3Audio.volume = MUSIC_LEVELS.level3;
+      }
+      if (musicState.gain) {
+        musicState.gain.gain.cancelScheduledValues(ctxAudio.currentTime);
+      musicState.gain.gain.setTargetAtTime(0.0001, ctxAudio.currentTime, 0.02);
+      }
+      musicState.trackId = 'level3';
+      musicState.step = 0;
+      musicState.nextNoteAt = 0;
+      musicState.level3Audio.play().catch(() => {});
+      return;
+    }
+
+    if (musicState.level3Audio) {
+      musicState.level3Audio.pause();
+      musicState.level3Audio.currentTime = 0;
+    }
+
     if (musicState.trackId === trackId) {
       return;
     }
@@ -1265,7 +1299,8 @@
     musicState.beat = track.beat || 0.34;
     musicState.nextNoteAt = ctxAudio.currentTime + 0.02;
     musicState.gain.gain.cancelScheduledValues(ctxAudio.currentTime);
-    musicState.gain.gain.setTargetAtTime(0.045, ctxAudio.currentTime, 0.08);
+    const targetLevel = MUSIC_LEVELS[trackId] || 0.09;
+    musicState.gain.gain.setTargetAtTime(targetLevel, ctxAudio.currentTime, 0.05);
   }
 
   function scheduleMusicTone(time, note, length, type = 'triangle', amp = 0.14, detune = 0) {
@@ -1289,6 +1324,9 @@
   }
 
   function updateBackgroundMusic() {
+    if (musicState.trackId === 'level3') {
+      return;
+    }
     if (!audioContext || !musicState.trackId || !musicState.gain) {
       return;
     }
@@ -1304,11 +1342,11 @@
       const bassNote = track.bass[idx % track.bass.length];
       const beat = musicState.beat;
       if (leadNote != null) {
-        scheduleMusicTone(musicState.nextNoteAt, leadNote, beat * 0.86, 'triangle', 0.12, -2);
-        scheduleMusicTone(musicState.nextNoteAt + 0.005, leadNote + 12, beat * 0.52, 'sine', 0.05, 3);
+        scheduleMusicTone(musicState.nextNoteAt, leadNote, beat * 0.86, 'triangle', 0.17, -2);
+        scheduleMusicTone(musicState.nextNoteAt + 0.005, leadNote + 12, beat * 0.52, 'sine', 0.075, 3);
       }
       if (bassNote != null) {
-        scheduleMusicTone(musicState.nextNoteAt, bassNote, beat * 0.96, 'sawtooth', 0.08, 0);
+        scheduleMusicTone(musicState.nextNoteAt, bassNote, beat * 0.96, 'sawtooth', 0.11, 0);
       }
       musicState.step += 1;
       musicState.nextNoteAt += beat;
@@ -1484,30 +1522,51 @@
       return;
     }
     const now = ctxAudio.currentTime;
-    const duration = 0.16;
+    const duration = 0.2;
 
-    const gain = ctxAudio.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.16, now + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    gain.connect(ctxAudio.destination);
+    const master = ctxAudio.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(0.2, now + 0.02);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    master.connect(ctxAudio.destination);
 
-    const oscA = ctxAudio.createOscillator();
-    oscA.type = 'sawtooth';
-    oscA.frequency.setValueAtTime(210, now);
-    oscA.frequency.exponentialRampToValueAtTime(560, now + duration * 0.72);
-    oscA.connect(gain);
-    oscA.start(now);
-    oscA.stop(now + duration);
+    const sampleRate = ctxAudio.sampleRate;
+    const noiseBuffer = ctxAudio.createBuffer(1, Math.floor(sampleRate * duration), sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i += 1) {
+      noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
+    }
 
-    const oscB = ctxAudio.createOscillator();
-    oscB.type = 'triangle';
-    oscB.frequency.setValueAtTime(420, now);
-    oscB.frequency.exponentialRampToValueAtTime(190, now + duration);
-    oscB.detune.value = 7;
-    oscB.connect(gain);
-    oscB.start(now);
-    oscB.stop(now + duration * 0.85);
+    const noise = ctxAudio.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const highpass = ctxAudio.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.setValueAtTime(500, now);
+    highpass.frequency.exponentialRampToValueAtTime(1500, now + duration * 0.8);
+    const band = ctxAudio.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.setValueAtTime(900, now);
+    band.frequency.exponentialRampToValueAtTime(520, now + duration);
+    band.Q.value = 0.8;
+
+    noise.connect(highpass);
+    highpass.connect(band);
+    band.connect(master);
+    noise.start(now);
+    noise.stop(now + duration);
+
+    const tone = ctxAudio.createOscillator();
+    tone.type = 'triangle';
+    tone.frequency.setValueAtTime(320, now);
+    tone.frequency.exponentialRampToValueAtTime(140, now + duration);
+    const toneGain = ctxAudio.createGain();
+    toneGain.gain.setValueAtTime(0.0001, now);
+    toneGain.gain.exponentialRampToValueAtTime(0.07, now + 0.02);
+    toneGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    tone.connect(toneGain);
+    toneGain.connect(master);
+    tone.start(now);
+    tone.stop(now + duration);
   }
 
   function fireProjectile(power = 0, forcedDamage = null, forcedCooldown = null) {
