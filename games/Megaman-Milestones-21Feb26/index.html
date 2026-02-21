@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Robot Cannon Platformer - Milestone 1</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="hud" aria-label="Player HUD">
+        <div class="hud-item"><span>Health</span><strong id="health-value">100</strong></div>
+        <div class="hud-item"><span>Cannon</span><strong id="cannon-mode">Single Shot</strong></div>
+        <div class="hud-item cooldown-item">
+          <span>Cannon Cooldown</span>
+          <div class="cooldown-track" aria-label="Weapon cooldown readiness">
+            <div id="cooldown-fill" class="cooldown-fill"></div>
+          </div>
+        </div>
+        <div class="hud-item"><span>Status</span><strong id="status-text">Press Enter to Start</strong></div>
+      </header>
+
+      <section class="viewport-wrap">
+        <canvas id="game-canvas" width="960" height="540" aria-label="Robot cannon platformer"></canvas>
+      </section>
+
+      <section class="controls" aria-label="Controls">
+        Move: A/D or Left/Right | Jump: W/Up/Space | Shoot: J/K/X | Restart: R
+      </section>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>

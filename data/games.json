@@ -148,5 +148,24 @@
     "featured": false,
     "status": "published",
     "durationEstimate": "10 min"
+  },
+  {
+    "id": "robot-cannon-platformer-2026-02-21",
+    "slug": "robot-cannon-platformer-21feb26",
+    "title": "Robot Cannon Platformer",
+    "releaseDate": "2026-02-21",
+    "description": "Push through a short platforming route, defeat the mini-boss, and unlock Rapid Shot.",
+    "newsTopic": "Milestone build showcase",
+    "tags": [
+      "Action",
+      "Platformer",
+      "Shooter"
+    ],
+    "thumbnailUrl": "/assets/thumbnails/robot-cannon-m1.svg",
+    "bannerUrl": "",
+    "gamePath": "/games/Megaman-Milestones-21Feb26/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "3 min"
   }
 ]
