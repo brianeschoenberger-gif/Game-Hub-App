@@ -20,6 +20,7 @@
 
   const LEVEL_1_ID = 'reactor_sweep';
   const LEVEL_2_ID = 'sky_foundry';
+  const LEVEL_3_ID = 'black_site_breach';
 
   const keys = new Set();
   const justPressed = new Set();
@@ -27,6 +28,7 @@
   const LEVEL_CONFIGS = {
     [LEVEL_1_ID]: {
       name: 'Level 1 - Reactor Sweep',
+      mode: '2d',
       worldWidth: 4300,
       spawn: { x: 90, y: 380 },
       finishGate: { x: 2580, y: 300, w: 45, h: 170 },
@@ -71,6 +73,7 @@
     },
     [LEVEL_2_ID]: {
       name: 'Level 2 - Sky Foundry',
+      mode: '2d',
       worldWidth: 4700,
       spawn: { x: 110, y: 340 },
       finishGate: { x: 3320, y: 250, w: 48, h: 220 },
@@ -107,6 +110,42 @@
         spread: [-0.33, -0.12, 0.12, 0.33],
         contactDamage: 26,
         projectileDamage: 14
+      }
+    },
+    [LEVEL_3_ID]: {
+      name: 'Level 3 - Black Site Breach',
+      mode: 'fps',
+      fps: {
+        map: [
+          '########################',
+          '#S...#.................#',
+          '#.##.#.#####.#########.#',
+          '#....#.....#.....#....##',
+          '####.#####.#####.#.##..#',
+          '#....#...#.....#.#..#..#',
+          '#.####.#.#####.#.##.#..#',
+          '#......#...#...#....#..#',
+          '#.########.#.########..#',
+          '#.....#....#......#....#',
+          '#.###.#.#########.#.##.#',
+          '#.#...#....#......#..#.#',
+          '#.#.######.#.#######.#.#',
+          '#...#......#.....#...#E#',
+          '########################'
+        ],
+        moveSpeed: 3.6,
+        sprintMultiplier: 1.55,
+        lookSpeed: 0.0026,
+        fireCooldown: 0.2,
+        enemyDamage: 14,
+        enemyAggroRange: 6.5,
+        enemyShootInterval: 1.1,
+        enemySpawns: [
+          { x: 5.5, y: 2.5, hp: 3 },
+          { x: 10.5, y: 4.5, hp: 4 },
+          { x: 16.5, y: 6.5, hp: 4 },
+          { x: 20.5, y: 10.5, hp: 5 }
+        ]
       }
     }
   };
@@ -154,13 +193,15 @@
     return {
       rapidUnlocked: localStorage.getItem(LEGACY_RAPID_KEY) === '1',
       chargeUnlocked: false,
+      pierceUnlocked: false,
       credits: 0,
       xp: 0,
       level: 1,
       clears: 0,
       missions: {
         [LEVEL_1_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
-        [LEVEL_2_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 }
+        [LEVEL_2_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
+        [LEVEL_3_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 }
       }
     };
   }
@@ -188,6 +229,7 @@
 
       merged.rapidUnlocked = Boolean(merged.rapidUnlocked || localStorage.getItem(LEGACY_RAPID_KEY) === '1');
       merged.chargeUnlocked = Boolean(merged.chargeUnlocked);
+      merged.pierceUnlocked = Boolean(merged.pierceUnlocked);
       return merged;
     } catch {
       return fallback;
@@ -205,6 +247,8 @@
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     if (profile.rapidUnlocked) {
       localStorage.setItem(LEGACY_RAPID_KEY, '1');
+    } else {
+      localStorage.removeItem(LEGACY_RAPID_KEY);
     }
   }
 
@@ -244,6 +288,9 @@
     }
     if (!missionState(LEVEL_2_ID).completed) {
       return LEVEL_2_ID;
+    }
+    if (!missionState(LEVEL_3_ID).completed) {
+      return LEVEL_3_ID;
     }
     return null;
   }
@@ -299,11 +346,70 @@
     };
   }
 
+  function parseFpsMap(mapRows) {
+    const grid = mapRows.map((row) => row.split(''));
+    let spawn = { x: 1.5, y: 1.5 };
+    let exit = { x: 2.5, y: 2.5 };
+
+    for (let y = 0; y < grid.length; y += 1) {
+      for (let x = 0; x < grid[y].length; x += 1) {
+        if (grid[y][x] === 'S') {
+          spawn = { x: x + 0.5, y: y + 0.5 };
+          grid[y][x] = '.';
+        } else if (grid[y][x] === 'E') {
+          exit = { x: x + 0.5, y: y + 0.5 };
+          grid[y][x] = '.';
+        }
+      }
+    }
+
+    return { grid, spawn, exit, width: grid[0]?.length || 0, height: grid.length };
+  }
+
+  function createFpsEnemies(spawns) {
+    return spawns.map((spawn) => ({
+      x: spawn.x,
+      y: spawn.y,
+      hp: spawn.hp,
+      alive: true,
+      lastShotAt: -999,
+      hitFlashUntil: 0
+    }));
+  }
+
   function createMissionRun(missionId) {
     const config = LEVEL_CONFIGS[missionId];
+    if (config.mode === 'fps') {
+      const parsed = parseFpsMap(config.fps.map);
+      return {
+        id: missionId,
+        name: config.name,
+        mode: 'fps',
+        cameraX: 0,
+        fps: {
+          grid: parsed.grid,
+          mapWidth: parsed.width,
+          mapHeight: parsed.height,
+          spawn: parsed.spawn,
+          exit: parsed.exit,
+          yaw: 0,
+          fireCooldown: config.fps.fireCooldown,
+          lastFireAt: -999,
+          moveSpeed: config.fps.moveSpeed,
+          sprintMultiplier: config.fps.sprintMultiplier,
+          lookSpeed: config.fps.lookSpeed,
+          enemyDamage: config.fps.enemyDamage,
+          enemyAggroRange: config.fps.enemyAggroRange,
+          enemyShootInterval: config.fps.enemyShootInterval,
+          enemies: createFpsEnemies(config.fps.enemySpawns)
+        }
+      };
+    }
+
     return {
       id: missionId,
       name: config.name,
+      mode: '2d',
       worldWidth: config.worldWidth,
       spawn: { ...config.spawn },
       finishGate: { ...config.finishGate },
@@ -344,7 +450,26 @@
     return leveled;
   }
 
+  function resetProgressProfile() {
+    const fresh = createDefaultProfile();
+    profile.rapidUnlocked = false;
+    profile.chargeUnlocked = false;
+    profile.pierceUnlocked = false;
+    profile.credits = 0;
+    profile.xp = 0;
+    profile.level = 1;
+    profile.clears = 0;
+    profile.missions = { ...fresh.missions };
+    player.chargeUnlocked = profile.chargeUnlocked;
+    player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
+    localStorage.removeItem(LEGACY_RAPID_KEY);
+    saveProfile();
+  }
+
   function enterHub(message) {
+    if (document.pointerLockElement === canvas) {
+      document.exitPointerLock();
+    }
     game.scene = 'hub';
     game.phase = 'hub';
     game.mission = null;
@@ -370,8 +495,13 @@
     game.activeMissionId = missionId;
     game.mission = createMissionRun(missionId);
 
-    player.x = game.mission.spawn.x;
-    player.y = game.mission.spawn.y;
+    if (game.mission.mode === 'fps') {
+      player.x = game.mission.fps.spawn.x;
+      player.y = game.mission.fps.spawn.y;
+    } else {
+      player.x = game.mission.spawn.x;
+      player.y = game.mission.spawn.y;
+    }
     player.vx = 0;
     player.vy = 0;
     player.grounded = false;
@@ -384,6 +514,10 @@
     player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
 
     setFeedback(`Mission Start: ${missionName(missionId)}`, 2.1);
+
+    if (game.mission.mode === 'fps') {
+      canvas.requestPointerLock?.();
+    }
   }
 
   function resetMissionAfterDeath() {
@@ -500,6 +634,31 @@
     oscB.stop(now + duration * 0.9);
   }
 
+  function playEnemyHitSfx(intensity = 1) {
+    const ctxAudio = ensureAudioContext();
+    if (!ctxAudio) {
+      return;
+    }
+
+    const now = ctxAudio.currentTime;
+    const safe = Math.max(0.6, Math.min(1.5, intensity));
+    const duration = 0.09 + safe * 0.04;
+
+    const gain = ctxAudio.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.1 * safe, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    gain.connect(ctxAudio.destination);
+
+    const osc = ctxAudio.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(480 + safe * 120, now);
+    osc.frequency.exponentialRampToValueAtTime(240 + safe * 80, now + duration);
+    osc.connect(gain);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
   function fireProjectile(power = 0, forcedDamage = null, forcedCooldown = null) {
     if (!game.mission) {
       return;
@@ -522,7 +681,9 @@
       r: radius,
       damage,
       power: normalizedPower,
-      color: normalizedPower > 0.35 ? '#b8ffff' : '#72e8ff'
+      color: normalizedPower > 0.35 ? '#b8ffff' : '#72e8ff',
+      piercing: forcedDamage === 1 && profile.pierceUnlocked,
+      pierceRemaining: forcedDamage === 1 && profile.pierceUnlocked ? 3 : 0
     });
 
     player.lastShotAt = game.now;
@@ -686,12 +847,20 @@
       tryLaunchMissionById(LEVEL_1_ID);
     } else if (justPressed.has('2')) {
       tryLaunchMissionById(LEVEL_2_ID);
+    } else if (justPressed.has('3')) {
+      tryLaunchMissionById(LEVEL_3_ID);
+    } else if (justPressed.has('t') || justPressed.has('T')) {
+      if (rectDistance(player, hub.dataTerminal) < 120) {
+        resetProgressProfile();
+        setFeedback('Profile reset complete. Missions and unlocks cleared.', 2.6);
+      }
     }
   }
 
   function interactInHub() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
+    const m3 = missionState(LEVEL_3_ID);
 
     if (rectDistance(player, hub.commander) < 90) {
       if (!m1.accepted) {
@@ -710,6 +879,14 @@
         setDialogue(hub.commander.name, 'Sky Foundry is live. Hold your cannon charge for bigger impact.');
       } else if (m2.completed && !m2.turnedIn) {
         setDialogue(hub.commander.name, 'Turn in your Sky Foundry clear at engineering for final sync.');
+      } else if (!m3.accepted) {
+        m3.accepted = true;
+        saveProfile();
+        setDialogue(hub.commander.name, 'Level 3 unlocked: Black Site Breach. Switch to first-person and clear hostiles.');
+      } else if (m3.accepted && !m3.completed) {
+        setDialogue(hub.commander.name, 'Black Site Breach active. Eliminate all hostiles and reach extraction.');
+      } else if (m3.completed && !m3.turnedIn) {
+        setDialogue(hub.commander.name, 'Report to Engineer Vale for Tier-3 cannon sync.');
       } else {
         setDialogue(hub.commander.name, 'Sector clear confirmed. Awaiting Milestone 3 expansion orders.');
       }
@@ -739,8 +916,21 @@
         } else {
           setDialogue(hub.engineer.name, 'Sky Foundry payout complete. Charge cannon calibration finalized.');
         }
-      } else if (m2.completed && m2.turnedIn) {
-        setDialogue(hub.engineer.name, 'All systems tuned. Charged blast profile is stable.');
+      } else if (m3.completed && !m3.turnedIn) {
+        m3.turnedIn = true;
+        profile.credits += 240;
+        const leveled = giveXp(170);
+        saveProfile();
+
+        if (leveled) {
+          setDialogue(hub.engineer.name, `Tier-3 sync complete. +240 credits, +170 XP. Level ${profile.level} reached.`);
+        } else {
+          setDialogue(hub.engineer.name, 'Tier-3 sync complete. Piercing rapid shots are now online.');
+        }
+      } else if (m3.completed && m3.turnedIn) {
+        setDialogue(hub.engineer.name, 'All systems tuned. Piercing cannon profile is stable.');
+      } else if (m2.completed && m2.turnedIn && !m3.completed) {
+        setDialogue(hub.engineer.name, 'Black Site package is queued. Complete Level 3 for Tier-3 unlock.');
       } else {
         setDialogue(hub.engineer.name, 'Bring me completed mission logs and I can issue upgrades.');
       }
@@ -773,9 +963,25 @@
           : missionState(LEVEL_2_ID).accepted
             ? 'L2 in progress'
             : 'L2 locked';
+      const missionText3 = missionState(LEVEL_3_ID).turnedIn
+        ? 'L3 archived'
+        : missionState(LEVEL_3_ID).completed
+          ? 'L3 complete, pending turn-in'
+          : missionState(LEVEL_3_ID).accepted
+            ? 'L3 in progress'
+            : 'L3 locked';
 
-      const upgrades = profile.chargeUnlocked ? 'Rapid + Charge online' : profile.rapidUnlocked ? 'Rapid online' : 'Base cannon';
-      setDialogue(hub.dataTerminal.name, `Lvl ${profile.level} | Cr ${profile.credits} | ${missionText1} | ${missionText2} | ${upgrades}`);
+      const upgrades = profile.pierceUnlocked
+        ? 'Rapid + Charge + Pierce online'
+        : profile.chargeUnlocked
+          ? 'Rapid + Charge online'
+          : profile.rapidUnlocked
+            ? 'Rapid online'
+            : 'Base cannon';
+      setDialogue(
+        hub.dataTerminal.name,
+        `Lvl ${profile.level} | Cr ${profile.credits} | ${missionText1} | ${missionText2} | ${missionText3} | ${upgrades} | Press T to reset save`
+      );
     }
   }
 
@@ -931,6 +1137,11 @@
       unlockBanner = 'Charge Shot Unlocked! Hold K and release to fire.';
     }
 
+    if (missionId === LEVEL_3_ID && !profile.pierceUnlocked) {
+      profile.pierceUnlocked = true;
+      unlockBanner = 'Tier-3 Unlock: Piercing Rapid Shot online.';
+    }
+
     saveProfile();
     enterHub(`${missionName(missionId)} complete. Report to Engineer Vale.`);
 
@@ -966,7 +1177,16 @@
         if (circleHitsRect(projectile, enemy)) {
           enemy.hp -= projectile.damage;
           enemy.hitFlashUntil = game.now + 0.08;
-          projectile._dead = true;
+          playEnemyHitSfx(1 + projectile.power * 0.7);
+          if (projectile.piercing && projectile.pierceRemaining > 0) {
+            projectile.pierceRemaining -= 1;
+            projectile.damage *= 0.86;
+            if (projectile.pierceRemaining <= 0) {
+              projectile._dead = true;
+            }
+          } else {
+            projectile._dead = true;
+          }
           spawnHitSpark(projectile.x, projectile.y, '#75f3ff', 1 + projectile.power * 0.8);
           if (enemy.hp <= 0) {
             enemy.alive = false;
@@ -1033,14 +1253,166 @@
     game.cameraX = mission.cameraX;
   }
 
+  function fpsTileAt(grid, x, y) {
+    const mx = Math.floor(x);
+    const my = Math.floor(y);
+    if (my < 0 || my >= grid.length || mx < 0 || mx >= grid[0].length) {
+      return '#';
+    }
+    return grid[my][mx];
+  }
+
+  function fpsIsWall(grid, x, y) {
+    return fpsTileAt(grid, x, y) === '#';
+  }
+
+  function fpsCanOccupy(grid, x, y) {
+    const r = 0.2;
+    const points = [
+      [x - r, y - r],
+      [x + r, y - r],
+      [x - r, y + r],
+      [x + r, y + r]
+    ];
+    for (const [px, py] of points) {
+      if (fpsIsWall(grid, px, py)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function fpsMoveWithCollision(grid, nextX, nextY) {
+    if (fpsCanOccupy(grid, nextX, player.y)) {
+      player.x = nextX;
+    }
+    if (fpsCanOccupy(grid, player.x, nextY)) {
+      player.y = nextY;
+    }
+  }
+
+  function castFpsRay(grid, ox, oy, angle, maxDepth = 20) {
+    const sin = Math.sin(angle);
+    const cos = Math.cos(angle);
+    let depth = 0;
+    while (depth < maxDepth) {
+      depth += 0.03;
+      const rx = ox + cos * depth;
+      const ry = oy + sin * depth;
+      if (fpsIsWall(grid, rx, ry)) {
+        return depth;
+      }
+    }
+    return maxDepth;
+  }
+
+  function hasFpsLineOfSight(grid, fromX, fromY, toX, toY) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 0.0001) {
+      return true;
+    }
+    const angle = Math.atan2(dy, dx);
+    const ray = castFpsRay(grid, fromX, fromY, angle, dist + 0.2);
+    return ray >= dist - 0.1;
+  }
+
+  function updateFpsMission(dt) {
+    const mission = game.mission;
+    if (!mission || mission.mode !== 'fps') {
+      return;
+    }
+
+    const fps = mission.fps;
+    const forward = (keys.has('w') || keys.has('W') ? 1 : 0) - (keys.has('s') || keys.has('S') ? 1 : 0);
+    const strafe = (keys.has('d') || keys.has('D') ? 1 : 0) - (keys.has('a') || keys.has('A') ? 1 : 0);
+    const speed = fps.moveSpeed * (keys.has('Shift') ? fps.sprintMultiplier : 1);
+
+    if (forward || strafe) {
+      const norm = 1 / Math.hypot(forward || 0, strafe || 0);
+      const f = forward * norm;
+      const s = strafe * norm;
+      const vx = (Math.cos(fps.yaw) * f + Math.cos(fps.yaw + Math.PI / 2) * s) * speed * dt;
+      const vy = (Math.sin(fps.yaw) * f + Math.sin(fps.yaw + Math.PI / 2) * s) * speed * dt;
+      fpsMoveWithCollision(fps.grid, player.x + vx, player.y + vy);
+    }
+
+    if (keys.has('q') || keys.has('Q')) {
+      fps.yaw -= fps.lookSpeed * 36;
+    }
+    if (keys.has('e') || keys.has('E')) {
+      fps.yaw += fps.lookSpeed * 36;
+    }
+
+    const wantsShoot = isRapidShootHeld() || isChargeShootHeld();
+    if (wantsShoot && game.now - fps.lastFireAt >= fps.fireCooldown) {
+      fps.lastFireAt = game.now;
+      let bestEnemy = null;
+      let bestDist = 999;
+      for (const enemy of fps.enemies) {
+        if (!enemy.alive) {
+          continue;
+        }
+        const dx = enemy.x - player.x;
+        const dy = enemy.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        const rel = Math.atan2(dy, dx) - fps.yaw;
+        const wrapped = Math.atan2(Math.sin(rel), Math.cos(rel));
+        if (Math.abs(wrapped) < 0.08 && dist < bestDist && hasFpsLineOfSight(fps.grid, player.x, player.y, enemy.x, enemy.y)) {
+          bestEnemy = enemy;
+          bestDist = dist;
+        }
+      }
+      if (bestEnemy) {
+        bestEnemy.hp -= 1;
+        bestEnemy.hitFlashUntil = game.now + 0.08;
+        playEnemyHitSfx(0.95);
+        spawnHitSpark(player.x, player.y, '#a7f7ff', 1.1);
+        if (bestEnemy.hp <= 0) {
+          bestEnemy.alive = false;
+          spawnHitSpark(bestEnemy.x, bestEnemy.y, '#ffd184', 1.3);
+        }
+      }
+    }
+
+    for (const enemy of fps.enemies) {
+      if (!enemy.alive) {
+        continue;
+      }
+      const dx = player.x - enemy.x;
+      const dy = player.y - enemy.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.7) {
+        damagePlayer(18, enemy.x);
+      } else if (
+        dist < fps.enemyAggroRange &&
+        game.now - enemy.lastShotAt >= fps.enemyShootInterval &&
+        hasFpsLineOfSight(fps.grid, enemy.x, enemy.y, player.x, player.y)
+      ) {
+        enemy.lastShotAt = game.now;
+        damagePlayer(fps.enemyDamage, enemy.x);
+      }
+    }
+
+    const allDefeated = fps.enemies.every((enemy) => !enemy.alive);
+    const exitDist = Math.hypot(player.x - fps.exit.x, player.y - fps.exit.y);
+    if (allDefeated && exitDist < 0.9) {
+      completeMissionRun();
+    }
+  }
+
   function updateHud() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
+    const m3 = missionState(LEVEL_3_ID);
 
     if (game.scene === 'mission') {
       healthEl.textContent = String(Math.max(0, Math.ceil(player.hp)));
 
-      if (profile.chargeUnlocked) {
+      if (profile.pierceUnlocked) {
+        cannonEl.textContent = 'Rapid + Charge + Pierce';
+      } else if (profile.chargeUnlocked) {
         cannonEl.textContent = 'Rapid + Charge';
       } else if (profile.rapidUnlocked) {
         cannonEl.textContent = 'Rapid Shot';
@@ -1049,7 +1421,11 @@
       }
 
       let readiness;
-      if (player.isCharging) {
+      if (game.mission?.mode === 'fps') {
+        const elapsed = game.now - (game.mission?.fps?.lastFireAt || 0);
+        const cd = game.mission?.fps?.fireCooldown || 0.2;
+        readiness = Math.max(0, Math.min(1, elapsed / cd));
+      } else if (player.isCharging) {
         readiness = player.currentCharge;
       } else {
         const elapsed = game.now - player.lastShotAt;
@@ -1059,6 +1435,12 @@
 
       if (game.phase === 'mission_failed') {
         statusEl.textContent = 'Mission failed. Press R to retry or H for Hub';
+      } else if (game.mission?.mode === 'fps') {
+        const alive = game.mission.fps.enemies.filter((enemy) => enemy.alive).length;
+        statusEl.textContent =
+          alive > 0
+            ? `${game.mission.name} | Eliminate hostiles (${alive} left)`
+            : `${game.mission.name} | Reach extraction`;
       } else if (game.mission?.bossActive && game.mission?.boss?.alive) {
         statusEl.textContent = `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))}`;
       } else if (player.isCharging) {
@@ -1070,7 +1452,13 @@
     }
 
     healthEl.textContent = '--';
-    cannonEl.textContent = profile.chargeUnlocked ? 'Rapid + Charge' : profile.rapidUnlocked ? 'Rapid Shot' : 'Single Shot';
+    cannonEl.textContent = profile.pierceUnlocked
+      ? 'Rapid + Charge + Pierce'
+      : profile.chargeUnlocked
+        ? 'Rapid + Charge'
+        : profile.rapidUnlocked
+          ? 'Rapid Shot'
+          : 'Single Shot';
     cooldownFillEl.style.transform = 'scaleX(1)';
 
     if (game.phase === 'intro') {
@@ -1090,6 +1478,12 @@
       statusEl.textContent = 'Level 2 accepted. Use lift to deploy';
     } else if (!m2.turnedIn) {
       statusEl.textContent = 'Turn in Level 2 report with Engineer Vale';
+    } else if (!m3.accepted) {
+      statusEl.textContent = 'Talk to Commander Rho to unlock Level 3';
+    } else if (!m3.completed) {
+      statusEl.textContent = 'Level 3 accepted. Use lift to deploy';
+    } else if (!m3.turnedIn) {
+      statusEl.textContent = 'Turn in Level 3 report with Engineer Vale';
     } else {
       statusEl.textContent = `Campaign complete. Lvl ${profile.level} | Credits ${profile.credits}`;
     }
@@ -1124,13 +1518,17 @@
       return;
     }
 
-    updateMissionInput(dt);
-    updateMissionPlayer(dt);
-    updateMissionEnemies(dt);
-    updateMissionBoss(dt);
-    updateMissionProjectiles(dt);
-    updateMissionSparks(dt);
-    updateMissionCamera(dt);
+    if (game.mission?.mode === 'fps') {
+      updateFpsMission(dt);
+    } else {
+      updateMissionInput(dt);
+      updateMissionPlayer(dt);
+      updateMissionEnemies(dt);
+      updateMissionBoss(dt);
+      updateMissionProjectiles(dt);
+      updateMissionSparks(dt);
+      updateMissionCamera(dt);
+    }
     updateCameraShake(dt);
     updateHud();
   }
@@ -1209,6 +1607,7 @@
   function drawHubObjectives() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
+    const m3 = missionState(LEVEL_3_ID);
     let objective;
 
     if (!m1.accepted) {
@@ -1223,6 +1622,12 @@
       objective = 'Objective: Use Mission Lift (E) to clear Level 2';
     } else if (!m2.turnedIn) {
       objective = 'Objective: Turn in Level 2 mission with Engineer Vale';
+    } else if (!m3.accepted) {
+      objective = 'Objective: Talk to Commander Rho to unlock Level 3';
+    } else if (!m3.completed) {
+      objective = 'Objective: Use Mission Lift (E) to clear Level 3 (FPS)';
+    } else if (!m3.turnedIn) {
+      objective = 'Objective: Turn in Level 3 mission with Engineer Vale';
     } else {
       objective = `Objective: Campaign complete | Level ${profile.level} | Credits ${profile.credits}`;
     }
@@ -1232,6 +1637,80 @@
     ctx.fillStyle = '#bfe2ff';
     ctx.font = 'bold 18px Segoe UI';
     ctx.fillText(objective, 36, 44);
+  }
+
+  function drawFpsMissionWorld() {
+    const mission = game.mission;
+    if (!mission || mission.mode !== 'fps') {
+      return;
+    }
+
+    const fps = mission.fps;
+    const grid = fps.grid;
+    const fov = Math.PI / 3;
+    const maxDepth = 18;
+    const w = WIDTH;
+    const h = HEIGHT;
+
+    const sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+    sky.addColorStop(0, '#42608f');
+    sky.addColorStop(1, '#1b2e4c');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h * 0.55);
+
+    const floor = ctx.createLinearGradient(0, h * 0.5, 0, h);
+    floor.addColorStop(0, '#1a1d28');
+    floor.addColorStop(1, '#0b0e14');
+    ctx.fillStyle = floor;
+    ctx.fillRect(0, h * 0.5, w, h * 0.5);
+
+    for (let x = 0; x < w; x += 1) {
+      const camX = (x / w - 0.5) * fov;
+      const angle = fps.yaw + camX;
+      const depth = castFpsRay(grid, player.x, player.y, angle, maxDepth);
+      const corrected = depth * Math.cos(camX);
+      const wallH = Math.min(h, (h / Math.max(0.001, corrected)) * 0.85);
+      const y1 = (h - wallH) / 2;
+      const shade = Math.max(0.16, 1 - corrected / 11);
+      const c = Math.floor(125 * shade);
+      ctx.fillStyle = `rgb(${c}, ${Math.floor(c * 1.18)}, ${Math.floor(c * 1.52)})`;
+      ctx.fillRect(x, y1, 1, wallH);
+    }
+
+    const aliveEnemies = fps.enemies.filter((enemy) => enemy.alive);
+    for (const enemy of aliveEnemies) {
+      const dx = enemy.x - player.x;
+      const dy = enemy.y - player.y;
+      const dist = Math.hypot(dx, dy);
+      const rel = Math.atan2(dy, dx) - fps.yaw;
+      const wrapped = Math.atan2(Math.sin(rel), Math.cos(rel));
+      if (Math.abs(wrapped) > fov / 2) {
+        continue;
+      }
+      if (!hasFpsLineOfSight(grid, player.x, player.y, enemy.x, enemy.y)) {
+        continue;
+      }
+      const screenX = (wrapped / fov + 0.5) * w;
+      const size = Math.min(h * 0.55, h / Math.max(0.6, dist));
+      const y = h / 2 - size * 0.55;
+      ctx.fillStyle = enemy.hitFlashUntil > game.now ? '#ffe0ae' : '#ffb36a';
+      ctx.fillRect(screenX - size * 0.22, y, size * 0.44, size * 0.68);
+      ctx.fillStyle = '#401f12';
+      ctx.fillRect(screenX - size * 0.11, y + size * 0.2, size * 0.22, size * 0.26);
+    }
+
+    const canExit = aliveEnemies.length === 0;
+    const exdx = fps.exit.x - player.x;
+    const exdy = fps.exit.y - player.y;
+    const exDist = Math.hypot(exdx, exdy);
+    const exRel = Math.atan2(exdy, exdx) - fps.yaw;
+    const exWrapped = Math.atan2(Math.sin(exRel), Math.cos(exRel));
+    if (Math.abs(exWrapped) < fov / 2 && hasFpsLineOfSight(grid, player.x, player.y, fps.exit.x, fps.exit.y)) {
+      const sx = (exWrapped / fov + 0.5) * w;
+      const s = Math.min(h * 0.3, h / Math.max(0.8, exDist));
+      ctx.fillStyle = canExit ? 'rgba(115, 255, 196, 0.9)' : 'rgba(255, 146, 107, 0.85)';
+      ctx.fillRect(sx - s * 0.13, h / 2 - s * 0.5, s * 0.26, s);
+    }
   }
 
   function drawMissionWorld() {
@@ -1311,7 +1790,7 @@
       ctx.fillStyle = '#d4efff';
       ctx.font = 'bold 20px Segoe UI';
       ctx.textAlign = 'center';
-      ctx.fillText(`Press E to interact: ${nearest.name} | Quick Launch: 1=L1, 2=L2`, WIDTH / 2, 496);
+      ctx.fillText(`Press E to interact: ${nearest.name} | Launch: 1=L1,2=L2,3=L3 | T at Terminal=Reset`, WIDTH / 2, 496);
       ctx.textAlign = 'left';
     }
   }
@@ -1448,14 +1927,20 @@
     }
 
     if (game.phase === 'intro') {
-      centeredMessage('Robot Cannon Platformer', 'Milestone 2: Press Enter to open the Hub');
+      centeredMessage('Robot Cannon Platformer', 'Milestone 3: Press Enter to open the Hub');
     }
 
     if (game.phase === 'mission_failed') {
       centeredMessage('Mission Failed', 'Press R to retry or H to return to Hub');
     }
 
-    if (game.scene === 'mission' && profile.chargeUnlocked) {
+    if (game.scene === 'mission' && game.mission?.mode === 'fps') {
+      ctx.fillStyle = 'rgba(220, 240, 255, 0.85)';
+      ctx.fillRect(WIDTH / 2 - 12, HEIGHT / 2 - 1, 24, 2);
+      ctx.fillRect(WIDTH / 2 - 1, HEIGHT / 2 - 12, 2, 24);
+    }
+
+    if (game.scene === 'mission' && game.mission?.mode !== 'fps' && profile.chargeUnlocked) {
       ctx.fillStyle = 'rgba(10, 18, 30, 0.7)';
       ctx.fillRect(24, HEIGHT - 40, 280, 16);
       ctx.fillStyle = '#6adfff';
@@ -1477,6 +1962,8 @@
     if (game.scene === 'hub' || game.phase === 'intro') {
       drawHubBackground();
       drawHubWorld();
+    } else if (game.mission?.mode === 'fps') {
+      drawFpsMissionWorld();
     } else {
       drawMissionBackground();
       drawMissionWorld();
@@ -1527,6 +2014,18 @@
 
   window.addEventListener('keyup', (event) => {
     keys.delete(event.key);
+  });
+
+  window.addEventListener('mousemove', (event) => {
+    if (game.scene === 'mission' && game.mission?.mode === 'fps' && document.pointerLockElement === canvas) {
+      game.mission.fps.yaw += event.movementX * game.mission.fps.lookSpeed;
+    }
+  });
+
+  canvas.addEventListener('click', () => {
+    if (game.scene === 'mission' && game.mission?.mode === 'fps' && document.pointerLockElement !== canvas) {
+      canvas.requestPointerLock?.();
+    }
   });
 
   player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
