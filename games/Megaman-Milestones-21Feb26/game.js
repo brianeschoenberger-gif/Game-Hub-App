@@ -1341,6 +1341,38 @@
     osc.stop(now + duration);
   }
 
+  function playAirDashSfx() {
+    const ctxAudio = ensureAudioContext();
+    if (!ctxAudio) {
+      return;
+    }
+    const now = ctxAudio.currentTime;
+    const duration = 0.16;
+
+    const gain = ctxAudio.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.16, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    gain.connect(ctxAudio.destination);
+
+    const oscA = ctxAudio.createOscillator();
+    oscA.type = 'sawtooth';
+    oscA.frequency.setValueAtTime(210, now);
+    oscA.frequency.exponentialRampToValueAtTime(560, now + duration * 0.72);
+    oscA.connect(gain);
+    oscA.start(now);
+    oscA.stop(now + duration);
+
+    const oscB = ctxAudio.createOscillator();
+    oscB.type = 'triangle';
+    oscB.frequency.setValueAtTime(420, now);
+    oscB.frequency.exponentialRampToValueAtTime(190, now + duration);
+    oscB.detune.value = 7;
+    oscB.connect(gain);
+    oscB.start(now);
+    oscB.stop(now + duration * 0.85);
+  }
+
   function fireProjectile(power = 0, forcedDamage = null, forcedCooldown = null) {
     if (!game.mission) {
       return;
@@ -1548,6 +1580,7 @@
     player.vx = dir * player.airDashSpeed;
     player.vy = Math.min(player.vy, 25);
     player.facing = dir;
+    playAirDashSfx();
     setFeedback('Air Dash', 0.4);
     return true;
   }
