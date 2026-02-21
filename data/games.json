@@ -129,5 +129,24 @@
     "featured": false,
     "status": "published",
     "durationEstimate": "8 min"
+  },
+  {
+    "id": "get-muduro-2026-02-16",
+    "slug": "get-muduro-16feb26",
+    "title": "Get Muduro",
+    "releaseDate": "2026-02-16",
+    "description": "Navigate a tense first-person campus mission, negotiate checkpoints, and reach the holding wing.",
+    "newsTopic": "Campus security incident simulation",
+    "tags": [
+      "Adventure",
+      "3D",
+      "Story"
+    ],
+    "thumbnailUrl": "/assets/thumbnails/get-muduro.svg",
+    "bannerUrl": "",
+    "gamePath": "/games/Get-Muduro-16Feb26/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "10 min"
   }
 ]

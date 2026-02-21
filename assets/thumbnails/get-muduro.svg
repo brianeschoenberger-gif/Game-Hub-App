@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c355f"/>
+      <stop offset="1" stop-color="#0b172d"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <rect x="22" y="22" width="596" height="316" rx="12" fill="#0d1a33" stroke="#5478b4" stroke-opacity="0.75"/>
+
+  <text x="42" y="60" fill="#f3f7ff" font-family="Segoe UI, Arial" font-size="24" font-weight="700">Get Muduro</text>
+  <text x="42" y="82" fill="#bfd2ef" font-family="Segoe UI, Arial" font-size="12">Open Campus Mission</text>
+
+  <polygon points="0,220 640,220 640,360 0,360" fill="#0a1020"/>
+  <polygon points="40,360 170,232 250,232 140,360" fill="#324d7d"/>
+  <polygon points="180,360 320,210 420,210 300,360" fill="#44639b"/>
+  <polygon points="340,360 500,242 620,242 470,360" fill="#2f4b7a"/>
+
+  <rect x="252" y="246" width="32" height="70" fill="#f3f7ff"/>
+  <rect x="264" y="232" width="8" height="14" fill="#f3f7ff"/>
+
+  <rect x="42" y="98" width="556" height="16" rx="6" fill="#122648" stroke="#3f639b"/>
+  <rect x="42" y="122" width="220" height="20" rx="8" fill="#152c53" stroke="#3f639b"/>
+  <rect x="272" y="122" width="150" height="20" rx="8" fill="#152c53" stroke="#3f639b"/>
+  <rect x="432" y="122" width="166" height="20" rx="8" fill="#152c53" stroke="#3f639b"/>
+
+  <rect x="42" y="154" width="184" height="54" rx="8" fill="#13274b" stroke="#385b92"/>
+  <rect x="236" y="154" width="184" height="54" rx="8" fill="#13274b" stroke="#385b92"/>
+  <rect x="430" y="154" width="168" height="54" rx="8" fill="#13274b" stroke="#385b92"/>
+</svg>
