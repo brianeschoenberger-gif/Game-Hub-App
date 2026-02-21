@@ -14,7 +14,7 @@
     "thumbnailUrl": "/assets/thumbnails/headline-dodge.svg",
     "bannerUrl": "",
     "gamePath": "/games/headline-dodge/index.html",
-    "featured": true,
+    "featured": false,
     "status": "published",
     "durationEstimate": "3 min"
   },
@@ -32,7 +32,7 @@
     "thumbnailUrl": "/assets/thumbnails/market-maze.svg",
     "bannerUrl": "",
     "gamePath": "/games/coming-soon.html",
-    "featured": false,
+    "featured": true,
     "status": "draft",
     "durationEstimate": "6 min"
   },
