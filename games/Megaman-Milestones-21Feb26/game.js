@@ -28,6 +28,7 @@
   const LEVEL_1_ID = 'reactor_sweep';
   const LEVEL_2_ID = 'sky_foundry';
   const LEVEL_3_ID = 'black_site_breach';
+  const LEVEL_3_CLEAR_VIDEO = 'assets/20260220_2235_01khzefgdhes6bhs7sbhjhgrw7.mp4';
 
   const keys = new Set();
   const justPressed = new Set();
@@ -468,6 +469,7 @@
   let audioContext = null;
   let mouseLeftDown = false;
   let mouseRightDown = false;
+  let level3CutsceneOverlay = null;
   const shellEl = document.querySelector('.game-shell');
 
   const VISUAL_THEME = {
@@ -818,7 +820,12 @@
         triggered: false,
         spawnAccumulator: 0,
         spawnCount: 0,
-        warnings: []
+        warnings: [],
+        wasWarning: false,
+        wasActive: false,
+        nextCueAt: 0,
+        cycleStamp: -1,
+        slamPlayed: false
       })),
       debrisActors: [],
       enemies: config.enemySpawns.map((spawn) => createEnemy(spawn)),
@@ -895,9 +902,95 @@
     saveProfile();
   }
 
+  function clearLevel3CutsceneOverlay() {
+    if (level3CutsceneOverlay && level3CutsceneOverlay.parentNode) {
+      level3CutsceneOverlay.parentNode.removeChild(level3CutsceneOverlay);
+    }
+    level3CutsceneOverlay = null;
+    if (game.phase === 'cutscene') {
+      game.phase = 'mission';
+    }
+  }
+
+  function playLevel3ClearVideo(onDone) {
+    clearLevel3CutsceneOverlay();
+    game.phase = 'cutscene';
+    clearTransientInputState();
+
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.left = '0';
+    overlay.style.top = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = 'rgba(0, 0, 0, 0.92)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '9999';
+
+    const wrap = document.createElement('div');
+    wrap.style.width = 'min(92vw, 1120px)';
+    wrap.style.height = 'min(88vh, 720px)';
+    wrap.style.display = 'flex';
+    wrap.style.flexDirection = 'column';
+    wrap.style.gap = '10px';
+    wrap.style.alignItems = 'stretch';
+
+    const video = document.createElement('video');
+    video.src = LEVEL_3_CLEAR_VIDEO;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.controls = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'contain';
+    video.style.background = '#000';
+    video.style.border = '1px solid rgba(110, 190, 255, 0.45)';
+
+    const skip = document.createElement('button');
+    skip.textContent = 'Skip (Enter Hub)';
+    skip.style.alignSelf = 'flex-end';
+    skip.style.padding = '8px 14px';
+    skip.style.border = '1px solid rgba(140, 210, 255, 0.65)';
+    skip.style.background = 'rgba(18, 38, 66, 0.85)';
+    skip.style.color = '#d6f0ff';
+    skip.style.font = '600 14px Segoe UI, sans-serif';
+    skip.style.cursor = 'pointer';
+
+    wrap.appendChild(video);
+    wrap.appendChild(skip);
+    overlay.appendChild(wrap);
+    document.body.appendChild(overlay);
+    level3CutsceneOverlay = overlay;
+
+    let finished = false;
+    const finalize = () => {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      clearLevel3CutsceneOverlay();
+      if (typeof onDone === 'function') {
+        onDone();
+      }
+    };
+
+    skip.addEventListener('click', finalize);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        finalize();
+      }
+    });
+    video.addEventListener('ended', finalize);
+    video.addEventListener('error', finalize);
+    video.play().catch(() => {});
+  }
+
   function enterHub(message) {
     mouseLeftDown = false;
     mouseRightDown = false;
+    clearLevel3CutsceneOverlay();
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
@@ -1177,6 +1270,77 @@
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(480 + safe * 120, now);
     osc.frequency.exponentialRampToValueAtTime(240 + safe * 80, now + duration);
+    osc.connect(gain);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  function playHazardLaserSfx(kind = 'warning') {
+    const ctxAudio = ensureAudioContext();
+    if (!ctxAudio) {
+      return;
+    }
+    const now = ctxAudio.currentTime;
+    const duration = kind === 'warning' ? 0.11 : 0.16;
+    const gain = ctxAudio.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(kind === 'warning' ? 0.08 : 0.1, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    gain.connect(ctxAudio.destination);
+
+    const osc = ctxAudio.createOscillator();
+    osc.type = kind === 'warning' ? 'square' : 'sawtooth';
+    osc.frequency.setValueAtTime(kind === 'warning' ? 780 : 420, now);
+    osc.frequency.exponentialRampToValueAtTime(kind === 'warning' ? 1040 : 510, now + duration);
+    osc.connect(gain);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  function playHazardCrusherSfx(kind = 'warning') {
+    const ctxAudio = ensureAudioContext();
+    if (!ctxAudio) {
+      return;
+    }
+    const now = ctxAudio.currentTime;
+    const duration = kind === 'warning' ? 0.14 : 0.24;
+    const gain = ctxAudio.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(kind === 'warning' ? 0.09 : 0.14, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    gain.connect(ctxAudio.destination);
+
+    const osc = ctxAudio.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(kind === 'warning' ? 220 : 150, now);
+    osc.frequency.exponentialRampToValueAtTime(kind === 'warning' ? 180 : 70, now + duration);
+    osc.connect(gain);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  function playHazardDebrisSfx(kind = 'whistle') {
+    const ctxAudio = ensureAudioContext();
+    if (!ctxAudio) {
+      return;
+    }
+    const now = ctxAudio.currentTime;
+    const duration = kind === 'whistle' ? 0.16 : 0.13;
+    const gain = ctxAudio.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(kind === 'whistle' ? 0.075 : 0.1, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    gain.connect(ctxAudio.destination);
+
+    const osc = ctxAudio.createOscillator();
+    osc.type = kind === 'whistle' ? 'sine' : 'square';
+    if (kind === 'whistle') {
+      osc.frequency.setValueAtTime(950, now);
+      osc.frequency.exponentialRampToValueAtTime(420, now + duration);
+    } else {
+      osc.frequency.setValueAtTime(190, now);
+      osc.frequency.exponentialRampToValueAtTime(120, now + duration);
+    }
     osc.connect(gain);
     osc.start(now);
     osc.stop(now + duration);
@@ -1845,8 +2009,19 @@
 
       if (hazard.type === 'laser_gate') {
         const state = getLaserGateState(mission, hazard);
+        if (state.warning && !hazard.wasWarning) {
+          playHazardLaserSfx('warning');
+        }
+        if (state.active && !hazard.wasActive) {
+          playHazardLaserSfx('active');
+          spawnScreenFlash('rgba(255, 132, 102, 0.24)', 0.05, 0.06);
+        }
+        if (state.active && game.now >= (hazard.nextCueAt || 0)) {
+          playHazardLaserSfx('active');
+          hazard.nextCueAt = game.now + 0.54;
+        }
         if (state.warning && Math.floor(game.now * 8) % 8 === 0) {
-          spawnLightFlash((hazard.x1 + hazard.x2) * 0.5, hazard.y, 'rgba(255, 187, 92, 0.28)', 38, 0.08);
+          spawnLightFlash((hazard.x1 + hazard.x2) * 0.5, hazard.y, 'rgba(255, 187, 92, 0.36)', 44, 0.08);
         }
         if (state.active) {
           const beamRect = {
@@ -1859,8 +2034,11 @@
             hazard.nextDamageAt = game.now + (hazard.tickInterval || 0.25);
             damagePlayer(hazard.damage || 12, (hazard.x1 + hazard.x2) * 0.5);
             spawnHitSpark(player.x + player.w * 0.5, beamRect.y + beamRect.h * 0.5, '#ffb168', 1.1);
+            spawnImpactRing(player.x + player.w * 0.5, beamRect.y + beamRect.h * 0.5, '#ffc386', 1.15);
           }
         }
+        hazard.wasWarning = state.warning;
+        hazard.wasActive = state.active;
       } else if (hazard.type === 'conveyor_crusher') {
         const belt = hazard.conveyor;
         const crusherState = getCrusherState(mission, hazard);
@@ -1871,6 +2049,12 @@
           h: hazard.crusher.h
         };
         const beltRect = { x: belt.x, y: belt.y, w: belt.w, h: belt.h };
+        const cycle = Math.max(0.2, hazard.cycleTime || 3.2);
+        const cycleStamp = Math.floor((mission.elapsed || 0) / cycle);
+        if (cycleStamp !== hazard.cycleStamp) {
+          hazard.cycleStamp = cycleStamp;
+          hazard.slamPlayed = false;
+        }
 
         if (intersects(player, beltRect) && player.grounded) {
           const push = (belt.push || 180) * dt;
@@ -1879,6 +2063,9 @@
           resolveMissionHorizontal();
         }
 
+        if (crusherState.warning && !hazard.wasWarning) {
+          playHazardCrusherSfx('warning');
+        }
         if (crusherState.warning && Math.floor(game.now * 10) % 10 === 0) {
           spawnLightFlash(
             crusherRect.x + crusherRect.w * 0.5,
@@ -1888,15 +2075,31 @@
             0.08
           );
         }
+        if (crusherState.active && !hazard.slamPlayed && crusherRect.y >= hazard.crusher.bottomY - 3) {
+          hazard.slamPlayed = true;
+          playHazardCrusherSfx('slam');
+          triggerCameraShake(1.9, 0.1, 0, -0.45);
+          spawnImpactRing(crusherRect.x + crusherRect.w * 0.5, hazard.crusher.bottomY + crusherRect.h, '#ffc38a', 2.1);
+          spawnLightFlash(
+            crusherRect.x + crusherRect.w * 0.5,
+            hazard.crusher.bottomY + crusherRect.h - 6,
+            'rgba(255, 165, 120, 0.5)',
+            62,
+            0.12
+          );
+        }
         if (crusherState.active && intersects(player, crusherRect) && game.now >= hazard.nextDamageAt) {
           hazard.nextDamageAt = game.now + (hazard.tickInterval || 0.2);
           damagePlayer(hazard.damage || 20, crusherRect.x + crusherRect.w * 0.5);
           spawnImpactRing(player.x + player.w * 0.5, player.y + player.h * 0.5, '#ffb37a', 1);
         }
+        hazard.wasWarning = crusherState.warning;
+        hazard.wasActive = crusherState.active;
       } else if (hazard.type === 'debris_zone') {
         if (!hazard.triggered && player.x + player.w * 0.5 >= hazard.triggerX) {
           hazard.triggered = true;
           setFeedback('Hazard zone detected: falling debris incoming.', 2.2);
+          playHazardDebrisSfx('whistle');
         }
         if (!hazard.triggered) {
           continue;
@@ -1915,6 +2118,10 @@
             life: hazard.warningDuration || 0.6,
             maxLife: hazard.warningDuration || 0.6
           });
+          if (game.now >= (hazard.nextCueAt || 0)) {
+            playHazardDebrisSfx('whistle');
+            hazard.nextCueAt = game.now + 0.34;
+          }
         }
 
         for (const warning of hazard.warnings) {
@@ -1926,6 +2133,7 @@
               y: hazard.yTop || 20,
               r: 14,
               vy: hazard.fallSpeed || 520,
+              floorY: hazard.yBottom || 520,
               damage: hazard.damage || 14,
               _dead: false
             });
@@ -1946,6 +2154,12 @@
         damagePlayer(debris.damage || 14, debris.x);
         spawnHitSpark(debris.x, debris.y, '#ffad7a', 1.2);
         spawnImpactRing(debris.x, debris.y, '#ffd1a6', 1);
+        playHazardDebrisSfx('impact');
+      } else if (debris.y >= (debris.floorY || HEIGHT + 40)) {
+        debris._dead = true;
+        spawnHitSpark(debris.x, debris.floorY || debris.y, '#ffbe89', 1.05);
+        spawnImpactRing(debris.x, debris.floorY || debris.y, '#ffd09c', 1.2);
+        playHazardDebrisSfx('impact');
       } else if (debris.y > HEIGHT + 80) {
         debris._dead = true;
       }
@@ -2142,6 +2356,17 @@
     }
 
     saveProfile();
+
+    if (missionId === LEVEL_3_ID) {
+      playLevel3ClearVideo(() => {
+        enterHub(`${missionName(missionId)} complete. Report to Engineer Vale.`);
+        if (unlockBanner) {
+          setFeedback(unlockBanner, 3.2);
+        }
+      });
+      return;
+    }
+
     enterHub(`${missionName(missionId)} complete. Report to Engineer Vale.`);
 
     if (unlockBanner) {
@@ -2736,6 +2961,17 @@
       return;
     }
 
+    if (game.phase === 'cutscene') {
+      if (justPressed.has('Escape')) {
+        clearLevel3CutsceneOverlay();
+        enterHub('Cutscene skipped. Returned to hub.');
+      }
+      updateCameraShake(dt);
+      updateRenderFx(dt);
+      updateHud();
+      return;
+    }
+
     if (game.mission?.mode === 'fps') {
       updateFpsMission(dt);
     } else {
@@ -3251,15 +3487,25 @@
         ctx.fillRect(hazard.x2 + 2, hazard.y - 18, 8, 36);
         if (state.warning) {
           const pulse = Math.sin(game.now * 18) * 0.5 + 0.5;
-          ctx.fillStyle = `rgba(255, 188, 108, ${0.25 + pulse * 0.45})`;
+          ctx.fillStyle = `rgba(255, 188, 108, ${0.3 + pulse * 0.5})`;
           ctx.fillRect(hazard.x1, hazard.y - thickness * 0.5, hazard.x2 - hazard.x1, thickness);
+          ctx.strokeStyle = `rgba(255, 232, 175, ${0.45 + pulse * 0.35})`;
+          ctx.setLineDash([8, 7]);
+          ctx.lineWidth = 1.7;
+          ctx.strokeRect(hazard.x1, hazard.y - thickness * 0.5, hazard.x2 - hazard.x1, thickness);
+          ctx.setLineDash([]);
         }
         if (state.active) {
-          ctx.fillStyle = 'rgba(255, 98, 84, 0.9)';
+          const pulse = Math.sin(game.now * 30) * 0.5 + 0.5;
+          ctx.fillStyle = `rgba(255, 98, 84, ${0.68 + pulse * 0.24})`;
           ctx.fillRect(hazard.x1, hazard.y - thickness * 0.5, hazard.x2 - hazard.x1, thickness);
           ctx.strokeStyle = '#ffd0a8';
           ctx.lineWidth = 2;
           ctx.strokeRect(hazard.x1, hazard.y - thickness * 0.5, hazard.x2 - hazard.x1, thickness);
+          ctx.globalAlpha = 0.42;
+          ctx.fillStyle = '#ffb07f';
+          ctx.fillRect(hazard.x1, hazard.y - thickness * 1.35, hazard.x2 - hazard.x1, thickness * 2.7);
+          ctx.globalAlpha = 1;
         }
       } else if (hazard.type === 'conveyor_crusher') {
         const belt = hazard.conveyor;
@@ -3286,8 +3532,14 @@
         ctx.strokeStyle = '#d7e0ee';
         ctx.strokeRect(crusherRect.x + 1, crusherRect.y + 1, crusherRect.w - 2, crusherRect.h - 2);
         if (crusherState.warning) {
-          ctx.fillStyle = `rgba(255, 167, 113, ${0.3 + (Math.sin(game.now * 16) * 0.5 + 0.5) * 0.45})`;
+          const pulse = Math.sin(game.now * 16) * 0.5 + 0.5;
+          ctx.fillStyle = `rgba(255, 167, 113, ${0.3 + pulse * 0.45})`;
           ctx.fillRect(crusherRect.x - 8, hazard.crusher.bottomY + crusherRect.h - 10, crusherRect.w + 16, 10);
+          ctx.fillStyle = `rgba(255, 220, 176, ${0.25 + pulse * 0.3})`;
+          for (let i = 0; i < 6; i += 1) {
+            const stripeX = crusherRect.x - 6 + i * ((crusherRect.w + 12) / 6);
+            ctx.fillRect(stripeX, hazard.crusher.bottomY + crusherRect.h - 10, 6, 10);
+          }
         }
       } else if (hazard.type === 'debris_zone') {
         if (!hazard.triggered) {
@@ -3307,6 +3559,12 @@
     }
 
     for (const debris of mission.debrisActors || []) {
+      ctx.strokeStyle = 'rgba(255, 210, 166, 0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(debris.x, debris.y - debris.r * 1.8);
+      ctx.lineTo(debris.x - 4, debris.y - debris.r * 0.5);
+      ctx.stroke();
       ctx.fillStyle = '#b4bcca';
       ctx.beginPath();
       ctx.arc(debris.x, debris.y, debris.r, 0, Math.PI * 2);
