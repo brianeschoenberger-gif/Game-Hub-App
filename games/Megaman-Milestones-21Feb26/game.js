@@ -237,6 +237,18 @@
     return null;
   }
 
+  function tryLaunchMissionById(missionId, lockMessage = true) {
+    const state = missionState(missionId);
+    if (!state?.accepted) {
+      if (lockMessage) {
+        setDialogue('Mission Lift', 'Mission lock active. Talk to Commander Rho first.', 3.2);
+      }
+      return false;
+    }
+    startMissionRun(missionId);
+    return true;
+  }
+
   function createEnemy(spawn) {
     return {
       x: spawn.x,
@@ -570,6 +582,12 @@
     if (wantsInteractPress()) {
       interactInHub();
     }
+
+    if (justPressed.has('1')) {
+      tryLaunchMissionById(LEVEL_1_ID);
+    } else if (justPressed.has('2')) {
+      tryLaunchMissionById(LEVEL_2_ID);
+    }
   }
 
   function interactInHub() {
@@ -634,10 +652,8 @@
       const next = nextMissionId();
       if (!next) {
         setDialogue(hub.missionLift.name, 'No pending mission. Hub standing by.');
-      } else if (!missionState(next).accepted) {
-        setDialogue(hub.missionLift.name, 'Mission lock active. Talk to Commander Rho first.', 3.2);
       } else {
-        startMissionRun(next);
+        tryLaunchMissionById(next, true);
       }
       return;
     }
@@ -1183,11 +1199,11 @@
 
     if (nearest && nearestDist < 110) {
       ctx.fillStyle = 'rgba(7, 16, 28, 0.75)';
-      ctx.fillRect(302, 468, 356, 44);
+      ctx.fillRect(112, 468, 736, 44);
       ctx.fillStyle = '#d4efff';
       ctx.font = 'bold 20px Segoe UI';
       ctx.textAlign = 'center';
-      ctx.fillText(`Press E to interact: ${nearest.name}`, WIDTH / 2, 496);
+      ctx.fillText(`Press E to interact: ${nearest.name} | Quick Launch: 1=L1, 2=L2`, WIDTH / 2, 496);
       ctx.textAlign = 'left';
     }
   }
