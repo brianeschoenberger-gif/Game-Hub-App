@@ -319,6 +319,7 @@
 
   let audioContext = null;
   let mouseLeftDown = false;
+  let mouseRightDown = false;
   const shellEl = document.querySelector('.game-shell');
 
   const VISUAL_THEME = {
@@ -573,6 +574,9 @@
           enemyDamage: config.fps.enemyDamage,
           enemyAggroRange: config.fps.enemyAggroRange,
           enemyShootInterval: config.fps.enemyShootInterval,
+          isCharging: false,
+          chargeStartedAt: 0,
+          chargePower: 0,
           enemies: createFpsEnemies(config.fps.enemySpawns, parsed.grid),
           bolts: []
         }
@@ -643,6 +647,7 @@
 
   function enterHub(message) {
     mouseLeftDown = false;
+    mouseRightDown = false;
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
@@ -1620,15 +1625,17 @@
     return ray >= dist - 0.1;
   }
 
-  function spawnFpsBolt(fps) {
-    const speed = 11.5;
+  function spawnFpsBolt(fps, power = 0) {
+    const clamped = Math.max(0, Math.min(1, power));
+    const speed = 11.5 + clamped * 2.6;
     fps.bolts.push({
       x: player.x,
       y: player.y,
       vx: Math.cos(fps.yaw) * speed,
       vy: Math.sin(fps.yaw) * speed,
-      life: 0.8,
-      radius: 0.17
+      life: 0.8 + clamped * 0.2,
+      radius: 0.17 + clamped * 0.16,
+      damage: 1 + clamped * 3
     });
   }
 
@@ -1649,14 +1656,17 @@
         }
         const dist = Math.hypot(enemy.x - bolt.x, enemy.y - bolt.y);
         if (dist <= bolt.radius + 0.23) {
-          enemy.hp -= 1;
+          enemy.hp -= bolt.damage || 1;
           enemy.hitFlashUntil = game.now + 0.08;
-          playEnemyHitSfx(0.95);
-          spawnHitSpark(bolt.x, bolt.y, '#a7f7ff', 1.1);
+          playEnemyHitSfx(0.95 + (bolt.damage || 1) * 0.15);
+          spawnHitSpark(bolt.x, bolt.y, '#a7f7ff', 1.1 + (bolt.damage || 1) * 0.2);
+          spawnImpactRing(bolt.x, bolt.y, '#9cf7ff', 0.8 + (bolt.damage || 1) * 0.22);
+          spawnLightFlash(bolt.x, bolt.y, 'rgba(127, 233, 255, 0.74)', 28 + (bolt.damage || 1) * 8, 0.1);
           bolt.life = -1;
           if (enemy.hp <= 0) {
             enemy.alive = false;
             spawnHitSpark(enemy.x, enemy.y, '#ffd184', 1.3);
+            spawnKillPop(enemy.x, enemy.y, '#ffd98f', 1.05 + (bolt.damage || 1) * 0.12);
           }
         }
       }
@@ -1697,10 +1707,33 @@
       fps.pitch = Math.max(-FPS_MAX_PITCH, fps.pitch - fps.lookSpeed * 30);
     }
 
-    const wantsShoot = isRapidShootHeld() || isChargeShootHeld() || mouseLeftDown;
-    if (wantsShoot && game.now - fps.lastFireAt >= fps.fireCooldown) {
+    const rapidHeld = isRapidShootHeld() || mouseLeftDown;
+    const chargeHeld = isChargeShootHeld() || mouseRightDown;
+
+    if (rapidHeld && game.now - fps.lastFireAt >= fps.fireCooldown) {
       fps.lastFireAt = game.now;
-      spawnFpsBolt(fps);
+      spawnFpsBolt(fps, 0);
+    }
+
+    if (chargeHeld && !fps.isCharging && profile.chargeUnlocked && game.now - fps.lastFireAt >= fps.fireCooldown) {
+      fps.isCharging = true;
+      fps.chargeStartedAt = game.now;
+      fps.chargePower = 0;
+    }
+
+    if (fps.isCharging && chargeHeld) {
+      fps.chargePower = Math.max(0, Math.min(1, (game.now - fps.chargeStartedAt) / 1.05));
+    }
+
+    if (fps.isCharging && !chargeHeld) {
+      const power = Math.max(0.35, fps.chargePower);
+      fps.lastFireAt = game.now;
+      spawnFpsBolt(fps, power);
+      playChargeShotSfx(power);
+      triggerCameraShake(2.4 + power * 4.2, 0.13 + power * 0.15, -0.9, -0.55);
+      spawnScreenFlash('rgba(112, 231, 255, 0.6)', 0.08 + power * 0.08, 0.12 + power * 0.12);
+      fps.isCharging = false;
+      fps.chargePower = 0;
     }
 
     updateFpsBolts(dt, fps);
@@ -1755,9 +1788,13 @@
 
       let readiness;
       if (game.mission?.mode === 'fps') {
-        const elapsed = game.now - (game.mission?.fps?.lastFireAt || 0);
-        const cd = game.mission?.fps?.fireCooldown || 0.2;
-        readiness = Math.max(0, Math.min(1, elapsed / cd));
+        if (game.mission?.fps?.isCharging) {
+          readiness = game.mission?.fps?.chargePower || 0;
+        } else {
+          const elapsed = game.now - (game.mission?.fps?.lastFireAt || 0);
+          const cd = game.mission?.fps?.fireCooldown || 0.2;
+          readiness = Math.max(0, Math.min(1, elapsed / cd));
+        }
       } else if (player.isCharging) {
         readiness = player.currentCharge;
       } else {
@@ -1771,11 +1808,16 @@
         statusEl.dataset.state = 'fail';
       } else if (game.mission?.mode === 'fps') {
         const alive = game.mission.fps.enemies.filter((enemy) => enemy.alive).length;
-        statusEl.textContent =
-          alive > 0
-            ? `${game.mission.name} | Eliminate hostiles (${alive} left)`
-            : `${game.mission.name} | Reach extraction`;
-        statusEl.dataset.state = 'active';
+        if (game.mission.fps.isCharging) {
+          statusEl.textContent = `${game.mission.name} | Charge ${(game.mission.fps.chargePower * 100).toFixed(0)}% (RMB release)`;
+          statusEl.dataset.state = 'charge';
+        } else {
+          statusEl.textContent =
+            alive > 0
+              ? `${game.mission.name} | Eliminate hostiles (${alive} left)`
+              : `${game.mission.name} | Reach extraction`;
+          statusEl.dataset.state = 'active';
+        }
       } else if (game.mission?.bossActive && game.mission?.boss?.alive) {
         statusEl.textContent = `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))}`;
         statusEl.dataset.state = 'boss';
@@ -2868,12 +2910,28 @@
       if (game.scene === 'mission' && game.mission?.mode === 'fps' && document.pointerLockElement !== canvas) {
         canvas.requestPointerLock?.();
       }
+    } else if (event.button === 2) {
+      mouseRightDown = true;
+      if (game.scene === 'mission' && game.mission?.mode === 'fps') {
+        event.preventDefault();
+        if (document.pointerLockElement !== canvas) {
+          canvas.requestPointerLock?.();
+        }
+      }
     }
   });
 
   window.addEventListener('mouseup', (event) => {
     if (event.button === 0) {
       mouseLeftDown = false;
+    } else if (event.button === 2) {
+      mouseRightDown = false;
+    }
+  });
+
+  canvas.addEventListener('contextmenu', (event) => {
+    if (game.scene === 'mission' && game.mission?.mode === 'fps') {
+      event.preventDefault();
     }
   });
 
