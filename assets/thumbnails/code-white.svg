@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#19345f"/>
+      <stop offset="1" stop-color="#0b1c34"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <rect x="22" y="22" width="596" height="316" rx="12" fill="#0d1a31" stroke="#5a7caf" stroke-opacity="0.75"/>
+
+  <text x="42" y="60" fill="#f2f6ff" font-family="Segoe UI, Arial" font-size="24" font-weight="700">CODE WHITE</text>
+  <text x="42" y="82" fill="#bcd0ef" font-family="Segoe UI, Arial" font-size="12">Tahoe Rescue</text>
+
+  <rect x="42" y="100" width="556" height="48" rx="8" fill="#17294b" stroke="#4f6ea2"/>
+  <rect x="42" y="156" width="556" height="18" rx="6" fill="#122648" stroke="#416299"/>
+
+  <rect x="42" y="186" width="132" height="28" rx="8" fill="#14284d" stroke="#416299"/>
+  <rect x="182" y="186" width="132" height="28" rx="8" fill="#14284d" stroke="#416299"/>
+  <rect x="322" y="186" width="132" height="28" rx="8" fill="#14284d" stroke="#416299"/>
+  <rect x="462" y="186" width="136" height="28" rx="8" fill="#14284d" stroke="#416299"/>
+
+  <rect x="42" y="224" width="174" height="96" rx="8" fill="#132447" stroke="#36588f"/>
+  <rect x="226" y="224" width="174" height="96" rx="8" fill="#132447" stroke="#36588f"/>
+  <rect x="410" y="224" width="188" height="96" rx="8" fill="#132447" stroke="#36588f"/>
+
+  <rect x="58" y="292" width="142" height="8" rx="4" fill="#67f0d1"/>
+  <circle cx="528" cy="264" r="12" fill="#e6f3ff"/>
+  <circle cx="552" cy="264" r="12" fill="#e6f3ff"/>
+  <rect x="512" y="278" width="56" height="10" rx="5" fill="#ff8e8e"/>
+</svg>

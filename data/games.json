@@ -110,5 +110,24 @@
     "featured": false,
     "status": "published",
     "durationEstimate": "9 min"
+  },
+  {
+    "id": "code-white-2026-02-18",
+    "slug": "code-white-18feb26",
+    "title": "Code White",
+    "releaseDate": "2026-02-18",
+    "description": "Stabilize rescue routes through whiteout conditions and keep responders moving under pressure.",
+    "newsTopic": "Tahoe emergency response updates",
+    "tags": [
+      "Strategy",
+      "Simulation",
+      "Crisis"
+    ],
+    "thumbnailUrl": "/assets/thumbnails/code-white.svg",
+    "bannerUrl": "",
+    "gamePath": "/games/Code-White-18Feb26/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "8 min"
   }
 ]
