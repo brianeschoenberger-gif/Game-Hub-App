@@ -2236,32 +2236,160 @@
 
   function drawPlayer() {
     const hitFlash = game.scene === 'mission' && game.now < player.invulnUntil && Math.floor(game.now * 20) % 2 === 0;
+    const moving = Math.abs(player.vx) > 35 && (game.scene === 'hub' || game.mission?.mode !== 'fps');
+    const speedNorm = Math.max(0.25, Math.min(1.4, Math.abs(player.vx) / Math.max(1, player.speed)));
+    const walkT = game.now * (moving ? (8 + speedNorm * 4) : 2.2);
+    const legSwing = moving ? Math.sin(walkT) * 5.6 : Math.sin(walkT) * 0.9;
+    const armSwing = moving ? Math.cos(walkT) * 3.8 : Math.cos(walkT) * 0.6;
+    const breath = Math.sin(game.now * 3.4) * 1.1;
+    const chargePulse = player.isCharging ? Math.sin(game.now * 20) * 0.5 + 0.5 : 0;
+    const shotKick = Math.max(0, 1 - (game.now - player.lastShotAt) * 10);
+
+    const baseX = player.x + player.w / 2;
+    const baseY = player.y + 7 + breath;
 
     ctx.save();
-    ctx.translate(player.x, player.y);
+    ctx.translate(baseX, baseY);
+    ctx.scale(player.facing, 1);
 
-    ctx.fillStyle = hitFlash ? '#ff8ea8' : '#8ac9ff';
-    ctx.fillRect(9, 8, 24, 22);
-    ctx.fillRect(5, 28, 32, 24);
+    ctx.fillStyle = 'rgba(4, 10, 18, 0.42)';
+    ctx.beginPath();
+    ctx.ellipse(0, 50, 20, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    ctx.fillStyle = '#d5ecff';
-    ctx.fillRect(13, 12, 16, 8);
+    ctx.save();
+    ctx.translate(-8, 34 + Math.max(0, legSwing * 0.2));
+    ctx.rotate((-0.14 - legSwing * 0.013) * 0.65);
+    const backLegGrad = ctx.createLinearGradient(0, -2, 0, 28);
+    backLegGrad.addColorStop(0, '#8f9aa8');
+    backLegGrad.addColorStop(1, '#4b5868');
+    ctx.fillStyle = backLegGrad;
+    ctx.fillRect(-8, -2, 14, 26);
+    ctx.fillStyle = '#0e1823';
+    ctx.fillRect(-10, 20, 18, 8);
+    ctx.restore();
 
-    ctx.fillStyle = '#4ea8ff';
-    ctx.fillRect(player.facing > 0 ? 27 : -6, 30, 24, 14);
+    ctx.save();
+    ctx.translate(8, 33);
+    ctx.rotate(0.18 + legSwing * 0.02);
+    const frontLegGrad = ctx.createLinearGradient(0, 0, 0, 31);
+    frontLegGrad.addColorStop(0, '#2f8df1');
+    frontLegGrad.addColorStop(1, '#11418d');
+    ctx.fillStyle = frontLegGrad;
+    ctx.fillRect(-8, 0, 16, 29);
+    ctx.fillStyle = '#0b1725';
+    ctx.fillRect(-11, 24, 22, 9);
+    ctx.fillStyle = '#8dd4ff';
+    ctx.fillRect(-6, 3, 12, 4);
+    ctx.restore();
 
-    if (player.isCharging) {
-      ctx.fillStyle = '#9ef6ff';
-      ctx.globalAlpha = 0.4 + player.currentCharge * 0.6;
+    const coreGrad = ctx.createLinearGradient(0, 0, 0, 30);
+    coreGrad.addColorStop(0, hitFlash ? '#ffc4d1' : '#56aaf8');
+    coreGrad.addColorStop(1, hitFlash ? '#e7869e' : '#2053a7');
+    ctx.fillStyle = coreGrad;
+    ctx.fillRect(-13, 10, 26, 20);
+    ctx.fillStyle = '#8a98a8';
+    ctx.fillRect(-6, 22, 12, 10);
+    ctx.fillStyle = '#d2ecff';
+    ctx.fillRect(-8, 13, 16, 4);
+
+    const shoulderGrad = ctx.createLinearGradient(-18, 7, -2, 23);
+    shoulderGrad.addColorStop(0, '#61b7ff');
+    shoulderGrad.addColorStop(1, '#1f5daa');
+    ctx.fillStyle = shoulderGrad;
+    ctx.beginPath();
+    ctx.ellipse(-12, 16, 9, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(15, 18);
+    ctx.rotate(0.2 + armSwing * 0.02);
+    const armGrad = ctx.createLinearGradient(0, -4, 0, 20);
+    armGrad.addColorStop(0, '#a5b4c6');
+    armGrad.addColorStop(1, '#5a6878');
+    ctx.fillStyle = armGrad;
+    ctx.fillRect(-3, -4, 9, 20);
+    ctx.fillStyle = '#111d2a';
+    ctx.fillRect(-4, 14, 11, 8);
+    ctx.restore();
+
+    ctx.save();
+    const cannonY = 18 - armSwing * 0.5 + shotKick * 1.2;
+    ctx.translate(-21 - shotKick * 2.8, cannonY);
+    ctx.rotate(-0.08 - armSwing * 0.01);
+    const cannonGrad = ctx.createLinearGradient(-8, -8, 24, 8);
+    cannonGrad.addColorStop(0, '#2f8ced');
+    cannonGrad.addColorStop(1, '#163f88');
+    ctx.fillStyle = cannonGrad;
+    ctx.fillRect(-6, -8, 21, 16);
+    ctx.beginPath();
+    ctx.ellipse(-6, 0, 8, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(15, 0, 8, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#6e7b8c';
+    ctx.beginPath();
+    ctx.ellipse(20, 0, 8, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#171e2a';
+    ctx.beginPath();
+    ctx.ellipse(22, 0, 5, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (player.isCharging || shotKick > 0) {
+      ctx.globalAlpha = 0.35 + player.currentCharge * 0.4 + shotKick * 0.2;
+      ctx.fillStyle = '#86f0ff';
       ctx.beginPath();
-      ctx.arc(player.facing > 0 ? 52 : -6, 37, 10 + player.currentCharge * 8, 0, Math.PI * 2);
+      ctx.ellipse(22, 0, 10 + player.currentCharge * 8 + shotKick * 5, 10 + player.currentCharge * 8 + shotKick * 5, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
+    if (player.isCharging) {
+      ctx.strokeStyle = '#d8ffff';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.45 + chargePulse * 0.45;
+      ctx.beginPath();
+      ctx.arc(22, 0, 13 + player.currentCharge * 10 + chargePulse * 2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
 
-    ctx.fillStyle = '#9fd6ff';
-    ctx.fillRect(8, 52, 10, 6);
-    ctx.fillRect(26, 52, 10, 6);
+    ctx.save();
+    ctx.translate(0, 8 + breath * 0.25);
+    ctx.fillStyle = '#f0c39f';
+    ctx.fillRect(-5, -8, 10, 11);
+    ctx.fillStyle = '#1a1f26';
+    ctx.fillRect(0, -8, 5, 11);
+    ctx.fillStyle = '#a2b4c8';
+    ctx.fillRect(0, -10, 7, 14);
+    ctx.fillStyle = '#7f90a3';
+    ctx.fillRect(2, -8, 4, 10);
+    ctx.fillStyle = '#2e1b14';
+    ctx.beginPath();
+    ctx.moveTo(-6, -8);
+    ctx.lineTo(-1, -14);
+    ctx.lineTo(4, -12);
+    ctx.lineTo(0, -8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#14181f';
+    ctx.fillRect(-2, -4, 2, 1);
+    ctx.fillRect(2, -4, 2, 1);
+    ctx.fillStyle = '#ff4e4e';
+    ctx.fillRect(2, -4, 2, 1);
+    ctx.restore();
+
+    ctx.fillStyle = '#29558f';
+    ctx.fillRect(-7, 31, 14, 5);
+    ctx.fillStyle = '#5ea9ff';
+    ctx.fillRect(-5, 31, 10, 2);
+
+    if (hitFlash) {
+      ctx.fillStyle = 'rgba(255, 142, 168, 0.32)';
+      ctx.fillRect(-16, -6, 40, 58);
+    }
 
     ctx.restore();
   }
