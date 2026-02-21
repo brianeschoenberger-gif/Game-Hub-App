@@ -136,6 +136,12 @@ nav a {
   font-size: 1rem;
 }
 
+.card-content .card-created {
+  font-size: 0.78rem;
+  color: #c6d3ea;
+  margin: 0.35rem 0 0.15rem;
+}
+
 .card-content p {
   color: var(--muted);
   margin: 0.4rem 0;

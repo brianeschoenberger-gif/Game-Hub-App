@@ -4,6 +4,7 @@ import { gameUrl, playUrl, resolveGamePath } from './paths.js';
 export function gameCard(game) {
   const tags = game.tags.slice(0, 2).map((tag) => `<span class="tag">${tag}</span>`).join('');
   const thumbnailSrc = game.thumbnailUrl ? resolveGamePath(game.thumbnailUrl) : '';
+  const createdDate = formatDate(game.releaseDate);
   return `
     <a class="game-card" href="${gameUrl(game.slug)}" aria-label="View details for ${game.title}">
       <div class="game-thumb">
@@ -11,6 +12,7 @@ export function gameCard(game) {
       </div>
       <div class="card-content">
         <h3>${game.title}</h3>
+        <p class="card-created">Created ${createdDate}</p>
         <p>${game.description}</p>
         <p>${tags}</p>
       </div>
