@@ -117,48 +117,67 @@
       name: 'Level 2 - Sky Foundry',
       mode: '2d',
       visualThemeId: 'level2',
-      worldWidth: 4700,
+      worldWidth: 9400,
       spawn: { x: 110, y: 340 },
-      finishGate: { x: 3320, y: 250, w: 48, h: 220 },
+      finishGate: { x: 7640, y: 130, w: 52, h: 270 },
       blocks: [
-        { x: 0, y: 470, w: 560, h: 70 },
-        { x: 620, y: 430, w: 300, h: 28 },
-        { x: 980, y: 470, w: 420, h: 70 },
-        { x: 1460, y: 390, w: 260, h: 24 },
-        { x: 1760, y: 470, w: 420, h: 70 },
-        { x: 2240, y: 360, w: 220, h: 20 },
-        { x: 2520, y: 420, w: 220, h: 20 },
-        { x: 2820, y: 470, w: 560, h: 70 },
-        { x: 3460, y: 470, w: 1200, h: 70 },
-        { x: 3600, y: 360, w: 130, h: 20 },
-        { x: 3900, y: 330, w: 130, h: 20 }
+        { x: 0, y: 470, w: 620, h: 70 },
+        { x: 720, y: 470, w: 640, h: 70 },
+        { x: 1490, y: 470, w: 560, h: 70 },
+        { x: 2180, y: 420, w: 260, h: 22 },
+        { x: 2460, y: 365, w: 220, h: 22 },
+        { x: 2730, y: 315, w: 220, h: 20 },
+        { x: 3000, y: 265, w: 220, h: 20 },
+        { x: 3270, y: 220, w: 220, h: 20 },
+        { x: 3540, y: 175, w: 220, h: 20 },
+        { x: 3810, y: 130, w: 260, h: 20 },
+        { x: 3460, y: 250, w: 160, h: 18 },
+        { x: 3240, y: 310, w: 140, h: 18 },
+        { x: 4020, y: 470, w: 760, h: 70 },
+        { x: 4880, y: 470, w: 640, h: 70 },
+        { x: 5640, y: 430, w: 220, h: 20 },
+        { x: 5900, y: 380, w: 220, h: 20 },
+        { x: 6160, y: 330, w: 220, h: 20 },
+        { x: 6420, y: 280, w: 220, h: 20 },
+        { x: 6680, y: 230, w: 220, h: 20 },
+        { x: 6940, y: 185, w: 220, h: 20 },
+        { x: 7200, y: 145, w: 220, h: 20 },
+        { x: 6920, y: 245, w: 160, h: 18 },
+        { x: 6660, y: 305, w: 140, h: 18 },
+        { x: 7420, y: 470, w: 1960, h: 70 },
+        { x: 7600, y: 250, w: 70, h: 220 }
       ],
       crates: [
-        { x: 560, y: 434, w: 36, h: 36, hp: 2 },
-        { x: 920, y: 394, w: 36, h: 36, hp: 2 },
-        { x: 1400, y: 434, w: 36, h: 36, hp: 2 },
-        { x: 1720, y: 434, w: 36, h: 36, hp: 2 },
-        { x: 2460, y: 384, w: 36, h: 36, hp: 2 },
-        { x: 2740, y: 434, w: 36, h: 36, hp: 2 },
-        { x: 3380, y: 434, w: 36, h: 36, hp: 2 },
-        { x: 3740, y: 324, w: 36, h: 36, hp: 3 },
-        { x: 4030, y: 434, w: 36, h: 36, hp: 3 }
+        { x: 680, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 1360, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 2430, y: 329, w: 36, h: 36, hp: 2 },
+        { x: 3005, y: 229, w: 36, h: 36, hp: 2 },
+        { x: 3550, y: 139, w: 36, h: 36, hp: 3 },
+        { x: 4790, y: 434, w: 36, h: 36, hp: 2 },
+        { x: 5610, y: 394, w: 36, h: 36, hp: 2 },
+        { x: 6140, y: 294, w: 36, h: 36, hp: 2 },
+        { x: 6890, y: 149, w: 36, h: 36, hp: 3 },
+        { x: 7390, y: 434, w: 36, h: 36, hp: 3 }
       ],
       enemySpawns: [
-        { x: 760, y: 378, minX: 640, maxX: 880, hp: 4, speed: 115 },
-        { x: 1210, y: 418, minX: 1020, maxX: 1370, hp: 4, speed: 110 },
-        { x: 1880, y: 418, minX: 1800, maxX: 2150, hp: 5, speed: 120 },
-        { x: 2900, y: 418, minX: 2860, maxX: 3370, hp: 5, speed: 122 }
+        { x: 890, y: 418, minX: 760, maxX: 1320, hp: 4, speed: 115 },
+        { x: 1710, y: 418, minX: 1520, maxX: 2030, hp: 4, speed: 112 },
+        { x: 2520, y: 313, minX: 2470, maxX: 2660, hp: 5, speed: 120 },
+        { x: 3300, y: 168, minX: 3280, maxX: 3480, hp: 5, speed: 124 },
+        { x: 4200, y: 418, minX: 4060, maxX: 4740, hp: 5, speed: 122 },
+        { x: 5750, y: 378, minX: 5660, maxX: 5860, hp: 5, speed: 126 },
+        { x: 6670, y: 178, minX: 6620, maxX: 6880, hp: 6, speed: 130 },
+        { x: 7420, y: 418, minX: 7440, maxX: 8060, hp: 6, speed: 132 }
       ],
       boss: {
-        x: 4040,
+        x: 8500,
         y: 300,
         w: 128,
         h: 142,
-        hp: 92,
-        speed: 125,
-        moveMinX: 3460,
-        moveMaxX: 4560,
+        hp: 108,
+        speed: 130,
+        moveMinX: 7900,
+        moveMaxX: 9260,
         attackInterval: 0.9,
         projectileSpeeds: [290, 330, 370, 410],
         spread: [-0.33, -0.12, 0.12, 0.33],
@@ -345,6 +364,7 @@
     now: 0,
     lastTime: 0,
     cameraX: 0,
+    cameraY: 0,
     feedbackUntil: 0,
     feedbackText: '',
     dialogueUntil: 0,
@@ -613,6 +633,7 @@
         name: config.name,
         mode: 'fps',
         cameraX: 0,
+        cameraY: 0,
         hitSparks: [],
         impactRings: [],
         lightFlashes: [],
@@ -659,6 +680,7 @@
       })),
       bossTemplate: { ...config.boss },
       cameraX: 0,
+      cameraY: 0,
       projectiles: [],
       enemyProjectiles: [],
       hitSparks: [],
@@ -744,6 +766,8 @@
     game.scene = 'hub';
     game.phase = 'hub';
     game.mission = null;
+    game.cameraX = 0;
+    game.cameraY = 0;
 
     player.x = hub.spawn.x;
     player.y = hub.spawn.y;
@@ -768,6 +792,8 @@
     game.phase = 'mission';
     game.activeMissionId = missionId;
     game.mission = createMissionRun(missionId);
+    game.cameraX = 0;
+    game.cameraY = 0;
 
     if (game.mission.mode === 'fps') {
       player.x = game.mission.fps.spawn.x;
@@ -1767,6 +1793,11 @@
     const clamped = Math.max(0, Math.min(mission.worldWidth - WIDTH, targetX));
     mission.cameraX += (clamped - mission.cameraX) * Math.min(1, dt * 8);
     game.cameraX = mission.cameraX;
+
+    const targetY = Math.min(0, player.y - HEIGHT * 0.62);
+    const clampedY = Math.max(-260, Math.min(0, targetY));
+    mission.cameraY += (clampedY - mission.cameraY) * Math.min(1, dt * 7);
+    game.cameraY = mission.cameraY;
   }
 
   function fpsTileAt(grid, x, y) {
@@ -2143,6 +2174,7 @@
 
   function drawMissionBackground() {
     const x = game.cameraX;
+    const y = game.cameraY;
     const theme = activeTheme();
     const sky = ctx.createLinearGradient(0, 0, 0, HEIGHT);
     sky.addColorStop(0, theme.skyTop);
@@ -2152,28 +2184,28 @@
 
     ctx.fillStyle = theme.haze;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    drawTextureOverlay(visualAssets.noise, 0.07, 3.6, -x * 0.18, game.now * 10);
+    drawTextureOverlay(visualAssets.noise, 0.07, 3.6, -x * 0.18, game.now * 10 - y * 0.4);
 
     ctx.fillStyle = 'rgba(14, 40, 58, 0.9)';
     for (let i = 0; i < 16; i += 1) {
       const px = (i * 360 - (x * 0.22) % 360) - 50;
-      ctx.fillRect(px, 214, 82, 340);
+      ctx.fillRect(px, 214 - y * 0.2, 82, 340);
       ctx.fillStyle = 'rgba(42, 92, 111, 0.35)';
-      ctx.fillRect(px + 10, 230, 14, 280);
+      ctx.fillRect(px + 10, 230 - y * 0.22, 14, 280);
       ctx.fillStyle = 'rgba(14, 40, 58, 0.9)';
     }
 
     ctx.fillStyle = 'rgba(32, 90, 114, 0.76)';
     for (let i = 0; i < 22; i += 1) {
       const px = (i * 248 - (x * 0.52) % 248) - 70;
-      ctx.fillRect(px, 290, 52, 250);
-      ctx.fillRect(px + 8, 318, 36, 8);
+      ctx.fillRect(px, 290 - y * 0.32, 52, 250);
+      ctx.fillRect(px + 8, 318 - y * 0.32, 36, 8);
     }
 
     ctx.strokeStyle = 'rgba(111, 209, 255, 0.21)';
     ctx.lineWidth = 3;
     for (let i = 0; i < 9; i += 1) {
-      const py = 160 + i * 40;
+      const py = 160 + i * 40 - y * 0.16;
       ctx.beginPath();
       ctx.moveTo(-30 - (x * 0.12) % 120, py);
       ctx.lineTo(WIDTH + 40, py + 34);
@@ -2385,8 +2417,9 @@
     }
 
     const camX = mission.cameraX;
+    const camY = mission.cameraY || 0;
     ctx.save();
-    ctx.translate(-camX, 0);
+    ctx.translate(-camX, -camY);
 
     for (const block of mission.blocks) {
       const blockGrad = ctx.createLinearGradient(block.x, block.y, block.x, block.y + block.h);
@@ -2456,15 +2489,15 @@
       const barW = 290;
       const ratio = Math.max(0, mission.boss.hp) / mission.boss.maxHp;
       ctx.fillStyle = '#180a14';
-      ctx.fillRect(camX + WIDTH - barW - 26, 20, barW, 18);
+      ctx.fillRect(camX + WIDTH - barW - 26, camY + 20, barW, 18);
       ctx.fillStyle = '#ff4d80';
-      ctx.fillRect(camX + WIDTH - barW - 26, 20, barW * ratio, 18);
+      ctx.fillRect(camX + WIDTH - barW - 26, camY + 20, barW * ratio, 18);
       ctx.strokeStyle = '#ff94b5';
-      ctx.strokeRect(camX + WIDTH - barW - 26, 20, barW, 18);
+      ctx.strokeRect(camX + WIDTH - barW - 26, camY + 20, barW, 18);
 
       ctx.fillStyle = '#ffd2df';
       ctx.font = 'bold 15px Segoe UI';
-      ctx.fillText(mission.name, camX + WIDTH - barW - 24, 14);
+      ctx.fillText(mission.name, camX + WIDTH - barW - 24, camY + 14);
     }
 
     drawPlayer();
