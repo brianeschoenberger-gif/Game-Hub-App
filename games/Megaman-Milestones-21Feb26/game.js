@@ -466,6 +466,31 @@
   let mouseRightDown = false;
   let level3CutsceneOverlay = null;
   const shellEl = document.querySelector('.game-shell');
+  const musicState = {
+    trackId: null,
+    step: 0,
+    nextNoteAt: 0,
+    beat: 0.34,
+    gain: null
+  };
+
+  const MUSIC_TRACKS = {
+    level1: {
+      beat: 0.36,
+      lead: [52, null, 55, null, 59, null, 55, null, 52, null, 50, null, 47, null, 50, null],
+      bass: [40, null, null, null, 43, null, null, null, 38, null, null, null, 35, null, null, null]
+    },
+    level2: {
+      beat: 0.32,
+      lead: [50, 53, null, 57, 60, null, 57, 53, 50, 53, null, 57, 62, null, 57, 53],
+      bass: [38, null, 38, null, 41, null, 41, null, 36, null, 36, null, 33, null, 33, null]
+    },
+    level3: {
+      beat: 0.28,
+      lead: [45, null, 48, 50, null, 52, 53, null, 50, null, 48, 45, null, 43, 41, null],
+      bass: [33, null, null, 36, null, null, 31, null, null, 33, null, null, 29, null, null, 31]
+    }
+  };
 
   const VISUAL_THEME = {
     hub: {
@@ -911,6 +936,7 @@
     clearLevel3CutsceneOverlay();
     game.phase = 'cutscene';
     clearTransientInputState();
+    stopBackgroundMusic();
 
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
@@ -1009,6 +1035,7 @@
     player.wallJumpLockUntil = 0;
     player.isAirDashing = false;
     player.airDashCharges = player.airDashUnlocked ? player.airDashMaxCharges : 0;
+    stopBackgroundMusic();
 
     if (message) {
       setFeedback(message, 2.2);
@@ -1156,6 +1183,7 @@
     keys.clear();
     justPressed.clear();
     mouseLeftDown = false;
+    startBackgroundMusic(trackForMission(missionId));
     mouseRightDown = false;
     player.isCharging = false;
     player.currentCharge = 0;
@@ -1176,6 +1204,115 @@
       audioContext.resume().catch(() => {});
     }
     return audioContext;
+  }
+
+  function midiToHz(note) {
+    return 440 * (2 ** ((note - 69) / 12));
+  }
+
+  function trackForMission(missionId) {
+    if (missionId === LEVEL_1_ID) {
+      return 'level1';
+    }
+    if (missionId === LEVEL_2_ID) {
+      return 'level2';
+    }
+    if (missionId === LEVEL_3_ID) {
+      return 'level3';
+    }
+    return null;
+  }
+
+  function stopBackgroundMusic() {
+    if (musicState.gain && audioContext) {
+      const now = audioContext.currentTime;
+      musicState.gain.gain.cancelScheduledValues(now);
+      musicState.gain.gain.setTargetAtTime(0.0001, now, 0.04);
+    }
+    musicState.trackId = null;
+    musicState.step = 0;
+    musicState.nextNoteAt = 0;
+  }
+
+  function startBackgroundMusic(trackId) {
+    if (!trackId) {
+      stopBackgroundMusic();
+      return;
+    }
+    const ctxAudio = ensureAudioContext();
+    if (!ctxAudio) {
+      return;
+    }
+
+    if (!musicState.gain) {
+      musicState.gain = ctxAudio.createGain();
+      musicState.gain.gain.value = 0.0001;
+      musicState.gain.connect(ctxAudio.destination);
+    }
+
+    if (musicState.trackId === trackId) {
+      return;
+    }
+
+    const track = MUSIC_TRACKS[trackId];
+    if (!track) {
+      stopBackgroundMusic();
+      return;
+    }
+
+    musicState.trackId = trackId;
+    musicState.step = 0;
+    musicState.beat = track.beat || 0.34;
+    musicState.nextNoteAt = ctxAudio.currentTime + 0.02;
+    musicState.gain.gain.cancelScheduledValues(ctxAudio.currentTime);
+    musicState.gain.gain.setTargetAtTime(0.045, ctxAudio.currentTime, 0.08);
+  }
+
+  function scheduleMusicTone(time, note, length, type = 'triangle', amp = 0.14, detune = 0) {
+    if (!audioContext || !musicState.gain || note == null) {
+      return;
+    }
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(midiToHz(note), time);
+    if (detune) {
+      osc.detune.setValueAtTime(detune, time);
+    }
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, amp), time + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.max(0.06, length));
+    osc.connect(gain);
+    gain.connect(musicState.gain);
+    osc.start(time);
+    osc.stop(time + Math.max(0.07, length + 0.03));
+  }
+
+  function updateBackgroundMusic() {
+    if (!audioContext || !musicState.trackId || !musicState.gain) {
+      return;
+    }
+    const track = MUSIC_TRACKS[musicState.trackId];
+    if (!track) {
+      return;
+    }
+
+    const lookahead = audioContext.currentTime + 0.12;
+    while (musicState.nextNoteAt <= lookahead) {
+      const idx = musicState.step % track.lead.length;
+      const leadNote = track.lead[idx];
+      const bassNote = track.bass[idx % track.bass.length];
+      const beat = musicState.beat;
+      if (leadNote != null) {
+        scheduleMusicTone(musicState.nextNoteAt, leadNote, beat * 0.86, 'triangle', 0.12, -2);
+        scheduleMusicTone(musicState.nextNoteAt + 0.005, leadNote + 12, beat * 0.52, 'sine', 0.05, 3);
+      }
+      if (bassNote != null) {
+        scheduleMusicTone(musicState.nextNoteAt, bassNote, beat * 0.96, 'sawtooth', 0.08, 0);
+      }
+      musicState.step += 1;
+      musicState.nextNoteAt += beat;
+    }
   }
 
   function triggerCameraShake(magnitude = 0, duration = 0.18, dirX = 0, dirY = 0) {
@@ -2673,13 +2810,15 @@
   function spawnFpsBolt(fps, power = 0) {
     const clamped = Math.max(0, Math.min(1, power));
     const speed = 11.5 + clamped * 2.6;
+    const radius = clamped >= 0.35 ? 0.24 + clamped * 0.95 : 0.17 + clamped * 0.2;
     fps.bolts.push({
       x: player.x,
       y: player.y,
       vx: Math.cos(fps.yaw) * speed,
       vy: Math.sin(fps.yaw) * speed,
       life: 0.8 + clamped * 0.2,
-      radius: 0.17 + clamped * 0.16,
+      radius,
+      power: clamped,
       damage: 1 + clamped * 3
     });
   }
@@ -2964,6 +3103,7 @@
       }
       updateCameraShake(dt);
       updateRenderFx(dt);
+      updateBackgroundMusic();
       updateHud();
       return;
     }
@@ -2972,6 +3112,7 @@
       updateHubInput();
       updateCameraShake(dt);
       updateRenderFx(dt);
+      updateBackgroundMusic();
       updateHud();
       return;
     }
@@ -2985,6 +3126,7 @@
       }
       updateCameraShake(dt);
       updateRenderFx(dt);
+      updateBackgroundMusic();
       updateHud();
       return;
     }
@@ -2996,6 +3138,7 @@
       }
       updateCameraShake(dt);
       updateRenderFx(dt);
+      updateBackgroundMusic();
       updateHud();
       return;
     }
@@ -3017,6 +3160,7 @@
     }
     updateCameraShake(dt);
     updateRenderFx(dt);
+    updateBackgroundMusic();
     updateHud();
   }
 
@@ -3251,9 +3395,24 @@
       const sx = (wrapped / fov + 0.5) * w;
       const s = Math.min(h * 0.2, h / Math.max(0.6, dist * 2.3));
       const y = h / 2;
+      const boltScale = 0.9 + bolt.radius * 2.7;
+      const coreR = Math.max(2.5, s * 0.18 * boltScale);
+      const glowR = coreR * (1.8 + (bolt.power || 0) * 0.7);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = '#9af7ff';
+      ctx.beginPath();
+      ctx.arc(sx, y, glowR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
       ctx.fillStyle = '#8ef5ff';
       ctx.beginPath();
-      ctx.arc(sx, y, Math.max(2.5, s * 0.18), 0, Math.PI * 2);
+      ctx.arc(sx, y, coreR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#e8ffff';
+      ctx.beginPath();
+      ctx.arc(sx - coreR * 0.28, y - coreR * 0.24, Math.max(1.2, coreR * 0.38), 0, Math.PI * 2);
       ctx.fill();
     }
 
