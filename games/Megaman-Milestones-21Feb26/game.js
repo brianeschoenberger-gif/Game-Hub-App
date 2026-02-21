@@ -17,6 +17,7 @@
 
   const LEGACY_RAPID_KEY = 'robotCannonRapidShotUnlocked';
   const PROFILE_KEY = 'robotCannonProfileM2';
+  const FPS_MAX_PITCH = 0.75;
 
   const LEVEL_1_ID = 'reactor_sweep';
   const LEVEL_2_ID = 'sky_foundry';
@@ -402,6 +403,7 @@
           spawn: parsed.spawn,
           exit: parsed.exit,
           yaw: 0,
+          pitch: 0,
           fireCooldown: config.fps.fireCooldown,
           lastFireAt: -999,
           moveSpeed: config.fps.moveSpeed,
@@ -1360,6 +1362,12 @@
     if (keys.has('e') || keys.has('E')) {
       fps.yaw += fps.lookSpeed * 36;
     }
+    if (keys.has('ArrowUp')) {
+      fps.pitch = Math.max(-FPS_MAX_PITCH, fps.pitch - fps.lookSpeed * 30);
+    }
+    if (keys.has('ArrowDown')) {
+      fps.pitch = Math.min(FPS_MAX_PITCH, fps.pitch + fps.lookSpeed * 30);
+    }
 
     const wantsShoot = isRapidShootHeld() || isChargeShootHeld();
     if (wantsShoot && game.now - fps.lastFireAt >= fps.fireCooldown) {
@@ -1667,18 +1675,20 @@
     const maxDepth = 18;
     const w = WIDTH;
     const h = HEIGHT;
+    const pitchOffset = fps.pitch * (h * 0.42);
+    const horizon = h * 0.5 + pitchOffset;
 
-    const sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+    const sky = ctx.createLinearGradient(0, 0, 0, Math.max(0, horizon));
     sky.addColorStop(0, '#42608f');
     sky.addColorStop(1, '#1b2e4c');
     ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, w, h * 0.55);
+    ctx.fillRect(0, 0, w, Math.max(0, horizon));
 
-    const floor = ctx.createLinearGradient(0, h * 0.5, 0, h);
+    const floor = ctx.createLinearGradient(0, Math.min(h, horizon), 0, h);
     floor.addColorStop(0, '#1a1d28');
     floor.addColorStop(1, '#0b0e14');
     ctx.fillStyle = floor;
-    ctx.fillRect(0, h * 0.5, w, h * 0.5);
+    ctx.fillRect(0, Math.min(h, horizon), w, h - Math.min(h, horizon));
 
     for (let x = 0; x < w; x += 1) {
       const camX = (x / w - 0.5) * fov;
@@ -1686,7 +1696,7 @@
       const depth = castFpsRay(grid, player.x, player.y, angle, maxDepth);
       const corrected = depth * Math.cos(camX);
       const wallH = Math.min(h, (h / Math.max(0.001, corrected)) * 0.85);
-      const y1 = (h - wallH) / 2;
+      const y1 = (h - wallH) / 2 + pitchOffset;
       const shade = Math.max(0.16, 1 - corrected / 11);
       const c = Math.floor(125 * shade);
       ctx.fillStyle = `rgb(${c}, ${Math.floor(c * 1.18)}, ${Math.floor(c * 1.52)})`;
@@ -1708,7 +1718,7 @@
       }
       const screenX = (wrapped / fov + 0.5) * w;
       const size = Math.min(h * 0.55, h / Math.max(0.6, dist));
-      const y = h / 2 - size * 0.55;
+      const y = h / 2 - size * 0.55 + pitchOffset;
       ctx.fillStyle = enemy.hitFlashUntil > game.now ? '#ffe0ae' : '#ffb36a';
       ctx.fillRect(screenX - size * 0.22, y, size * 0.44, size * 0.68);
       ctx.fillStyle = '#401f12';
@@ -1725,7 +1735,7 @@
       const sx = (exWrapped / fov + 0.5) * w;
       const s = Math.min(h * 0.3, h / Math.max(0.8, exDist));
       ctx.fillStyle = canExit ? 'rgba(115, 255, 196, 0.9)' : 'rgba(255, 146, 107, 0.85)';
-      ctx.fillRect(sx - s * 0.13, h / 2 - s * 0.5, s * 0.26, s);
+      ctx.fillRect(sx - s * 0.13, h / 2 - s * 0.5 + pitchOffset, s * 0.26, s);
     }
   }
 
@@ -2035,6 +2045,8 @@
   window.addEventListener('mousemove', (event) => {
     if (game.scene === 'mission' && game.mission?.mode === 'fps' && document.pointerLockElement === canvas) {
       game.mission.fps.yaw += event.movementX * game.mission.fps.lookSpeed;
+      game.mission.fps.pitch += event.movementY * game.mission.fps.lookSpeed;
+      game.mission.fps.pitch = Math.max(-FPS_MAX_PITCH, Math.min(FPS_MAX_PITCH, game.mission.fps.pitch));
     }
   });
 
