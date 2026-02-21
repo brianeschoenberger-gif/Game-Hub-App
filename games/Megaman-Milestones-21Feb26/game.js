@@ -1004,6 +1004,19 @@
     return game.now - player.lastShotAt >= player.cooldownSeconds;
   }
 
+  function clearTransientInputState() {
+    keys.clear();
+    justPressed.clear();
+    mouseLeftDown = false;
+    mouseRightDown = false;
+    player.isCharging = false;
+    player.currentCharge = 0;
+    if (game.mission?.mode === 'fps' && game.mission?.fps) {
+      game.mission.fps.isCharging = false;
+      game.mission.fps.chargePower = 0;
+    }
+  }
+
   function ensureAudioContext() {
     if (!audioContext) {
       const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
@@ -3730,6 +3743,16 @@
     keys.delete(event.key);
   });
 
+  window.addEventListener('blur', () => {
+    clearTransientInputState();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') {
+      clearTransientInputState();
+    }
+  });
+
   window.addEventListener('mousedown', (event) => {
     if (event.button === 0) {
       mouseLeftDown = true;
@@ -3758,6 +3781,12 @@
   canvas.addEventListener('contextmenu', (event) => {
     if (game.scene === 'mission' && game.mission?.mode === 'fps') {
       event.preventDefault();
+    }
+  });
+
+  document.addEventListener('pointerlockchange', () => {
+    if (game.scene === 'mission' && game.mission?.mode === 'fps' && document.pointerLockElement !== canvas) {
+      clearTransientInputState();
     }
   });
 
