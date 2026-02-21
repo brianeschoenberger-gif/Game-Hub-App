@@ -201,7 +201,11 @@
     chargeUnlocked: false,
     isCharging: false,
     chargeStartedAt: 0,
-    currentCharge: 0
+    currentCharge: 0,
+    jumpCount: 0,
+    maxJumps: 2,
+    wallDir: 0,
+    wallJumpLockUntil: 0
   };
 
   function createDefaultMissions() {
@@ -664,6 +668,9 @@
     player.invulnUntil = 0;
     player.isCharging = false;
     player.currentCharge = 0;
+    player.jumpCount = 0;
+    player.wallDir = 0;
+    player.wallJumpLockUntil = 0;
 
     if (message) {
       setFeedback(message, 2.2);
@@ -692,6 +699,9 @@
     player.cooldownSeconds = 0.28;
     player.isCharging = false;
     player.currentCharge = 0;
+    player.jumpCount = 0;
+    player.wallDir = 0;
+    player.wallJumpLockUntil = 0;
     player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
     mouseLeftDown = false;
 
@@ -1003,7 +1013,41 @@
     return justPressed.has('e') || justPressed.has('E');
   }
 
+  function tryMissionJump() {
+    if (game.scene !== 'mission' || game.mission?.mode === 'fps' || game.phase !== 'mission') {
+      return false;
+    }
+
+    if (player.grounded) {
+      player.vy = -player.jumpSpeed;
+      player.grounded = false;
+      player.jumpCount = 1;
+      return true;
+    }
+
+    if (player.wallDir !== 0 && game.now >= player.wallJumpLockUntil) {
+      player.vy = -player.jumpSpeed * 0.92;
+      player.vx = -player.wallDir * player.speed * 0.96;
+      player.wallJumpLockUntil = game.now + 0.12;
+      player.jumpCount = 1;
+      player.facing = player.vx >= 0 ? 1 : -1;
+      return true;
+    }
+
+    if (player.jumpCount < player.maxJumps) {
+      player.vy = -player.jumpSpeed * 0.9;
+      player.jumpCount += 1;
+      return true;
+    }
+
+    return false;
+  }
+
   function updateMissionInput(dt) {
+    if (wantsJumpPress()) {
+      tryMissionJump();
+    }
+
     const moveLeft = isMoveLeft();
     const moveRight = isMoveRight();
 
@@ -1252,8 +1296,10 @@
       }
       if (player.vx > 0) {
         player.x = block.x - player.w;
+        player.wallDir = 1;
       } else if (player.vx < 0) {
         player.x = block.x + block.w;
+        player.wallDir = -1;
       }
       player.vx = 0;
     }
@@ -1290,12 +1336,20 @@
       player.vy = MAX_FALL_SPEED;
     }
 
+    player.wallDir = 0;
     player.x += player.vx * dt;
     resolveMissionHorizontal();
 
     player.y += player.vy * dt;
     player.grounded = false;
     resolveMissionVertical();
+
+    if (player.grounded) {
+      player.jumpCount = 0;
+      player.wallJumpLockUntil = 0;
+    } else if (player.wallDir !== 0 && player.vy > 220) {
+      player.vy = 220;
+    }
 
     player.x = Math.max(0, Math.min(mission.worldWidth - player.w, player.x));
 
@@ -2976,11 +3030,6 @@
       justPressed.add(key);
     }
     keys.add(key);
-
-    if (wantsJumpPress() && player.grounded && game.phase === 'mission') {
-      player.vy = -player.jumpSpeed;
-      player.grounded = false;
-    }
 
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(key)) {
       event.preventDefault();
