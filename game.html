@@ -17,6 +17,9 @@
 
     <main id="game-detail" class="page-shell details-page"></main>
 
-    <script type="module" src="./src/game-detail.js"></script>
+    <script type="module">
+      import { APP_VERSION } from './src/app-version.js';
+      import(`./src/game-detail.js?v=${APP_VERSION}`);
+    </script>
   </body>
 </html>

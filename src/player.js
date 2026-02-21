@@ -2,6 +2,16 @@ import { findGame, loadGames } from './data.js';
 import { resolveGamePath } from './paths.js';
 import { escapeHtml } from './sanitize.js';
 import { emptyState } from './ui.js';
+import { APP_VERSION } from './app-version.js';
+
+function withVersion(url, enabled = true) {
+  if (!enabled) {
+    return url;
+  }
+  const parsed = new URL(url);
+  parsed.searchParams.set('v', APP_VERSION);
+  return parsed.toString();
+}
 
 async function renderPlayer() {
   const root = document.querySelector('#player-page');
@@ -24,7 +34,7 @@ async function renderPlayer() {
     const pageTitle = String(game.title ?? '');
     const safeTitle = escapeHtml(game.title);
     const safeTopic = escapeHtml(game.newsTopic);
-    const safeGameUrl = resolveGamePath(game.gamePath);
+    const safeGameUrl = withVersion(resolveGamePath(game.gamePath), !/^https?:\/\//i.test(game.gamePath));
 
     document.title = `Play ${pageTitle} - Daily Arcade`;
     root.innerHTML = `
