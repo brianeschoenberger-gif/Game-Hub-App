@@ -1,101 +1,103 @@
-# Product Brief: Multi-Genre "Mega Man Bass" Inspired Game
+# Product Brief: Robot Cannon Platformer (Milestone-Driven)
 
-## Vision
-Build a staged, playable game experience inspired by classic Mega Man pacing, starting with a tight **2D action-platformer** MVP and expanding over time into:
-1. **2D RPG-style progression layer** (town/dialogue/quests/light stats), then
-2. **First-person perspective chapters** for later game phases.
+## Product Direction
+Create a multi-phase action game that starts as a polished **2D platformer**, then evolves into a **2D RPG-style progression layer**, and eventually includes **first-person gameplay sections**.
 
-The goal is to ship in small, playable milestones where each phase is fun on its own and reuses as much code/content as possible.
+For visual identity, the hero should be an **original robot-style character** (not a direct Mega Man clone) with a **large laser cannon arm**.
 
 ---
 
-## Milestone Roadmap (High Level)
+## Confirmed Design Decisions (From Your Feedback)
 
-### Milestone 1 (Now): 2D Platformer Playable Demo (MVP)
-A short, polished "feel test" demo focused on movement + cannon shooting.
+- Character style: robot protagonist with a large laser cannon arm.
+- Milestone 1 includes a **mini-boss at the end of Level 1**.
+- Weapon progression starts immediately:
+  - base weapon starts with **single-shot or double-shot with cooldown**,
+  - defeating the Milestone 1 mini-boss unlocks **rapid shot**,
+  - later milestones continue adding new cannon abilities.
+
+---
+
+## Milestone Roadmap
+
+### Milestone 1 (Current): 2D Platformer MVP
+Deliver a complete, short demo that proves movement + shooting + progression reward loop.
 
 ### Milestone 2: 2D RPG Layer
-Add hub areas, NPC dialogue, mission flow, and persistent unlocks tied to platformer progression.
+Add traversal hubs, NPC dialogue, mission flow, and persistent progression systems.
 
-### Milestone 3: First-Person Sections
-Introduce first-person maps/combat/exploration as a mode transition and late-game expansion.
+### Milestone 3: First-Person Expansion
+Introduce first-person maps/combat to represent later-game mode shifts.
 
 ---
 
-## Milestone 1: Reasonably Doable MVP Scope
+## Milestone 1 MVP Scope (Implementation-Ready)
 
-### Core Player Experience
-- Side-scrolling 2D level with camera follow.
-- Character can:
+### Core Gameplay
+- Side-scrolling 2D platformer level with camera follow.
+- Robot player can:
   - move left/right,
-  - jump (with gravity and grounded detection),
-  - fire a small cannon shot ("power ball") with a short cooldown.
-- Cannon shots travel horizontally, despawn on timeout or collision.
-- At least one basic enemy type with simple patrol behavior.
-- Enemy takes hit(s), shows feedback, and is removed on defeat.
-- Basic player health + damage on enemy contact.
-- Start point and goal point (finish marker/door) to complete the demo.
+  - jump with tuned gravity and grounded checks,
+  - fire cannon shots with cooldown-based cadence.
+- Cannon system includes upgrade-ready architecture:
+  - `single_shot` (default) OR tuned `double_shot` starter,
+  - timed cooldown gate,
+  - projectile hit, despawn, and collision rules.
 
-### Level/Content Scope
-- 1 short level (about 1–3 minutes for first-time clear).
-- 2–3 platforming challenge moments (gap jump, elevated platform, enemy placement).
-- 1 simple checkpoint or restart-at-beginning flow (choose one for MVP).
+### Enemies and Combat
+- Basic enemy type(s) with simple patrol/approach behavior.
+- Enemies take projectile damage and show hit feedback.
+- Contact with enemies damages the player.
 
-### UX & Presentation (MVP-appropriate)
-- Simple HUD: health and maybe shot cooldown indicator.
-- Keyboard controls display on pause/start overlay.
-- Temporary placeholder art/sfx allowed, but readability must be strong.
+### Mini-Boss (End of Level 1)
+- One mini-boss arena encounter at end of level.
+- Mini-boss has more health than regular enemies and at least one recognizable attack pattern.
+- On mini-boss defeat:
+  - show clear victory feedback,
+  - grant **Rapid Shot unlock** (first progression milestone),
+  - mark level completion.
 
-### Technical Scope
-- Browser-based, static-host friendly build compatible with this repo architecture.
+### Player State / UX
+- Player health system.
+- Simple HUD:
+  - health,
+  - current cannon mode,
+  - cooldown/readiness indicator.
+- Start, death, and restart flow is deterministic and stable.
+
+### Level Content
+- One short level (1–3 minutes on first clear).
+- Includes light platforming challenge beats before boss arena.
+- Finish gate transitions into boss encounter cleanly.
+
+### Technical Constraints
+- Must run as a static-hosted web game in this repo.
 - No backend required.
-- Keep code modular enough to extend for Milestone 2.
+- Keep code modular so cannon progression tiers can expand in Milestone 2+.
 
 ---
 
-## Milestone 1 Non-Goals (to avoid over-scoping)
-- No RPG inventory/equipment systems yet.
-- No dialogue trees yet.
-- No first-person camera yet.
-- No large multi-level campaign yet.
-- No advanced boss AI (optional stretch only).
+## Milestone 1 Non-Goals
+- No full RPG inventory/equipment yet.
+- No quest tree or branching dialogue yet.
+- No first-person mode yet.
+- No multi-level campaign structure yet.
 
 ---
 
-## Suggested MVP Acceptance Criteria
-- Player can complete the level from start to finish without errors.
-- Controls feel responsive (movement/jump/shoot all reliable).
-- Cannon cooldown prevents spamming but still feels fun.
-- At least one enemy can be defeated with cannon shots.
-- Death/restart flow works consistently.
-- Game is launchable from the hub like other entries in this repo.
+## Milestone 1 Acceptance Criteria
+- Player can complete level start-to-mini-boss without runtime errors.
+- Shooting cadence feels intentional (cooldown readable, not spammy).
+- Mini-boss is defeatable and reliably grants **Rapid Shot** unlock.
+- Death/restart loop works every run.
+- Demo is playable via Game Hub integration and static paths resolve correctly.
 
 ---
 
-## Proposed Delivery Sequence for Milestone 1
-1. **Game loop foundation**: scene, physics, tile/platform collisions, player controller.
-2. **Combat basics**: projectile system, cooldown, enemy hit logic.
-3. **Level completion + fail state**: goal, health, restart.
-4. **Polish pass**: tuning jump arc, movement speed, shot feel, HUD clarity.
-5. **Hub integration**: thumbnail + metadata entry + published status when ready.
+## Cannon Progression Plan (Forward-Compatible)
 
----
+1. **Tier 0 (M1 Start):** Single Shot (or Double Shot if tuned best for feel).
+2. **Tier 1 (M1 Reward):** Rapid Shot unlocked by mini-boss defeat.
+3. **Tier 2+ (Later Milestones):** Additional cannon behaviors (charge burst, spread, piercing, elemental variants, etc.).
 
-## Questions Before Implementation
-1. Do you want this first demo built in **vanilla HTML5 Canvas** (lightweight, no external engine) or with a framework (for example Phaser)?
-2. Should the protagonist be visually close to Mega Man Bass style, or should we make a **legally safer original character** with a similar gameplay feel?
-3. For MVP controls, are you good with:
-   - `A/D` or arrow keys = move,
-   - `Space` = jump,
-   - `J` (or `K`) = shoot?
-4. Cannon behavior preference:
-   - single shot on-screen at once (classic feel), or
-   - multiple shots allowed with cooldown?
-5. Difficulty target for MVP:
-   - easy showcase,
-   - medium challenge,
-   - hard/retro challenge?
-6. Should we include one **mini-boss encounter** in Milestone 1, or keep it strictly to basic enemies?
-7. Do you want keyboard-only for now, or should we also include gamepad support in MVP?
-
-Once you answer these, I can move straight into implementation with a concrete Milestone 1 build plan and task breakdown.
+This keeps Milestone 1 focused while preserving a clear ability-growth roadmap for the larger game vision.
