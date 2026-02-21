@@ -415,24 +415,28 @@
     game.mission.hitSparks.push({ x, y, life: 0.16, maxLife: 0.16, color, scale });
   }
 
-  function getShootHeld() {
-    return keys.has('j') || keys.has('J') || keys.has('k') || keys.has('K') || keys.has('x') || keys.has('X');
+  function isRapidShootHeld() {
+    return keys.has('j') || keys.has('J');
+  }
+
+  function isChargeShootHeld() {
+    return keys.has('k') || keys.has('K');
   }
 
   function canShootNow() {
     return game.now - player.lastShotAt >= player.cooldownSeconds;
   }
 
-  function fireProjectile(power = 0, forcedDamage = null) {
+  function fireProjectile(power = 0, forcedDamage = null, forcedCooldown = null) {
     if (!game.mission) {
       return;
     }
 
     const shootDir = player.facing;
     const normalizedPower = Math.max(0, Math.min(1, power));
-    const damage = forcedDamage ?? (1 + normalizedPower * 3.2);
-    const radius = 5 + normalizedPower * 9;
-    const speed = 540 + normalizedPower * 240;
+    const damage = forcedDamage ?? (normalizedPower > 0 ? 2.2 + normalizedPower * 5.5 : 1);
+    const radius = 5 + normalizedPower * 11;
+    const speed = 540 + normalizedPower * 280;
 
     const px = player.x + player.w * (shootDir > 0 ? 0.98 : 0.02);
     const py = player.y + 24;
@@ -445,11 +449,11 @@
       r: radius,
       damage,
       power: normalizedPower,
-      color: normalizedPower > 0.45 ? '#9ff9ff' : '#72e8ff'
+      color: normalizedPower > 0.35 ? '#b8ffff' : '#72e8ff'
     });
 
     player.lastShotAt = game.now;
-    player.cooldownSeconds = 0.2 + normalizedPower * 0.3;
+    player.cooldownSeconds = forcedCooldown ?? (0.2 + normalizedPower * 0.3);
   }
 
   function fireBossBurst(boss) {
@@ -531,27 +535,42 @@
       }
     }
 
-    const shootHeld = getShootHeld();
+    const rapidHeld = isRapidShootHeld();
+    const chargeHeld = isChargeShootHeld();
 
-    if (!profile.chargeUnlocked) {
-      if (shootHeld && canShootNow()) {
-        fireProjectile(0, 1);
+    if (rapidHeld) {
+      if (player.isCharging) {
+        player.isCharging = false;
+        player.currentCharge = 0;
+      }
+      if (canShootNow()) {
+        const rapidCooldown = profile.rapidUnlocked ? 0.11 : 0.22;
+        fireProjectile(0, 1, rapidCooldown);
       }
       return;
     }
 
-    if (shootHeld && !player.isCharging && canShootNow()) {
+    if (!profile.chargeUnlocked) {
+      if (player.isCharging) {
+        player.isCharging = false;
+        player.currentCharge = 0;
+      }
+      return;
+    }
+
+    if (chargeHeld && !player.isCharging && canShootNow()) {
       player.isCharging = true;
       player.chargeStartedAt = game.now;
       player.currentCharge = 0;
     }
 
-    if (player.isCharging && shootHeld) {
+    if (player.isCharging && chargeHeld) {
       player.currentCharge = Math.max(0, Math.min(1, (game.now - player.chargeStartedAt) / 1.15));
     }
 
-    if (player.isCharging && !shootHeld) {
-      fireProjectile(player.currentCharge);
+    if (player.isCharging && !chargeHeld) {
+      const chargePower = Math.max(0.35, player.currentCharge);
+      fireProjectile(chargePower, null, 0.3);
       spawnHitSpark(player.x + player.w / 2 + player.facing * 14, player.y + 24, '#8df6ff', 1 + player.currentCharge * 0.8);
       player.isCharging = false;
       player.currentCharge = 0;
@@ -823,6 +842,7 @@
     const ms = missionState(missionId);
     ms.completed = true;
     profile.clears += 1;
+    let unlockBanner = '';
 
     if (missionId === LEVEL_1_ID && !profile.rapidUnlocked) {
       profile.rapidUnlocked = true;
@@ -833,11 +853,15 @@
     if (missionId === LEVEL_1_ID && !profile.chargeUnlocked) {
       profile.chargeUnlocked = true;
       player.chargeUnlocked = true;
-      setFeedback('Charge Blast unlocked: hold fire, release for power', 2.6);
+      unlockBanner = 'Charge Shot Unlocked! Hold K and release to fire.';
     }
 
     saveProfile();
     enterHub(`${missionName(missionId)} complete. Report to Engineer Vale.`);
+
+    if (unlockBanner) {
+      setFeedback(unlockBanner, 3.2);
+    }
   }
 
   function updateMissionProjectiles(dt) {
