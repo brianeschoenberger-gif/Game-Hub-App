@@ -109,7 +109,12 @@
         projectileSpeeds: [260, 300, 340],
         spread: [-0.24, 0, 0.24],
         contactDamage: 22,
-        projectileDamage: 10
+        projectileDamage: 10,
+        telegraphDuration: 0.58,
+        recoveryDuration: 0.42,
+        dashSpeed: 540,
+        dashDuration: 0.34,
+        areaVolleyCount: 5
       }
     },
     [LEVEL_2_ID]: {
@@ -162,7 +167,12 @@
         projectileSpeeds: [290, 330, 370, 410],
         spread: [-0.33, -0.12, 0.12, 0.33],
         contactDamage: 26,
-        projectileDamage: 14
+        projectileDamage: 14,
+        telegraphDuration: 0.5,
+        recoveryDuration: 0.38,
+        dashSpeed: 620,
+        dashDuration: 0.36,
+        areaVolleyCount: 6
       }
     },
     [LEVEL_3_ID]: {
@@ -530,7 +540,7 @@
       alive: true,
       dir: -1,
       speed: config.speed,
-      attackTimer: 0,
+      attackTimer: config.attackInterval,
       moveMinX: config.moveMinX,
       moveMaxX: config.moveMaxX,
       attackInterval: config.attackInterval,
@@ -538,8 +548,44 @@
       spread: config.spread,
       contactDamage: config.contactDamage,
       projectileDamage: config.projectileDamage,
+      telegraphDuration: config.telegraphDuration || 0.56,
+      recoveryDuration: config.recoveryDuration || 0.4,
+      dashSpeed: config.dashSpeed || 560,
+      dashDuration: config.dashDuration || 0.34,
+      areaVolleyCount: config.areaVolleyCount || 5,
+      state: 'reposition',
+      stateTimer: config.attackInterval,
+      queuedPattern: null,
+      lastPattern: null,
+      phase: 1,
+      vulnerabilityUntil: 0,
+      telegraphUntil: 0,
+      dashVx: 0,
       hitFlashUntil: 0
     };
+  }
+
+  function bossPhaseForHp(boss) {
+    const ratio = boss.hp / Math.max(1, boss.maxHp);
+    if (ratio <= 0.35) {
+      return 3;
+    }
+    if (ratio <= 0.7) {
+      return 2;
+    }
+    return 1;
+  }
+
+  function pickBossPattern(boss) {
+    const options = boss.phase === 1
+      ? ['spread_burst', 'dash_slam']
+      : boss.phase === 2
+        ? ['spread_burst', 'dash_slam', 'area_denial']
+        : ['dash_slam', 'area_denial', 'spread_burst'];
+
+    const filtered = options.filter((name) => name !== boss.lastPattern);
+    const pool = filtered.length ? filtered : options;
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   function parseFpsMap(mapRows) {
@@ -1001,7 +1047,7 @@
     player.cooldownSeconds = forcedCooldown ?? (0.2 + normalizedPower * 0.3);
   }
 
-  function fireBossBurst(boss) {
+  function fireBossBurst(boss, spreadBoost = 0) {
     if (!game.mission || !boss || !boss.alive) {
       return;
     }
@@ -1014,18 +1060,74 @@
     const baseAngle = Math.atan2(targetY - sourceY, targetX - sourceX);
 
     for (let i = 0; i < boss.projectileSpeeds.length; i += 1) {
-      const angle = baseAngle + boss.spread[i % boss.spread.length];
+      const baseSpread = boss.spread[i % boss.spread.length];
+      const angle = baseAngle + baseSpread * (1 + spreadBoost);
       game.mission.enemyProjectiles.push({
         x: sourceX,
         y: sourceY,
         vx: Math.cos(angle) * boss.projectileSpeeds[i],
         vy: Math.sin(angle) * boss.projectileSpeeds[i],
-        r: 7,
+        r: 7 + spreadBoost,
         damage: boss.projectileDamage,
+        kind: 'spread',
         trail: []
       });
     }
     spawnLightFlash(sourceX, sourceY, 'rgba(255, 123, 169, 0.7)', 78, 0.2);
+  }
+
+  function fireBossDashSlam(boss) {
+    const sourceX = boss.x + boss.w / 2;
+    const impactY = player.y + player.h * 0.68;
+    const dir = player.x + player.w / 2 >= sourceX ? 1 : -1;
+    boss.dashVx = dir * boss.dashSpeed;
+    boss.state = 'dash_slam';
+    boss.stateTimer = boss.dashDuration;
+
+    game.mission.enemyProjectiles.push({
+      x: sourceX,
+      y: impactY,
+      vx: dir * 320,
+      vy: 0,
+      r: 9,
+      damage: boss.projectileDamage + 3,
+      kind: 'shockwave',
+      ttl: 1.2,
+      trail: []
+    });
+    game.mission.enemyProjectiles.push({
+      x: sourceX,
+      y: impactY,
+      vx: -dir * 300,
+      vy: 0,
+      r: 8,
+      damage: boss.projectileDamage + 2,
+      kind: 'shockwave',
+      ttl: 1.1,
+      trail: []
+    });
+    spawnScreenFlash('rgba(255, 124, 154, 0.48)', 0.09, 0.15);
+  }
+
+  function fireBossAreaDenial(boss) {
+    const zoneMin = Math.max(boss.moveMinX + 40, player.x - 220);
+    const zoneMax = Math.min(boss.moveMaxX - 40, player.x + 220);
+    const count = boss.areaVolleyCount + Math.max(0, boss.phase - 2);
+    for (let i = 0; i < count; i += 1) {
+      const x = zoneMin + ((zoneMax - zoneMin) * (count <= 1 ? 0.5 : i / (count - 1)));
+      game.mission.enemyProjectiles.push({
+        x,
+        y: 20 + (i % 2) * 24,
+        vx: 0,
+        vy: 260 + i * 12,
+        r: 8,
+        damage: boss.projectileDamage - 1 + Math.max(0, boss.phase - 1),
+        kind: 'area_denial',
+        ttl: 2.2,
+        trail: []
+      });
+    }
+    spawnLightFlash(player.x + player.w / 2, player.y + player.h / 2, 'rgba(255, 164, 122, 0.48)', 120, 0.18);
   }
 
   function damagePlayer(amount, sourceX) {
@@ -1489,24 +1591,89 @@
     }
 
     const boss = mission.boss;
-    boss.x += boss.dir * boss.speed * dt;
-    if (boss.x < boss.moveMinX) {
-      boss.x = boss.moveMinX;
-      boss.dir = 1;
-    }
-    if (boss.x + boss.w > boss.moveMaxX) {
-      boss.x = boss.moveMaxX - boss.w;
-      boss.dir = -1;
+    const previousPhase = boss.phase;
+    boss.phase = bossPhaseForHp(boss);
+
+    if (boss.phase > previousPhase) {
+      boss.state = 'telegraph';
+      boss.stateTimer = boss.telegraphDuration * 1.05;
+      boss.telegraphUntil = game.now + boss.stateTimer;
+      boss.queuedPattern = 'area_denial';
+      spawnScreenFlash('rgba(255, 100, 144, 0.55)', 0.1, 0.2);
+      setFeedback(`Boss Phase ${boss.phase}`, 1.2);
     }
 
-    boss.attackTimer -= dt;
-    if (boss.attackTimer <= 0) {
-      fireBossBurst(boss);
-      boss.attackTimer = boss.attackInterval;
+    if (boss.state === 'dash_slam') {
+      boss.x += boss.dashVx * dt;
+      if (boss.x < boss.moveMinX) {
+        boss.x = boss.moveMinX;
+        boss.dashVx *= -0.8;
+      }
+      if (boss.x + boss.w > boss.moveMaxX) {
+        boss.x = boss.moveMaxX - boss.w;
+        boss.dashVx *= -0.8;
+      }
+      boss.stateTimer -= dt;
+      if (boss.stateTimer <= 0) {
+        boss.state = 'recover';
+        boss.stateTimer = boss.recoveryDuration + 0.08;
+        boss.vulnerabilityUntil = game.now + boss.stateTimer;
+        boss.attackTimer = Math.max(0.3, boss.attackInterval * 0.7);
+      }
+    } else {
+      boss.x += boss.dir * boss.speed * dt * (boss.phase >= 3 ? 1.15 : 1);
+      if (boss.x < boss.moveMinX) {
+        boss.x = boss.moveMinX;
+        boss.dir = 1;
+      }
+      if (boss.x + boss.w > boss.moveMaxX) {
+        boss.x = boss.moveMaxX - boss.w;
+        boss.dir = -1;
+      }
+
+      if (boss.state === 'reposition') {
+        boss.attackTimer -= dt;
+        if (boss.attackTimer <= 0) {
+          boss.queuedPattern = pickBossPattern(boss);
+          boss.state = 'telegraph';
+          boss.stateTimer = boss.telegraphDuration * (boss.phase >= 3 ? 0.82 : boss.phase === 2 ? 0.9 : 1);
+          boss.telegraphUntil = game.now + boss.stateTimer;
+        }
+      } else if (boss.state === 'telegraph') {
+        boss.stateTimer -= dt;
+        if (boss.stateTimer <= 0) {
+          if (boss.queuedPattern === 'dash_slam') {
+            fireBossDashSlam(boss);
+          } else if (boss.queuedPattern === 'area_denial') {
+            fireBossAreaDenial(boss);
+            boss.state = 'recover';
+            boss.stateTimer = boss.recoveryDuration + 0.06;
+            boss.vulnerabilityUntil = game.now + boss.stateTimer;
+            boss.attackTimer = Math.max(0.22, boss.attackInterval * (boss.phase >= 3 ? 0.52 : 0.62));
+          } else {
+            fireBossBurst(boss, boss.phase >= 3 ? 0.38 : boss.phase === 2 ? 0.18 : 0);
+            if (boss.phase >= 3) {
+              fireBossBurst(boss, 0.05);
+            }
+            boss.state = 'recover';
+            boss.stateTimer = boss.recoveryDuration;
+            boss.vulnerabilityUntil = game.now + boss.stateTimer;
+            boss.attackTimer = Math.max(0.2, boss.attackInterval * (boss.phase >= 3 ? 0.5 : 0.65));
+          }
+          boss.lastPattern = boss.queuedPattern;
+          boss.queuedPattern = null;
+        }
+      } else if (boss.state === 'recover') {
+        boss.stateTimer -= dt;
+        if (boss.stateTimer <= 0) {
+          boss.state = 'reposition';
+        }
+      }
     }
 
     if (intersects(player, boss)) {
-      damagePlayer(boss.contactDamage, boss.x + boss.w / 2);
+      const contactScale = boss.state === 'dash_slam' ? 1.35 : 1;
+      damagePlayer(Math.round(boss.contactDamage * contactScale), boss.x + boss.w / 2);
     }
   }
 
@@ -1560,6 +1727,13 @@
       if (projectile.trail.length > 7) {
         projectile.trail.shift();
       }
+      if (Number.isFinite(projectile.ttl)) {
+        projectile.ttl -= dt;
+        if (projectile.ttl <= 0) {
+          projectile._dead = true;
+          continue;
+        }
+      }
       projectile.x += projectile.vx * dt;
       projectile.y += projectile.vy * dt;
     }
@@ -1569,6 +1743,13 @@
       projectile.trail.push({ x: projectile.x, y: projectile.y });
       if (projectile.trail.length > 6) {
         projectile.trail.shift();
+      }
+      if (Number.isFinite(projectile.ttl)) {
+        projectile.ttl -= dt;
+        if (projectile.ttl <= 0) {
+          projectile._dead = true;
+          continue;
+        }
       }
       projectile.x += projectile.vx * dt;
       projectile.y += projectile.vy * dt;
@@ -1636,13 +1817,15 @@
       }
 
       if (mission.boss && mission.boss.alive && !projectile._dead && circleHitsRect(projectile, mission.boss)) {
-        mission.boss.hp -= projectile.damage;
-        mission.boss.hitFlashUntil = game.now + 0.1;
-        playEnemyHitSfx(1.15 + projectile.power * 0.85);
+        const vulnerabilityActive = game.now <= (mission.boss.vulnerabilityUntil || 0);
+        const damageScale = vulnerabilityActive ? 1 : 0.65;
+        mission.boss.hp -= projectile.damage * damageScale;
+        mission.boss.hitFlashUntil = game.now + (vulnerabilityActive ? 0.12 : 0.06);
+        playEnemyHitSfx((vulnerabilityActive ? 1.15 : 0.9) + projectile.power * 0.85);
         projectile._dead = true;
-        spawnHitSpark(projectile.x, projectile.y, '#9df0ff', 1 + projectile.power);
-        spawnImpactRing(projectile.x, projectile.y, '#9df0ff', 1.2 + projectile.power * 1.1);
-        spawnLightFlash(projectile.x, projectile.y, 'rgba(127, 230, 255, 0.75)', 48 + projectile.power * 40, 0.16);
+        spawnHitSpark(projectile.x, projectile.y, vulnerabilityActive ? '#9df0ff' : '#94b9d1', 1 + projectile.power);
+        spawnImpactRing(projectile.x, projectile.y, vulnerabilityActive ? '#9df0ff' : '#9cb8cc', 1.2 + projectile.power * 1.1);
+        spawnLightFlash(projectile.x, projectile.y, vulnerabilityActive ? 'rgba(127, 230, 255, 0.75)' : 'rgba(124, 167, 197, 0.52)', 48 + projectile.power * 40, 0.16);
 
         if (mission.boss.hp <= 0) {
           mission.boss.alive = false;
@@ -1996,7 +2179,7 @@
           statusEl.dataset.state = 'active';
         }
       } else if (game.mission?.bossActive && game.mission?.boss?.alive) {
-        statusEl.textContent = `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))}`;
+        statusEl.textContent = `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))} | Phase ${game.mission.boss.phase || 1}`;
         statusEl.dataset.state = 'boss';
       } else if (player.isCharging) {
         statusEl.textContent = `${game.mission?.name || 'Mission'} | Charging ${Math.round(player.currentCharge * 100)}%`;
@@ -2699,8 +2882,11 @@
     ctx.translate(boss.x, boss.y);
     const t = game.now * 2.8;
     const idleBob = Math.sin(t) * 2.4;
-    const surge = Math.max(0, 1 - (boss.attackTimer / Math.max(0.001, boss.attackInterval)));
-    const energy = 0.55 + Math.sin(game.now * 9.5) * 0.15 + surge * 0.35;
+    const surge = boss.state === 'telegraph'
+      ? 1
+      : Math.max(0, 1 - (boss.attackTimer / Math.max(0.001, boss.attackInterval)));
+    const phaseBoost = (boss.phase || 1) * 0.06;
+    const energy = 0.55 + Math.sin(game.now * 9.5) * 0.15 + surge * 0.35 + phaseBoost;
 
     ctx.translate(0, idleBob);
 
@@ -2747,7 +2933,9 @@
     ctx.fillStyle = '#1b1f2d';
     ctx.fillRect(46, 22, boss.w - 92, 22);
 
-    const eyeGlow = `rgba(255, 61, 61, ${0.5 + energy * 0.4})`;
+    const isTelegraphing = boss.state === 'telegraph' && game.now <= (boss.telegraphUntil || 0) + 0.2;
+    const eyeColor = isTelegraphing ? '255, 210, 87' : '255, 61, 61';
+    const eyeGlow = `rgba(${eyeColor}, ${0.5 + energy * 0.4})`;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = eyeGlow;
@@ -2767,7 +2955,11 @@
     drawBossArc(boss.w - 18, 58, 16 + energy * 2, game.now * 5.8 + 0.9, arcColor);
     drawBossArc(coreX, boss.h - 16, 24 + energy * 4, game.now * 4.5 + 1.2, arcColor);
 
-    ctx.strokeStyle = flash ? 'rgba(243, 233, 255, 0.9)' : 'rgba(149, 126, 208, 0.55)';
+    ctx.strokeStyle = boss.state === 'dash_slam'
+      ? 'rgba(255, 171, 194, 0.95)'
+      : flash
+        ? 'rgba(243, 233, 255, 0.9)'
+        : 'rgba(149, 126, 208, 0.55)';
     ctx.lineWidth = 2.4;
     ctx.strokeRect(11, 20, boss.w - 22, boss.h - 24);
     ctx.restore();
@@ -2814,9 +3006,14 @@
       ctx.fill();
     }
     for (const p of game.mission.enemyProjectiles) {
+      const palette = p.kind === 'area_denial'
+        ? { glow: '#ffc18b', core: '#ff9b5f', stroke: '#ffe0b6' }
+        : p.kind === 'shockwave'
+          ? { glow: '#ff9dd1', core: '#ff5a94', stroke: '#ffd0e2' }
+          : { glow: '#ff95bc', core: '#ff7899', stroke: '#ffd1df' };
       if (VISUAL_FLAGS.enableBloomLikeGlow) {
         ctx.globalAlpha = 0.18;
-        ctx.fillStyle = '#ff95bc';
+        ctx.fillStyle = palette.glow;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r * 2.3, 0, Math.PI * 2);
         ctx.fill();
@@ -2827,18 +3024,18 @@
           const t = p.trail[i];
           const ratio = (i + 1) / p.trail.length;
           ctx.globalAlpha = ratio * 0.24;
-          ctx.fillStyle = '#ff91af';
+          ctx.fillStyle = palette.glow;
           ctx.beginPath();
           ctx.arc(t.x, t.y, Math.max(1, p.r * ratio * 0.7), 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.globalAlpha = 1;
       }
-      ctx.fillStyle = '#ff7899';
+      ctx.fillStyle = palette.core;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#ffd1df';
+      ctx.strokeStyle = palette.stroke;
       ctx.lineWidth = 1.7;
       ctx.stroke();
       ctx.fillStyle = '#ffd3de';

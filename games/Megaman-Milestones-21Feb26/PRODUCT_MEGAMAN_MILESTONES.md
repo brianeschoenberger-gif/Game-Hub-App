@@ -29,6 +29,130 @@ Add traversal hubs, NPC dialogue, mission flow, and persistent progression syste
 ### Milestone 3: First-Person Expansion
 Introduce first-person maps/combat to represent later-game mode shifts.
 
+### Milestone 4: Boss Attack Pattern Suite
+Expand boss encounters with clear telegraphs, multi-phase behavior, and signature attack variety.
+
+### Milestone 5: Mobility Upgrade - Air Dash
+Add air dash traversal/combat utility and design level beats that require and reward dash mastery.
+
+### Milestone 6: Dynamic Stage Hazards
+Introduce interactive/timed hazards that create rhythm-based platforming and combat pressure.
+
+---
+
+## Build-Ready Milestones (Say: "Build Milestone X")
+
+Use this section as execution shorthand. If you say **"Build Milestone 4"**, etc., implementation can follow the exact scope below without additional planning.
+
+### Build Milestone 4 - Boss Attack Pattern Suite
+
+#### Objective
+Upgrade bosses from "single loop" behavior into memorable fights with readable attacks and escalating pressure.
+
+#### Scope
+- Add a **boss state machine** for each major boss with at least 3 states:
+  - `idle/reposition`,
+  - `telegraph`,
+  - `attack`.
+- Implement **3 attack archetypes** minimum:
+  1. **Spread Burst** (projectile fan with dodge lanes),
+  2. **Dash Slam** (rapid reposition + contact/splash threat),
+  3. **Area Denial** (lingering zones or timed hazard volleys).
+- Add **phase transitions** at HP thresholds (example: 70% and 35%) that modify cadence/speed/pattern mix.
+- Add **clear telegraphs** (animation cue, flash color, and/or sound cue) with a consistent reaction window.
+- Ensure each boss has one short **vulnerability window** after a major attack to reward timing.
+
+#### Integration Notes
+- Keep attack params data-driven in level/boss config where possible.
+- Reuse existing projectile and feedback systems (sparks, flashes, camera shake) before adding new systems.
+
+#### Acceptance Criteria
+- Every boss can execute all assigned attack patterns without runtime errors.
+- Telegraphs are readable enough that a first-time player can learn patterns after a few attempts.
+- Phase transitions trigger reliably at configured HP thresholds.
+
+#### Done Means
+- "Build Milestone 4" is complete when boss fights feel mechanically distinct, not just higher HP variants.
+
+---
+
+### Build Milestone 5 - Mobility Upgrade: Air Dash
+
+#### Objective
+Add a high-skill movement option that improves traversal flow and opens new combat expression.
+
+#### Scope
+- Add **Air Dash** ability with parameters:
+  - dash speed,
+  - dash duration,
+  - cooldown,
+  - charges (start with 1 midair charge).
+- Input design:
+  - dedicated key/button OR directional + dash key,
+  - supports left/right in 2D,
+  - optional forward burst behavior in FPS mode (if enabled in this milestone).
+- Movement rules:
+  - temporary gravity dampening during dash,
+  - invulnerability optional (default off),
+  - resets on ground touch and/or wall checkpoint rule.
+- Combat coupling:
+  - allow dash-cancel into shot,
+  - optional small damage bonus on dash-canceled charged shot.
+- Level updates:
+  - add at least 3 traversal beats requiring smart dash timing,
+  - add at least 1 optional shortcut or secret pickup gated by dash mastery.
+
+#### Integration Notes
+- Expose dash unlocked state via profile progression and HUD status.
+- Keep behavior deterministic with existing death/restart and mission reset flows.
+
+#### Acceptance Criteria
+- Air dash feels responsive and does not break collision/grounded logic.
+- Player can complete required dash traversal beats consistently.
+- Cooldown/charges are readable in HUD feedback.
+
+#### Done Means
+- "Build Milestone 5" is complete when dash changes how levels are played, not just movement speed.
+
+---
+
+### Build Milestone 6 - Dynamic Stage Hazards
+
+#### Objective
+Turn static stages into reactive environments with timing-based challenge and encounter variety.
+
+#### Scope
+- Implement hazard framework supporting:
+  - `on/off` timed hazards,
+  - moving hazard actors,
+  - trigger-activated hazards.
+- Add at least **3 hazard types**:
+  1. **Laser Gate** (periodic beam with warning flash),
+  2. **Conveyor + Crusher** or moving press pattern,
+  3. **Falling Debris/Arc Turret Zone** tied to player position/progress.
+- Add per-hazard config values:
+  - cycle time,
+  - warning duration,
+  - damage,
+  - active region bounds.
+- Ensure hazards interact with:
+  - player damage/invulnerability rules,
+  - enemy navigation/combat space where applicable,
+  - camera readability (no off-screen unavoidable damage).
+- Add at least one **hazard + enemy combo encounter** to force priority decisions.
+
+#### Integration Notes
+- Prefer data-driven hazard placement in level config.
+- Reuse existing visual FX for warnings/impacts before creating new asset-heavy effects.
+
+#### Acceptance Criteria
+- Hazards run deterministically on repeated plays/restarts.
+- Damage sources are readable and fair (warning before activation).
+- Stage pacing improves through varied challenge beats, not random unavoidable hits.
+
+#### Done Means
+- "Build Milestone 6" is complete when environmental danger is a core gameplay pillar in at least one full stage.
+
 ---
 
 ## Milestone 1 MVP Scope (Implementation-Ready)
