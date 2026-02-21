@@ -432,7 +432,7 @@
       ['grime2', 'assets/grime-decal-02.png'],
       ['panelHighlight', 'assets/panel-highlight.png'],
       ['scanline', 'assets/scanline-soft.png'],
-      ['enemySmall', 'assets/matt-enemy.png']
+      ['enemySmall', ['assets/Matt.jpg', 'assets/matt-enemy.png']]
     ];
     let pending = entries.length;
     if (!pending) {
@@ -441,6 +441,8 @@
     }
     for (const [key, src] of entries) {
       const img = new Image();
+      const sourceList = Array.isArray(src) ? src : [src];
+      let sourceIndex = 0;
       img.onload = () => {
         visualAssets[key] = img;
         pending -= 1;
@@ -449,12 +451,17 @@
         }
       };
       img.onerror = () => {
+        sourceIndex += 1;
+        if (sourceIndex < sourceList.length) {
+          img.src = sourceList[sourceIndex];
+          return;
+        }
         pending -= 1;
         if (pending <= 0) {
           visualAssetsReady = true;
         }
       };
-      img.src = src;
+      img.src = sourceList[sourceIndex];
     }
   }
 
@@ -507,13 +514,13 @@
   function createEnemy(spawn) {
     return {
       x: spawn.x,
-      y: spawn.y,
-      w: 42,
-      h: 52,
+      y: spawn.y - 52,
+      w: 84,
+      h: 104,
       minX: spawn.minX,
       maxX: spawn.maxX,
       vx: spawn.speed,
-      hp: spawn.hp,
+      hp: (spawn.hp || 1) * 2,
       alive: true,
       contactDamage: spawn.contactDamage || 14,
       hitFlashUntil: 0
