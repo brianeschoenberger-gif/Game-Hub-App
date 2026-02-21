@@ -279,6 +279,7 @@
   };
 
   let audioContext = null;
+  let mouseLeftDown = false;
 
   function missionState(missionId) {
     return profile.missions[missionId];
@@ -412,7 +413,8 @@
           enemyDamage: config.fps.enemyDamage,
           enemyAggroRange: config.fps.enemyAggroRange,
           enemyShootInterval: config.fps.enemyShootInterval,
-          enemies: createFpsEnemies(config.fps.enemySpawns)
+          enemies: createFpsEnemies(config.fps.enemySpawns),
+          bolts: []
         }
       };
     }
@@ -478,6 +480,7 @@
   }
 
   function enterHub(message) {
+    mouseLeftDown = false;
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
@@ -523,6 +526,7 @@
     player.isCharging = false;
     player.currentCharge = 0;
     player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
+    mouseLeftDown = false;
 
     setFeedback(`Mission Start: ${missionName(missionId)}`, 2.1);
 
@@ -1336,6 +1340,50 @@
     return ray >= dist - 0.1;
   }
 
+  function spawnFpsBolt(fps) {
+    const speed = 11.5;
+    fps.bolts.push({
+      x: player.x,
+      y: player.y,
+      vx: Math.cos(fps.yaw) * speed,
+      vy: Math.sin(fps.yaw) * speed,
+      life: 0.8,
+      radius: 0.17
+    });
+  }
+
+  function updateFpsBolts(dt, fps) {
+    for (const bolt of fps.bolts) {
+      bolt.x += bolt.vx * dt;
+      bolt.y += bolt.vy * dt;
+      bolt.life -= dt;
+
+      if (fpsIsWall(fps.grid, bolt.x, bolt.y)) {
+        bolt.life = -1;
+        continue;
+      }
+
+      for (const enemy of fps.enemies) {
+        if (!enemy.alive || bolt.life <= 0) {
+          continue;
+        }
+        const dist = Math.hypot(enemy.x - bolt.x, enemy.y - bolt.y);
+        if (dist <= bolt.radius + 0.23) {
+          enemy.hp -= 1;
+          enemy.hitFlashUntil = game.now + 0.08;
+          playEnemyHitSfx(0.95);
+          spawnHitSpark(bolt.x, bolt.y, '#a7f7ff', 1.1);
+          bolt.life = -1;
+          if (enemy.hp <= 0) {
+            enemy.alive = false;
+            spawnHitSpark(enemy.x, enemy.y, '#ffd184', 1.3);
+          }
+        }
+      }
+    }
+    fps.bolts = fps.bolts.filter((bolt) => bolt.life > 0);
+  }
+
   function updateFpsMission(dt) {
     const mission = game.mission;
     if (!mission || mission.mode !== 'fps') {
@@ -1369,36 +1417,13 @@
       fps.pitch = Math.min(FPS_MAX_PITCH, fps.pitch + fps.lookSpeed * 30);
     }
 
-    const wantsShoot = isRapidShootHeld() || isChargeShootHeld();
+    const wantsShoot = isRapidShootHeld() || isChargeShootHeld() || mouseLeftDown;
     if (wantsShoot && game.now - fps.lastFireAt >= fps.fireCooldown) {
       fps.lastFireAt = game.now;
-      let bestEnemy = null;
-      let bestDist = 999;
-      for (const enemy of fps.enemies) {
-        if (!enemy.alive) {
-          continue;
-        }
-        const dx = enemy.x - player.x;
-        const dy = enemy.y - player.y;
-        const dist = Math.hypot(dx, dy);
-        const rel = Math.atan2(dy, dx) - fps.yaw;
-        const wrapped = Math.atan2(Math.sin(rel), Math.cos(rel));
-        if (Math.abs(wrapped) < 0.08 && dist < bestDist && hasFpsLineOfSight(fps.grid, player.x, player.y, enemy.x, enemy.y)) {
-          bestEnemy = enemy;
-          bestDist = dist;
-        }
-      }
-      if (bestEnemy) {
-        bestEnemy.hp -= 1;
-        bestEnemy.hitFlashUntil = game.now + 0.08;
-        playEnemyHitSfx(0.95);
-        spawnHitSpark(player.x, player.y, '#a7f7ff', 1.1);
-        if (bestEnemy.hp <= 0) {
-          bestEnemy.alive = false;
-          spawnHitSpark(bestEnemy.x, bestEnemy.y, '#ffd184', 1.3);
-        }
-      }
+      spawnFpsBolt(fps);
     }
+
+    updateFpsBolts(dt, fps);
 
     for (const enemy of fps.enemies) {
       if (!enemy.alive) {
@@ -1725,6 +1750,27 @@
       ctx.fillRect(screenX - size * 0.11, y + size * 0.2, size * 0.22, size * 0.26);
     }
 
+    for (const bolt of fps.bolts) {
+      const dx = bolt.x - player.x;
+      const dy = bolt.y - player.y;
+      const dist = Math.hypot(dx, dy);
+      const rel = Math.atan2(dy, dx) - fps.yaw;
+      const wrapped = Math.atan2(Math.sin(rel), Math.cos(rel));
+      if (Math.abs(wrapped) > fov / 2 || dist < 0.15) {
+        continue;
+      }
+      if (!hasFpsLineOfSight(grid, player.x, player.y, bolt.x, bolt.y)) {
+        continue;
+      }
+      const sx = (wrapped / fov + 0.5) * w;
+      const s = Math.min(h * 0.2, h / Math.max(0.6, dist * 2.3));
+      const y = h / 2 - s * 0.5 + pitchOffset;
+      ctx.fillStyle = '#8ef5ff';
+      ctx.beginPath();
+      ctx.arc(sx, y, Math.max(2.5, s * 0.18), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     const canExit = aliveEnemies.length === 0;
     const exdx = fps.exit.x - player.x;
     const exdy = fps.exit.y - player.y;
@@ -2040,6 +2086,21 @@
 
   window.addEventListener('keyup', (event) => {
     keys.delete(event.key);
+  });
+
+  window.addEventListener('mousedown', (event) => {
+    if (event.button === 0) {
+      mouseLeftDown = true;
+      if (game.scene === 'mission' && game.mission?.mode === 'fps' && document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock?.();
+      }
+    }
+  });
+
+  window.addEventListener('mouseup', (event) => {
+    if (event.button === 0) {
+      mouseLeftDown = false;
+    }
   });
 
   window.addEventListener('mousemove', (event) => {
