@@ -1080,6 +1080,7 @@
     player.airDashCharges = profile.airDashUnlocked ? player.airDashMaxCharges : 0;
     player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
     mouseLeftDown = false;
+    startBackgroundMusic(trackForMission(missionId));
 
     setFeedback(`Mission Start: ${missionName(missionId)}`, 2.1);
 
@@ -1190,7 +1191,6 @@
     keys.clear();
     justPressed.clear();
     mouseLeftDown = false;
-    startBackgroundMusic(trackForMission(missionId));
     mouseRightDown = false;
     player.isCharging = false;
     player.currentCharge = 0;
