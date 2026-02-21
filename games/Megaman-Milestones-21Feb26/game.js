@@ -727,13 +727,18 @@
   function createFpsEnemies(spawns, grid) {
     return spawns.map((spawn) => {
       const safe = nearestWalkableFpsPoint(grid, spawn.x, spawn.y);
+      const seed = safe.x * 17.37 + safe.y * 11.91 + (spawn.hp || 3) * 0.73;
       return {
         x: safe.x,
         y: safe.y,
-      hp: spawn.hp,
-      alive: true,
-      lastShotAt: -999,
-      hitFlashUntil: 0
+        hp: spawn.hp,
+        alive: true,
+        lastShotAt: -999,
+        hitFlashUntil: 0,
+        patrolDir: (seed % (Math.PI * 2)) - Math.PI,
+        turnTimer: 0.65 + ((seed * 3.1) % 0.9),
+        moveSpeed: 0.82 + ((seed * 5.7) % 0.26),
+        gaitTime: 0
       };
     });
   }
@@ -2529,6 +2534,24 @@
       if (!enemy.alive) {
         continue;
       }
+      enemy.turnTimer -= dt;
+      enemy.gaitTime += dt * (3.2 + enemy.moveSpeed * 1.8);
+      if (enemy.turnTimer <= 0) {
+        enemy.turnTimer = 0.8 + Math.random() * 1.4;
+        enemy.patrolDir += (Math.random() * 2 - 1) * 1.35;
+      }
+
+      const enemyStep = enemy.moveSpeed * dt;
+      const ex = enemy.x + Math.cos(enemy.patrolDir) * enemyStep;
+      const ey = enemy.y + Math.sin(enemy.patrolDir) * enemyStep;
+      if (fpsCanOccupy(fps.grid, ex, ey)) {
+        enemy.x = ex;
+        enemy.y = ey;
+      } else {
+        enemy.patrolDir += (Math.random() > 0.5 ? 1 : -1) * (Math.PI * (0.45 + Math.random() * 0.45));
+        enemy.turnTimer = 0.22 + Math.random() * 0.4;
+      }
+
       const dx = player.x - enemy.x;
       const dy = player.y - enemy.y;
       const dist = Math.hypot(dx, dy);
@@ -2946,10 +2969,7 @@
       const screenX = (wrapped / fov + 0.5) * w;
       const size = Math.min(h * 0.55, h / Math.max(0.6, dist));
       const y = h / 2 - size * 0.55 + pitchOffset;
-      ctx.fillStyle = enemy.hitFlashUntil > game.now ? '#ffe0ae' : '#ffb36a';
-      ctx.fillRect(screenX - size * 0.22, y, size * 0.44, size * 0.68);
-      ctx.fillStyle = '#401f12';
-      ctx.fillRect(screenX - size * 0.11, y + size * 0.2, size * 0.22, size * 0.26);
+      drawFpsEnemyWalker(enemy, screenX, y, size, dist);
     }
 
     for (const bolt of fps.bolts) {
@@ -3107,6 +3127,89 @@
     drawProjectiles();
     drawSparks();
     drawMissionLights();
+
+    ctx.restore();
+  }
+
+  function drawFpsEnemyWalker(enemy, screenX, y, size, dist) {
+    const flash = enemy.hitFlashUntil > game.now;
+    const gait = Math.sin(enemy.gaitTime || game.now * 3.4);
+
+    ctx.save();
+    ctx.translate(screenX, y);
+
+    const armor = ctx.createLinearGradient(0, 0, 0, size * 0.9);
+    armor.addColorStop(0, flash ? '#d8f2c7' : '#6e8f62');
+    armor.addColorStop(0.55, flash ? '#9cc08e' : '#35533e');
+    armor.addColorStop(1, flash ? '#6e9871' : '#1e2f29');
+    ctx.fillStyle = armor;
+    ctx.fillRect(-size * 0.24, size * 0.16, size * 0.48, size * 0.54);
+
+    ctx.fillStyle = '#2d3f36';
+    ctx.fillRect(-size * 0.18, size * 0.62, size * 0.12, size * 0.2);
+    ctx.fillRect(size * 0.06, size * 0.62 + gait * size * 0.03, size * 0.12, size * 0.2);
+    ctx.fillStyle = '#99b7a6';
+    ctx.fillRect(-size * 0.2, size * 0.8, size * 0.16, size * 0.06);
+    ctx.fillRect(size * 0.03, size * 0.8 + gait * size * 0.03, size * 0.16, size * 0.06);
+
+    ctx.fillStyle = '#364a3f';
+    ctx.fillRect(-size * 0.34, size * 0.22, size * 0.16, size * 0.26);
+    ctx.fillRect(size * 0.18, size * 0.25, size * 0.16, size * 0.24);
+    ctx.fillStyle = '#df8735';
+    ctx.fillRect(-size * 0.37, size * 0.2, size * 0.05, size * 0.14);
+    ctx.fillRect(size * 0.3, size * 0.24, size * 0.05, size * 0.12);
+
+    ctx.fillStyle = '#25332d';
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.18, size * 0.2);
+    ctx.lineTo(-size * 0.04, -size * 0.02);
+    ctx.lineTo(size * 0.02, size * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.02, size * 0.2);
+    ctx.lineTo(size * 0.16, -size * 0.01);
+    ctx.lineTo(size * 0.2, size * 0.2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#ff7f2f';
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.13, size * 0.2);
+    ctx.lineTo(-size * 0.07, size * 0.03);
+    ctx.lineTo(-size * 0.01, size * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.05, size * 0.2);
+    ctx.lineTo(size * 0.11, size * 0.04);
+    ctx.lineTo(size * 0.16, size * 0.2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#1f2a24';
+    ctx.fillRect(-size * 0.14, size * 0.26, size * 0.28, size * 0.18);
+    ctx.fillStyle = flash ? '#ffd9a0' : '#ff6740';
+    ctx.fillRect(-size * 0.1, size * 0.3, size * 0.08, size * 0.03);
+    ctx.fillRect(size * 0.02, size * 0.3, size * 0.08, size * 0.03);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = flash ? 'rgba(255, 238, 192, 0.85)' : 'rgba(255, 128, 56, 0.85)';
+    ctx.beginPath();
+    ctx.arc(0, size * 0.39, size * 0.04, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    if (dist < 2.6) {
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#9cff8b';
+      ctx.beginPath();
+      ctx.arc(0, size * 0.12, size * 0.44, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     ctx.restore();
   }
