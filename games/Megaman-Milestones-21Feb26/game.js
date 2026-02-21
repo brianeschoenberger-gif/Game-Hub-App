@@ -1121,6 +1121,7 @@
   function completeMissionRun() {
     const missionId = game.activeMissionId;
     const ms = missionState(missionId);
+    const m3 = missionState(LEVEL_3_ID);
     ms.completed = true;
     profile.clears += 1;
     let unlockBanner = '';
@@ -1135,6 +1136,11 @@
       profile.chargeUnlocked = true;
       player.chargeUnlocked = true;
       unlockBanner = 'Charge Shot Unlocked! Hold K and release to fire.';
+    }
+
+    if (missionId === LEVEL_2_ID && !m3.accepted) {
+      m3.accepted = true;
+      unlockBanner = 'Level 3 Unlocked! Launch Black Site Breach from the lift.';
     }
 
     if (missionId === LEVEL_3_ID && !profile.pierceUnlocked) {
