@@ -2454,24 +2454,106 @@
     ctx.restore();
   }
 
+  function drawBossArc(cx, cy, radius, phase, color) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.2;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    const points = 7;
+    for (let i = 0; i < points; i += 1) {
+      const t = i / (points - 1);
+      const angle = phase + t * Math.PI * 1.2;
+      const wobble = Math.sin(phase * 2 + i * 1.4) * 5;
+      const x = cx + Math.cos(angle) * (radius + wobble);
+      const y = cy + Math.sin(angle) * (radius * 0.45 + wobble * 0.3);
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawBoss(boss, flash) {
     ctx.save();
     ctx.translate(boss.x, boss.y);
-    const body = ctx.createLinearGradient(0, 10, 0, boss.h);
-    body.addColorStop(0, flash ? '#ffe8f0' : '#ff7a9f');
-    body.addColorStop(1, flash ? '#f5b5c7' : '#b84868');
-    ctx.fillStyle = body;
-    ctx.fillRect(10, 16, boss.w - 20, boss.h - 18);
-    ctx.fillStyle = '#2f1330';
-    ctx.fillRect(24, 28, boss.w - 48, 30);
-    ctx.fillStyle = '#ffc4d3';
-    ctx.fillRect(0, 58, 36, 18);
-    ctx.fillRect(boss.w - 36, 58, 36, 18);
-    ctx.fillStyle = '#fff0a8';
-    ctx.fillRect(38, 82, boss.w - 76, 16);
-    ctx.strokeStyle = flash ? 'rgba(255, 232, 244, 0.95)' : 'rgba(255, 135, 173, 0.55)';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(10, 16, boss.w - 20, boss.h - 18);
+    const t = game.now * 2.8;
+    const idleBob = Math.sin(t) * 2.4;
+    const surge = Math.max(0, 1 - (boss.attackTimer / Math.max(0.001, boss.attackInterval)));
+    const energy = 0.55 + Math.sin(game.now * 9.5) * 0.15 + surge * 0.35;
+
+    ctx.translate(0, idleBob);
+
+    const armor = ctx.createLinearGradient(0, 12, 0, boss.h);
+    armor.addColorStop(0, flash ? '#d8cfff' : '#3e2b69');
+    armor.addColorStop(0.45, flash ? '#a8a0d9' : '#2a214c');
+    armor.addColorStop(1, flash ? '#8c84b8' : '#171a31');
+    ctx.fillStyle = armor;
+    ctx.fillRect(11, 20, boss.w - 22, boss.h - 24);
+
+    const steel = ctx.createLinearGradient(0, 18, 0, boss.h);
+    steel.addColorStop(0, '#aab1bf');
+    steel.addColorStop(1, '#505866');
+    ctx.fillStyle = steel;
+    ctx.fillRect(30, 35, boss.w - 60, 54);
+
+    ctx.fillStyle = '#4a3b7c';
+    ctx.fillRect(5, 46, 34, 26);
+    ctx.fillRect(boss.w - 39, 46, 34, 26);
+    ctx.fillStyle = '#1a1f30';
+    ctx.fillRect(3, 70, 40, 20);
+    ctx.fillRect(boss.w - 43, 70, 40, 20);
+
+    const coreX = boss.w / 2;
+    const coreY = 62;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = `rgba(255, 70, 82, ${0.45 + energy * 0.35})`;
+    ctx.beginPath();
+    ctx.arc(coreX, coreY, 10 + energy * 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffddd8';
+    ctx.beginPath();
+    ctx.arc(coreX, coreY, 5 + energy * 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle = '#4f5982';
+    ctx.fillRect(40, 8, boss.w - 80, 22);
+    ctx.fillStyle = '#272d40';
+    ctx.fillRect(44, 12, boss.w - 88, 14);
+    ctx.fillStyle = '#ff2f36';
+    ctx.fillRect(coreX - 3, -4, 6, 18);
+    ctx.fillStyle = '#1b1f2d';
+    ctx.fillRect(46, 22, boss.w - 92, 22);
+
+    const eyeGlow = `rgba(255, 61, 61, ${0.5 + energy * 0.4})`;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = eyeGlow;
+    ctx.fillRect(coreX - 20, 29, 10, 3);
+    ctx.fillRect(coreX + 10, 29, 10, 3);
+    ctx.restore();
+
+    ctx.fillStyle = '#192034';
+    ctx.fillRect(20, boss.h - 34, 28, 18);
+    ctx.fillRect(boss.w - 48, boss.h - 34, 28, 18);
+    ctx.fillStyle = '#444f70';
+    ctx.fillRect(16, boss.h - 22, 36, 10);
+    ctx.fillRect(boss.w - 52, boss.h - 22, 36, 10);
+
+    const arcColor = flash ? 'rgba(230, 194, 255, 0.95)' : 'rgba(184, 112, 255, 0.9)';
+    drawBossArc(18, 58, 16 + energy * 2, game.now * 5.8, arcColor);
+    drawBossArc(boss.w - 18, 58, 16 + energy * 2, game.now * 5.8 + 0.9, arcColor);
+    drawBossArc(coreX, boss.h - 16, 24 + energy * 4, game.now * 4.5 + 1.2, arcColor);
+
+    ctx.strokeStyle = flash ? 'rgba(243, 233, 255, 0.9)' : 'rgba(149, 126, 208, 0.55)';
+    ctx.lineWidth = 2.4;
+    ctx.strokeRect(11, 20, boss.w - 22, boss.h - 24);
     ctx.restore();
   }
 
