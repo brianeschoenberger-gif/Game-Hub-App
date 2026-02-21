@@ -110,7 +110,16 @@
         projectileSpeeds: [260, 300, 340],
         spread: [-0.24, 0, 0.24],
         contactDamage: 22,
-        projectileDamage: 10
+        projectileDamage: 10,
+        phaseThresholds: [0.7, 0.35],
+        attackPatternByPhase: [
+          ['spread', 'dash', 'spread', 'area'],
+          ['spread', 'dash', 'area', 'spread', 'dash'],
+          ['dash', 'spread', 'area', 'dash', 'spread', 'area']
+        ],
+        stateDurations: { reposition: 0.7, telegraph: 0.55, recover: 0.7 },
+        dash: { duration: 0.4, speedMult: 3.1, impactRadius: 90, impactDamage: 18 },
+        areaDenial: { zoneCount: 2, warning: 0.75, active: 1.15, radius: 66, damage: 14, tickInterval: 0.24 }
       }
     },
     [LEVEL_2_ID]: {
@@ -225,7 +234,16 @@
         projectileSpeeds: [290, 330, 370, 410],
         spread: [-0.33, -0.12, 0.12, 0.33],
         contactDamage: 26,
-        projectileDamage: 14
+        projectileDamage: 14,
+        phaseThresholds: [0.7, 0.35],
+        attackPatternByPhase: [
+          ['spread', 'dash', 'area', 'spread'],
+          ['dash', 'spread', 'area', 'dash', 'spread'],
+          ['dash', 'area', 'spread', 'dash', 'area', 'spread']
+        ],
+        stateDurations: { reposition: 0.65, telegraph: 0.5, recover: 0.62 },
+        dash: { duration: 0.46, speedMult: 3.35, impactRadius: 104, impactDamage: 22 },
+        areaDenial: { zoneCount: 3, warning: 0.7, active: 1.25, radius: 72, damage: 16, tickInterval: 0.22 }
       }
     },
     [LEVEL_3_ID]: {
@@ -608,6 +626,11 @@
   }
 
   function createBoss(config) {
+    const phaseThresholds = Array.isArray(config.phaseThresholds) ? config.phaseThresholds : [0.7, 0.35];
+    const attackPatternByPhase = Array.isArray(config.attackPatternByPhase) ? config.attackPatternByPhase : [['spread', 'dash', 'area']];
+    const stateDurations = config.stateDurations || {};
+    const dashCfg = config.dash || {};
+    const areaCfg = config.areaDenial || {};
     return {
       x: config.x,
       y: config.y,
@@ -626,7 +649,38 @@
       spread: config.spread,
       contactDamage: config.contactDamage,
       projectileDamage: config.projectileDamage,
-      hitFlashUntil: 0
+      hitFlashUntil: 0,
+      phaseThresholds,
+      attackPatternByPhase,
+      stateDurations: {
+        reposition: stateDurations.reposition ?? 0.7,
+        telegraph: stateDurations.telegraph ?? 0.55,
+        recover: stateDurations.recover ?? 0.7
+      },
+      dash: {
+        duration: dashCfg.duration ?? 0.42,
+        speedMult: dashCfg.speedMult ?? 3.1,
+        impactRadius: dashCfg.impactRadius ?? 92,
+        impactDamage: dashCfg.impactDamage ?? Math.round((config.contactDamage || 20) * 0.8)
+      },
+      areaDenial: {
+        zoneCount: areaCfg.zoneCount ?? 2,
+        warning: areaCfg.warning ?? 0.75,
+        active: areaCfg.active ?? 1.15,
+        radius: areaCfg.radius ?? 66,
+        damage: areaCfg.damage ?? Math.round((config.projectileDamage || 10) * 1.1),
+        tickInterval: areaCfg.tickInterval ?? 0.24
+      },
+      phase: 1,
+      state: 'reposition',
+      stateTimer: stateDurations.reposition ?? 0.7,
+      currentAttack: 'spread',
+      attackIndex: 0,
+      dashTargetX: config.x,
+      dashDirX: -1,
+      dashImpacted: false,
+      vulnerableUntil: 0,
+      telegraphPulse: 0
     };
   }
 
@@ -752,6 +806,7 @@
       impactRings: [],
       lightFlashes: [],
       killPops: [],
+      bossZones: [],
       hazards: (config.hazards || []).map((hazard) => ({
         ...hazard,
         nextDamageAt: 0,
@@ -1154,7 +1209,7 @@
     player.cooldownSeconds = forcedCooldown ?? (0.2 + normalizedPower * 0.3);
   }
 
-  function fireBossBurst(boss) {
+  function fireBossBurst(boss, options = {}) {
     if (!game.mission || !boss || !boss.alive) {
       return;
     }
@@ -1165,20 +1220,70 @@
     const targetY = player.y + player.h / 2;
 
     const baseAngle = Math.atan2(targetY - sourceY, targetX - sourceX);
+    const speedScale = options.speedScale ?? 1;
+    const spreadScale = options.spreadScale ?? 1;
+    const damageScale = options.damageScale ?? 1;
+    const radius = options.radius ?? 7;
+    const spreadList = (options.spreadList || boss.spread).map((s) => s * spreadScale);
+    const projectileSpeeds = options.projectileSpeeds || boss.projectileSpeeds;
 
-    for (let i = 0; i < boss.projectileSpeeds.length; i += 1) {
-      const angle = baseAngle + boss.spread[i % boss.spread.length];
+    for (let i = 0; i < projectileSpeeds.length; i += 1) {
+      const angle = baseAngle + spreadList[i % spreadList.length];
       game.mission.enemyProjectiles.push({
         x: sourceX,
         y: sourceY,
-        vx: Math.cos(angle) * boss.projectileSpeeds[i],
-        vy: Math.sin(angle) * boss.projectileSpeeds[i],
-        r: 7,
-        damage: boss.projectileDamage,
+        vx: Math.cos(angle) * projectileSpeeds[i] * speedScale,
+        vy: Math.sin(angle) * projectileSpeeds[i] * speedScale,
+        r: radius,
+        damage: boss.projectileDamage * damageScale,
         trail: []
       });
     }
     spawnLightFlash(sourceX, sourceY, 'rgba(255, 123, 169, 0.7)', 78, 0.2);
+  }
+
+  function resolveBossPhase(boss) {
+    const hpRatio = boss.hp / Math.max(1, boss.maxHp);
+    const t1 = boss.phaseThresholds[0] ?? 0.7;
+    const t2 = boss.phaseThresholds[1] ?? 0.35;
+    const nextPhase = hpRatio <= t2 ? 3 : hpRatio <= t1 ? 2 : 1;
+    if (nextPhase !== boss.phase) {
+      boss.phase = nextPhase;
+      spawnScreenFlash(nextPhase === 2 ? 'rgba(255, 170, 104, 0.45)' : 'rgba(255, 106, 132, 0.5)', 0.14, 0.2);
+      triggerCameraShake(nextPhase === 3 ? 2.1 : 1.4, 0.16, 0, -0.3);
+      setFeedback(`Boss phase ${nextPhase} engaged.`, 1.4);
+    }
+  }
+
+  function pickBossAttack(boss) {
+    const phaseIndex = Math.max(0, Math.min((boss.attackPatternByPhase?.length || 1) - 1, boss.phase - 1));
+    const pattern = boss.attackPatternByPhase?.[phaseIndex] || ['spread', 'dash', 'area'];
+    const pick = pattern[boss.attackIndex % pattern.length];
+    boss.attackIndex += 1;
+    return pick;
+  }
+
+  function spawnBossAreaDenial(mission, boss) {
+    const count = Math.max(1, Math.round(boss.areaDenial.zoneCount));
+    const laneMin = boss.moveMinX + 38;
+    const laneMax = boss.moveMaxX - 64;
+    for (let i = 0; i < count; i += 1) {
+      const t = count === 1 ? 0.5 : i / (count - 1);
+      const wobble = Math.sin((boss.attackIndex + i + boss.phase) * 1.73) * 0.08;
+      const x = laneMin + (laneMax - laneMin) * Math.max(0.05, Math.min(0.95, t + wobble));
+      mission.bossZones.push({
+        x,
+        y: 460,
+        radius: boss.areaDenial.radius,
+        warning: boss.areaDenial.warning,
+        active: boss.areaDenial.active,
+        damage: boss.areaDenial.damage,
+        tickInterval: boss.areaDenial.tickInterval,
+        life: boss.areaDenial.warning + boss.areaDenial.active,
+        nextDamageAt: 0
+      });
+    }
+    spawnScreenFlash('rgba(255, 154, 108, 0.24)', 0.12, 0.15);
   }
 
   function damagePlayer(amount, sourceX) {
@@ -1876,21 +1981,122 @@
     }
 
     const boss = mission.boss;
-    boss.x += boss.dir * boss.speed * dt;
-    if (boss.x < boss.moveMinX) {
-      boss.x = boss.moveMinX;
-      boss.dir = 1;
-    }
-    if (boss.x + boss.w > boss.moveMaxX) {
-      boss.x = boss.moveMaxX - boss.w;
-      boss.dir = -1;
+    resolveBossPhase(boss);
+    const phaseCadence = boss.phase === 1 ? 1 : boss.phase === 2 ? 1.12 : 1.24;
+
+    const patrolStep = boss.speed * dt * 0.9;
+    const clampBossX = () => {
+      boss.x = Math.max(boss.moveMinX, Math.min(boss.moveMaxX - boss.w, boss.x));
+    };
+
+    boss.stateTimer -= dt;
+    boss.telegraphPulse = Math.sin(game.now * 16) * 0.5 + 0.5;
+
+    if (boss.state === 'reposition') {
+      boss.x += boss.dir * patrolStep;
+      if (boss.x < boss.moveMinX) {
+        boss.x = boss.moveMinX;
+        boss.dir = 1;
+      } else if (boss.x + boss.w > boss.moveMaxX) {
+        boss.x = boss.moveMaxX - boss.w;
+        boss.dir = -1;
+      }
+
+      if (boss.stateTimer <= 0) {
+        boss.currentAttack = pickBossAttack(boss);
+        boss.state = 'telegraph';
+        boss.stateTimer = Math.max(0.2, boss.stateDurations.telegraph / phaseCadence);
+        const telegraphText =
+          boss.currentAttack === 'dash'
+            ? 'Dash Slam incoming'
+            : boss.currentAttack === 'area'
+              ? 'Area denial charging'
+              : 'Spread burst charging';
+        setFeedback(telegraphText, 0.8);
+        spawnLightFlash(boss.x + boss.w / 2, boss.y + 42, 'rgba(255, 166, 122, 0.55)', 72, 0.18);
+      }
+    } else if (boss.state === 'telegraph') {
+      if (boss.stateTimer <= 0) {
+        boss.state = 'attack';
+        if (boss.currentAttack === 'spread') {
+          fireBossBurst(boss, {
+            speedScale: 1 + (boss.phase - 1) * 0.12,
+            spreadScale: boss.phase === 3 ? 1.16 : 1,
+            radius: boss.phase === 3 ? 8 : 7,
+            damageScale: 1 + (boss.phase - 1) * 0.08
+          });
+          boss.state = 'recover';
+          boss.stateTimer = Math.max(0.2, boss.stateDurations.recover / phaseCadence);
+          boss.vulnerableUntil = game.now + 0.55;
+        } else if (boss.currentAttack === 'dash') {
+          const targetCenter = Math.max(
+            boss.moveMinX + boss.w * 0.5,
+            Math.min(boss.moveMaxX - boss.w * 0.5, player.x + player.w * 0.5)
+          );
+          boss.dashTargetX = targetCenter - boss.w * 0.5;
+          boss.dashDirX = boss.dashTargetX >= boss.x ? 1 : -1;
+          boss.dashImpacted = false;
+          boss.stateTimer = Math.max(0.18, boss.dash.duration / phaseCadence);
+          triggerCameraShake(1.1, 0.1, boss.dashDirX * 0.7, -0.2);
+        } else {
+          spawnBossAreaDenial(mission, boss);
+          boss.state = 'recover';
+          boss.stateTimer = Math.max(0.2, boss.stateDurations.recover / phaseCadence);
+          boss.vulnerableUntil = game.now + 0.75;
+        }
+      }
+    } else if (boss.state === 'attack') {
+      if (boss.currentAttack === 'dash') {
+        const dashSpeed = boss.speed * boss.dash.speedMult * phaseCadence;
+        boss.x += boss.dashDirX * dashSpeed * dt;
+        clampBossX();
+        const reachedTarget = Math.abs((boss.x + boss.w * 0.5) - (boss.dashTargetX + boss.w * 0.5)) < 24;
+        if (!boss.dashImpacted && (reachedTarget || boss.stateTimer <= 0)) {
+          boss.dashImpacted = true;
+          const impactX = boss.x + boss.w * 0.5;
+          const impactY = boss.y + boss.h - 10;
+          spawnImpactRing(impactX, impactY, '#ffb886', 2.4);
+          spawnLightFlash(impactX, impactY, 'rgba(255, 166, 120, 0.72)', boss.dash.impactRadius * 1.25, 0.2);
+          spawnScreenFlash('rgba(255, 160, 120, 0.36)', 0.1, 0.16);
+          triggerCameraShake(2.6, 0.14, boss.dashDirX * 1.2, -0.6);
+
+          const px = player.x + player.w * 0.5;
+          const py = player.y + player.h * 0.5;
+          const dist = Math.hypot(px - impactX, py - impactY);
+          if (dist <= boss.dash.impactRadius) {
+            damagePlayer(boss.dash.impactDamage, impactX);
+          }
+        }
+        if (boss.stateTimer <= 0 || reachedTarget) {
+          boss.state = 'recover';
+          boss.stateTimer = Math.max(0.2, boss.stateDurations.recover / phaseCadence);
+          boss.vulnerableUntil = game.now + 0.95;
+        }
+      } else {
+        boss.state = 'recover';
+        boss.stateTimer = Math.max(0.2, boss.stateDurations.recover / phaseCadence);
+      }
+    } else {
+      if (boss.stateTimer <= 0) {
+        boss.state = 'reposition';
+        boss.stateTimer = Math.max(0.2, boss.stateDurations.reposition / phaseCadence);
+      }
     }
 
-    boss.attackTimer -= dt;
-    if (boss.attackTimer <= 0) {
-      fireBossBurst(boss);
-      boss.attackTimer = boss.attackInterval;
+    for (const zone of mission.bossZones || []) {
+      zone.life -= dt;
+      const inWarning = zone.life > zone.active;
+      if (!inWarning && game.now >= zone.nextDamageAt) {
+        zone.nextDamageAt = game.now + zone.tickInterval;
+        const dx = player.x + player.w * 0.5 - zone.x;
+        const dy = player.y + player.h * 0.5 - zone.y;
+        if (dx * dx + dy * dy <= zone.radius * zone.radius) {
+          damagePlayer(zone.damage, zone.x);
+          spawnHitSpark(player.x + player.w * 0.5, player.y + player.h * 0.5, '#ffb58f', 1.1);
+        }
+      }
     }
+    mission.bossZones = (mission.bossZones || []).filter((zone) => zone.life > 0);
 
     if (intersects(player, boss)) {
       damagePlayer(boss.contactDamage, boss.x + boss.w / 2);
@@ -2026,22 +2232,31 @@
       }
 
       if (mission.boss && mission.boss.alive && !projectile._dead && circleHitsRect(projectile, mission.boss)) {
-        mission.boss.hp -= projectile.damage;
+        const boss = mission.boss;
+        const vulnerable = game.now <= (boss.vulnerableUntil || 0);
+        const appliedDamage = vulnerable ? projectile.damage : projectile.damage * 0.45;
+        boss.hp -= appliedDamage;
         mission.boss.hitFlashUntil = game.now + 0.1;
         playEnemyHitSfx(1.15 + projectile.power * 0.85);
         projectile._dead = true;
-        spawnHitSpark(projectile.x, projectile.y, '#9df0ff', 1 + projectile.power);
-        spawnImpactRing(projectile.x, projectile.y, '#9df0ff', 1.2 + projectile.power * 1.1);
-        spawnLightFlash(projectile.x, projectile.y, 'rgba(127, 230, 255, 0.75)', 48 + projectile.power * 40, 0.16);
+        spawnHitSpark(projectile.x, projectile.y, vulnerable ? '#9df0ff' : '#ffc388', 1 + projectile.power);
+        spawnImpactRing(projectile.x, projectile.y, vulnerable ? '#9df0ff' : '#ffba8f', 1.2 + projectile.power * 1.1);
+        spawnLightFlash(
+          projectile.x,
+          projectile.y,
+          vulnerable ? 'rgba(127, 230, 255, 0.75)' : 'rgba(255, 186, 127, 0.6)',
+          48 + projectile.power * 40,
+          0.16
+        );
 
-        if (mission.boss.hp <= 0) {
-          mission.boss.alive = false;
+        if (boss.hp <= 0) {
+          boss.alive = false;
           mission.bossDefeated = true;
           mission.levelComplete = true;
-          spawnKillPop(mission.boss.x + mission.boss.w / 2, mission.boss.y + mission.boss.h / 2, '#ffd1e2', 2.2);
+          spawnKillPop(boss.x + boss.w / 2, boss.y + boss.h / 2, '#ffd1e2', 2.2);
           spawnLightFlash(
-            mission.boss.x + mission.boss.w / 2,
-            mission.boss.y + mission.boss.h / 2,
+            boss.x + boss.w / 2,
+            boss.y + boss.h / 2,
             'rgba(255, 151, 190, 0.78)',
             120,
             0.24
@@ -2403,7 +2618,13 @@
           );
         }
       } else if (game.mission?.bossActive && game.mission?.boss?.alive) {
-        setStatusState('boss', `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))} | ${dashStateText}`);
+        const boss = game.mission.boss;
+        const vulnerability = game.now <= (boss.vulnerableUntil || 0) ? 'Vulnerable' : 'Armored';
+        const state = boss.state === 'telegraph' ? 'Telegraph' : boss.state === 'attack' ? 'Attack' : boss.state === 'recover' ? 'Recover' : 'Reposition';
+        setStatusState(
+          'boss',
+          `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(boss.hp))} | ${state} | ${vulnerability} | ${dashStateText}`
+        );
       } else if (player.isCharging) {
         setStatusState('charge', `${game.mission?.name || 'Mission'} | Charging ${Math.round(player.currentCharge * 100)}% | ${dashStateText}`);
       } else {
@@ -2863,6 +3084,8 @@
       drawCrawler(enemy, enemy.hitFlashUntil > game.now);
     }
 
+    drawBossZones();
+
     if (mission.bossActive && mission.boss && mission.boss.alive) {
       drawBoss(mission.boss, mission.boss.hitFlashUntil > game.now);
 
@@ -2886,6 +3109,28 @@
     drawMissionLights();
 
     ctx.restore();
+  }
+
+  function drawBossZones() {
+    const mission = game.mission;
+    if (!mission || !Array.isArray(mission.bossZones)) {
+      return;
+    }
+
+    for (const zone of mission.bossZones) {
+      const inWarning = zone.life > zone.active;
+      const alphaBase = inWarning ? 0.22 : 0.4;
+      const pulse = Math.sin(game.now * (inWarning ? 14 : 8)) * 0.5 + 0.5;
+      ctx.fillStyle = inWarning
+        ? `rgba(255, 182, 122, ${alphaBase + pulse * 0.2})`
+        : `rgba(255, 112, 92, ${alphaBase + pulse * 0.24})`;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = inWarning ? '#ffd7a6' : '#ffd0c0';
+      ctx.lineWidth = inWarning ? 2 : 2.4;
+      ctx.stroke();
+    }
   }
 
   function drawMissionHazards() {
@@ -3218,15 +3463,18 @@
     ctx.translate(boss.x, boss.y);
     const t = game.now * 2.8;
     const idleBob = Math.sin(t) * 2.4;
-    const surge = Math.max(0, 1 - (boss.attackTimer / Math.max(0.001, boss.attackInterval)));
+    const telegraphing = boss.state === 'telegraph';
+    const attacking = boss.state === 'attack';
+    const vulnerable = game.now <= (boss.vulnerableUntil || 0);
+    const surge = telegraphing ? 0.85 + boss.telegraphPulse * 0.6 : attacking ? 1 : 0.35;
     const energy = 0.55 + Math.sin(game.now * 9.5) * 0.15 + surge * 0.35;
 
     ctx.translate(0, idleBob);
 
     const armor = ctx.createLinearGradient(0, 12, 0, boss.h);
-    armor.addColorStop(0, flash ? '#d8cfff' : '#3e2b69');
-    armor.addColorStop(0.45, flash ? '#a8a0d9' : '#2a214c');
-    armor.addColorStop(1, flash ? '#8c84b8' : '#171a31');
+    armor.addColorStop(0, flash ? '#d8cfff' : telegraphing ? '#6b3856' : '#3e2b69');
+    armor.addColorStop(0.45, flash ? '#a8a0d9' : telegraphing ? '#4c2a44' : '#2a214c');
+    armor.addColorStop(1, flash ? '#8c84b8' : telegraphing ? '#2a1830' : '#171a31');
     ctx.fillStyle = armor;
     ctx.fillRect(11, 20, boss.w - 22, boss.h - 24);
 
@@ -3247,7 +3495,7 @@
     const coreY = 62;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = `rgba(255, 70, 82, ${0.45 + energy * 0.35})`;
+    ctx.fillStyle = vulnerable ? `rgba(119, 246, 255, ${0.4 + energy * 0.35})` : `rgba(255, 70, 82, ${0.45 + energy * 0.35})`;
     ctx.beginPath();
     ctx.arc(coreX, coreY, 10 + energy * 5, 0, Math.PI * 2);
     ctx.fill();
