@@ -159,6 +159,49 @@
       pickups: [
         { x: 5508, y: 194, w: 24, h: 24, credits: 120, xp: 80, label: 'Hidden Air Cache' }
       ],
+      hazards: [
+        {
+          id: 'l2_laser_combo',
+          type: 'laser_gate',
+          x1: 4090,
+          x2: 4680,
+          y: 438,
+          thickness: 12,
+          cycleTime: 3.2,
+          warningDuration: 0.7,
+          activeDuration: 0.9,
+          damage: 14,
+          tickInterval: 0.28,
+          activeRegion: { x: 4050, y: 340, w: 720, h: 210 }
+        },
+        {
+          id: 'l2_crusher_lane',
+          type: 'conveyor_crusher',
+          conveyor: { x: 4980, y: 430, w: 560, h: 40, push: 210 },
+          crusher: { x: 5420, topY: 246, bottomY: 370, w: 92, h: 62 },
+          cycleTime: 3.7,
+          warningDuration: 0.72,
+          descendDuration: 0.7,
+          holdDuration: 0.5,
+          retractDuration: 0.86,
+          damage: 22,
+          tickInterval: 0.22,
+          activeRegion: { x: 5040, y: 230, w: 420, h: 260 }
+        },
+        {
+          id: 'l2_debris_zone',
+          type: 'debris_zone',
+          triggerX: 6480,
+          zoneX: 6480,
+          zoneW: 860,
+          yTop: 20,
+          yBottom: 520,
+          spawnInterval: 1.15,
+          warningDuration: 0.65,
+          damage: 16,
+          fallSpeed: 540
+        }
+      ],
       enemySpawns: [
         { x: 890, y: 418, minX: 760, maxX: 1320, hp: 4, speed: 115 },
         { x: 1710, y: 418, minX: 1520, maxX: 2030, hp: 4, speed: 112 },
@@ -702,12 +745,22 @@
       bossTemplate: { ...config.boss },
       cameraX: 0,
       cameraY: 0,
+      elapsed: 0,
       projectiles: [],
       enemyProjectiles: [],
       hitSparks: [],
       impactRings: [],
       lightFlashes: [],
       killPops: [],
+      hazards: (config.hazards || []).map((hazard) => ({
+        ...hazard,
+        nextDamageAt: 0,
+        triggered: false,
+        spawnAccumulator: 0,
+        spawnCount: 0,
+        warnings: []
+      })),
+      debrisActors: [],
       enemies: config.enemySpawns.map((spawn) => createEnemy(spawn)),
       boss: null,
       bossActive: false,
@@ -1612,6 +1665,171 @@
     }
   }
 
+  function getLaserGateState(mission, hazard) {
+    const cycle = Math.max(0.2, hazard.cycleTime || 2.5);
+    const warningDuration = Math.max(0.05, hazard.warningDuration || 0.5);
+    const activeDuration = Math.max(0.05, hazard.activeDuration || 0.5);
+    const phase = mission.elapsed % cycle;
+    return {
+      warning: phase < warningDuration,
+      active: phase >= warningDuration && phase < warningDuration + activeDuration
+    };
+  }
+
+  function getCrusherState(mission, hazard) {
+    const cycle = Math.max(0.2, hazard.cycleTime || 3.2);
+    const warningDuration = Math.max(0.05, hazard.warningDuration || 0.6);
+    const descendDuration = Math.max(0.05, hazard.descendDuration || 0.6);
+    const holdDuration = Math.max(0.05, hazard.holdDuration || 0.4);
+    const retractDuration = Math.max(0.05, hazard.retractDuration || 0.8);
+    const phase = mission.elapsed % cycle;
+    const topY = hazard.crusher.topY;
+    const bottomY = hazard.crusher.bottomY;
+    const travel = bottomY - topY;
+
+    let y = topY;
+    let active = false;
+    let warning = false;
+    if (phase < warningDuration) {
+      warning = true;
+    } else if (phase < warningDuration + descendDuration) {
+      const t = (phase - warningDuration) / descendDuration;
+      y = topY + travel * t;
+      active = true;
+    } else if (phase < warningDuration + descendDuration + holdDuration) {
+      y = bottomY;
+      active = true;
+    } else if (phase < warningDuration + descendDuration + holdDuration + retractDuration) {
+      const t = (phase - warningDuration - descendDuration - holdDuration) / retractDuration;
+      y = bottomY - travel * t;
+    } else {
+      y = topY;
+    }
+
+    return { y, active, warning };
+  }
+
+  function updateMissionHazards(dt) {
+    const mission = game.mission;
+    if (!mission || mission.mode === 'fps') {
+      return;
+    }
+
+    for (const hazard of mission.hazards || []) {
+      if (hazard.activeRegion && !intersects(player, hazard.activeRegion)) {
+        continue;
+      }
+
+      if (hazard.type === 'laser_gate') {
+        const state = getLaserGateState(mission, hazard);
+        if (state.warning && Math.floor(game.now * 8) % 8 === 0) {
+          spawnLightFlash((hazard.x1 + hazard.x2) * 0.5, hazard.y, 'rgba(255, 187, 92, 0.28)', 38, 0.08);
+        }
+        if (state.active) {
+          const beamRect = {
+            x: hazard.x1,
+            y: hazard.y - (hazard.thickness || 10) * 0.5,
+            w: hazard.x2 - hazard.x1,
+            h: hazard.thickness || 10
+          };
+          if (intersects(player, beamRect) && game.now >= hazard.nextDamageAt) {
+            hazard.nextDamageAt = game.now + (hazard.tickInterval || 0.25);
+            damagePlayer(hazard.damage || 12, (hazard.x1 + hazard.x2) * 0.5);
+            spawnHitSpark(player.x + player.w * 0.5, beamRect.y + beamRect.h * 0.5, '#ffb168', 1.1);
+          }
+        }
+      } else if (hazard.type === 'conveyor_crusher') {
+        const belt = hazard.conveyor;
+        const crusherState = getCrusherState(mission, hazard);
+        const crusherRect = {
+          x: hazard.crusher.x,
+          y: crusherState.y,
+          w: hazard.crusher.w,
+          h: hazard.crusher.h
+        };
+        const beltRect = { x: belt.x, y: belt.y, w: belt.w, h: belt.h };
+
+        if (intersects(player, beltRect) && player.grounded) {
+          const push = (belt.push || 180) * dt;
+          player.x += push;
+          player.x = Math.max(0, Math.min(mission.worldWidth - player.w, player.x));
+          resolveMissionHorizontal();
+        }
+
+        if (crusherState.warning && Math.floor(game.now * 10) % 10 === 0) {
+          spawnLightFlash(
+            crusherRect.x + crusherRect.w * 0.5,
+            crusherRect.y + crusherRect.h * 0.5,
+            'rgba(255, 144, 104, 0.26)',
+            44,
+            0.08
+          );
+        }
+        if (crusherState.active && intersects(player, crusherRect) && game.now >= hazard.nextDamageAt) {
+          hazard.nextDamageAt = game.now + (hazard.tickInterval || 0.2);
+          damagePlayer(hazard.damage || 20, crusherRect.x + crusherRect.w * 0.5);
+          spawnImpactRing(player.x + player.w * 0.5, player.y + player.h * 0.5, '#ffb37a', 1);
+        }
+      } else if (hazard.type === 'debris_zone') {
+        if (!hazard.triggered && player.x + player.w * 0.5 >= hazard.triggerX) {
+          hazard.triggered = true;
+          setFeedback('Hazard zone detected: falling debris incoming.', 2.2);
+        }
+        if (!hazard.triggered) {
+          continue;
+        }
+
+        hazard.spawnAccumulator += dt;
+        while (hazard.spawnAccumulator >= (hazard.spawnInterval || 1.2)) {
+          hazard.spawnAccumulator -= hazard.spawnInterval || 1.2;
+          const n = hazard.spawnCount + 1;
+          const frac = Math.abs(Math.sin(n * 12.9898) * 43758.5453) % 1;
+          const x = hazard.zoneX + 40 + frac * Math.max(40, hazard.zoneW - 80);
+          hazard.spawnCount += 1;
+          hazard.warnings.push({
+            x,
+            y: (hazard.yBottom || 520) - 16,
+            life: hazard.warningDuration || 0.6,
+            maxLife: hazard.warningDuration || 0.6
+          });
+        }
+
+        for (const warning of hazard.warnings) {
+          warning.life -= dt;
+          if (warning.life <= 0 && !warning.spawned) {
+            warning.spawned = true;
+            mission.debrisActors.push({
+              x: warning.x,
+              y: hazard.yTop || 20,
+              r: 14,
+              vy: hazard.fallSpeed || 520,
+              damage: hazard.damage || 14,
+              _dead: false
+            });
+            spawnLightFlash(warning.x, warning.y, 'rgba(255, 201, 145, 0.28)', 28, 0.11);
+          }
+        }
+        hazard.warnings = hazard.warnings.filter((w) => !w.spawned);
+      }
+    }
+
+    for (const debris of mission.debrisActors || []) {
+      if (debris._dead) {
+        continue;
+      }
+      debris.y += debris.vy * dt;
+      if (circleHitsRect(debris, player)) {
+        debris._dead = true;
+        damagePlayer(debris.damage || 14, debris.x);
+        spawnHitSpark(debris.x, debris.y, '#ffad7a', 1.2);
+        spawnImpactRing(debris.x, debris.y, '#ffd1a6', 1);
+      } else if (debris.y > HEIGHT + 80) {
+        debris._dead = true;
+      }
+    }
+    mission.debrisActors = (mission.debrisActors || []).filter((d) => !d._dead);
+  }
+
   function updateMissionEnemies(dt) {
     const mission = game.mission;
     if (!mission) {
@@ -2180,7 +2398,7 @@
         setStatusState(
           'active',
           isDashCourse
-            ? `${game.mission?.name || 'Mission'} | Dash course active: cross wide gaps and find hidden cache | ${dashStateText}`
+            ? `${game.mission?.name || 'Mission'} | Hazard course active: time lasers, crusher lane, and debris zone | ${dashStateText}`
             : `${game.mission?.name || 'Mission'} active: reach and clear mini-boss gate | ${dashStateText}`
         );
       }
@@ -2264,8 +2482,12 @@
     if (game.mission?.mode === 'fps') {
       updateFpsMission(dt);
     } else {
+      if (game.mission) {
+        game.mission.elapsed = (game.mission.elapsed || 0) + dt;
+      }
       updateMissionInput(dt);
       updateMissionPlayer(dt);
+      updateMissionHazards(dt);
       updateMissionEnemies(dt);
       updateMissionBoss(dt);
       updateMissionProjectiles(dt);
@@ -2589,6 +2811,8 @@
       ctx.stroke();
     }
 
+    drawMissionHazards();
+
     for (const pickup of mission.pickups || []) {
       if (pickup.collected) {
         continue;
@@ -2649,6 +2873,87 @@
     drawMissionLights();
 
     ctx.restore();
+  }
+
+  function drawMissionHazards() {
+    const mission = game.mission;
+    if (!mission || mission.mode === 'fps') {
+      return;
+    }
+
+    for (const hazard of mission.hazards || []) {
+      if (hazard.type === 'laser_gate') {
+        const state = getLaserGateState(mission, hazard);
+        const thickness = hazard.thickness || 10;
+        ctx.fillStyle = '#5f6777';
+        ctx.fillRect(hazard.x1 - 10, hazard.y - 18, 8, 36);
+        ctx.fillRect(hazard.x2 + 2, hazard.y - 18, 8, 36);
+        if (state.warning) {
+          const pulse = Math.sin(game.now * 18) * 0.5 + 0.5;
+          ctx.fillStyle = `rgba(255, 188, 108, ${0.25 + pulse * 0.45})`;
+          ctx.fillRect(hazard.x1, hazard.y - thickness * 0.5, hazard.x2 - hazard.x1, thickness);
+        }
+        if (state.active) {
+          ctx.fillStyle = 'rgba(255, 98, 84, 0.9)';
+          ctx.fillRect(hazard.x1, hazard.y - thickness * 0.5, hazard.x2 - hazard.x1, thickness);
+          ctx.strokeStyle = '#ffd0a8';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(hazard.x1, hazard.y - thickness * 0.5, hazard.x2 - hazard.x1, thickness);
+        }
+      } else if (hazard.type === 'conveyor_crusher') {
+        const belt = hazard.conveyor;
+        const crusherState = getCrusherState(mission, hazard);
+        const crusherRect = { x: hazard.crusher.x, y: crusherState.y, w: hazard.crusher.w, h: hazard.crusher.h };
+
+        ctx.fillStyle = '#2a3448';
+        ctx.fillRect(belt.x, belt.y, belt.w, belt.h);
+        ctx.fillStyle = '#4a81a0';
+        ctx.fillRect(belt.x, belt.y, belt.w, 5);
+        for (let x = belt.x + 10; x < belt.x + belt.w - 8; x += 26) {
+          ctx.strokeStyle = 'rgba(184, 230, 255, 0.5)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, belt.y + belt.h - 8);
+          ctx.lineTo(x + 12, belt.y + 8);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = '#1b2535';
+        ctx.fillRect(crusherRect.x, hazard.crusher.topY - 54, crusherRect.w, 54);
+        ctx.fillStyle = crusherState.active ? '#ff9d72' : '#7f8da2';
+        ctx.fillRect(crusherRect.x, crusherRect.y, crusherRect.w, crusherRect.h);
+        ctx.strokeStyle = '#d7e0ee';
+        ctx.strokeRect(crusherRect.x + 1, crusherRect.y + 1, crusherRect.w - 2, crusherRect.h - 2);
+        if (crusherState.warning) {
+          ctx.fillStyle = `rgba(255, 167, 113, ${0.3 + (Math.sin(game.now * 16) * 0.5 + 0.5) * 0.45})`;
+          ctx.fillRect(crusherRect.x - 8, hazard.crusher.bottomY + crusherRect.h - 10, crusherRect.w + 16, 10);
+        }
+      } else if (hazard.type === 'debris_zone') {
+        if (!hazard.triggered) {
+          ctx.strokeStyle = 'rgba(255, 210, 145, 0.55)';
+          ctx.setLineDash([8, 7]);
+          ctx.strokeRect(hazard.zoneX, 80, hazard.zoneW, 380);
+          ctx.setLineDash([]);
+        }
+        for (const warning of hazard.warnings || []) {
+          const alpha = warning.life / warning.maxLife;
+          ctx.fillStyle = `rgba(255, 186, 120, ${0.2 + alpha * 0.5})`;
+          ctx.beginPath();
+          ctx.arc(warning.x, warning.y, 12 + (1 - alpha) * 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    for (const debris of mission.debrisActors || []) {
+      ctx.fillStyle = '#b4bcca';
+      ctx.beginPath();
+      ctx.arc(debris.x, debris.y, debris.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#e7edf7';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
   }
 
   function drawHubWorld() {
