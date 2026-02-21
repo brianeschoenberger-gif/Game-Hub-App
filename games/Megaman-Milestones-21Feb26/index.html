@@ -29,6 +29,11 @@
       </section>
     </main>
 
-    <script src="game.js?v=20260221-10"></script>
+    <script type="module">
+      import { APP_VERSION } from '../../src/app-version.js';
+      const gameScript = document.createElement('script');
+      gameScript.src = `game.js?v=${APP_VERSION}`;
+      document.body.appendChild(gameScript);
+    </script>
   </body>
 </html>

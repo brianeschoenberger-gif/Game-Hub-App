@@ -190,6 +190,14 @@
     currentCharge: 0
   };
 
+  function createDefaultMissions() {
+    return {
+      [LEVEL_1_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
+      [LEVEL_2_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
+      [LEVEL_3_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 }
+    };
+  }
+
   function createDefaultProfile() {
     return {
       rapidUnlocked: localStorage.getItem(LEGACY_RAPID_KEY) === '1',
@@ -199,11 +207,7 @@
       xp: 0,
       level: 1,
       clears: 0,
-      missions: {
-        [LEVEL_1_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
-        [LEVEL_2_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
-        [LEVEL_3_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 }
-      }
+      missions: createDefaultMissions()
     };
   }
 
@@ -222,11 +226,24 @@
       const merged = {
         ...fallback,
         ...parsed,
-        missions: {
-          ...fallback.missions,
-          ...(parsed.missions || {})
-        }
+        missions: createDefaultMissions()
       };
+
+      const parsedMissions =
+        parsed.missions && typeof parsed.missions === 'object' && !Array.isArray(parsed.missions)
+          ? parsed.missions
+          : {};
+
+      for (const missionId of Object.keys(fallback.missions)) {
+        const rawState = parsedMissions[missionId];
+        const state = rawState && typeof rawState === 'object' ? rawState : {};
+        merged.missions[missionId] = {
+          accepted: Boolean(state.accepted),
+          completed: Boolean(state.completed),
+          turnedIn: Boolean(state.turnedIn),
+          deaths: Number.isFinite(Number(state.deaths)) ? Number(state.deaths) : 0
+        };
+      }
 
       merged.rapidUnlocked = Boolean(merged.rapidUnlocked || localStorage.getItem(LEGACY_RAPID_KEY) === '1');
       merged.chargeUnlocked = Boolean(merged.chargeUnlocked);
@@ -397,6 +414,7 @@
         name: config.name,
         mode: 'fps',
         cameraX: 0,
+        hitSparks: [],
         fps: {
           grid: parsed.grid,
           mapWidth: parsed.width,
@@ -464,7 +482,6 @@
   }
 
   function resetProgressProfile() {
-    const fresh = createDefaultProfile();
     profile.rapidUnlocked = false;
     profile.chargeUnlocked = false;
     profile.pierceUnlocked = false;
@@ -472,7 +489,7 @@
     profile.xp = 0;
     profile.level = 1;
     profile.clears = 0;
-    profile.missions = { ...fresh.missions };
+    profile.missions = createDefaultMissions();
     player.chargeUnlocked = profile.chargeUnlocked;
     player.cannonMode = profile.rapidUnlocked ? 'rapid_shot' : 'single_shot';
     localStorage.removeItem(LEGACY_RAPID_KEY);
@@ -566,6 +583,9 @@
   function spawnHitSpark(x, y, color, scale = 1) {
     if (!game.mission) {
       return;
+    }
+    if (!Array.isArray(game.mission.hitSparks)) {
+      game.mission.hitSparks = [];
     }
     game.mission.hitSparks.push({ x, y, life: 0.16, maxLife: 0.16, color, scale });
   }
