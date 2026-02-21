@@ -150,10 +150,15 @@
         enemyAggroRange: 6.5,
         enemyShootInterval: 1.1,
         enemySpawns: [
-          { x: 5.5, y: 2.5, hp: 3 },
+          { x: 3.5, y: 1.5, hp: 3 },
+          { x: 3.5, y: 7.5, hp: 3 },
           { x: 10.5, y: 4.5, hp: 4 },
+          { x: 8.5, y: 9.5, hp: 4 },
           { x: 16.5, y: 6.5, hp: 4 },
-          { x: 20.5, y: 10.5, hp: 5 }
+          { x: 7.5, y: 11.5, hp: 4 },
+          { x: 20.5, y: 9.5, hp: 5 },
+          { x: 14.5, y: 13.5, hp: 5 },
+          { x: 18.5, y: 13.5, hp: 5 }
         ]
       }
     }
@@ -504,15 +509,38 @@
     return { grid, spawn, exit, width: grid[0]?.length || 0, height: grid.length };
   }
 
-  function createFpsEnemies(spawns) {
-    return spawns.map((spawn) => ({
-      x: spawn.x,
-      y: spawn.y,
+  function nearestWalkableFpsPoint(grid, x, y) {
+    if (!fpsIsWall(grid, x, y)) {
+      return { x, y };
+    }
+    const tx = Math.floor(x);
+    const ty = Math.floor(y);
+    for (let radius = 1; radius <= 4; radius += 1) {
+      for (let oy = -radius; oy <= radius; oy += 1) {
+        for (let ox = -radius; ox <= radius; ox += 1) {
+          const nx = tx + ox + 0.5;
+          const ny = ty + oy + 0.5;
+          if (!fpsIsWall(grid, nx, ny)) {
+            return { x: nx, y: ny };
+          }
+        }
+      }
+    }
+    return { x: 1.5, y: 1.5 };
+  }
+
+  function createFpsEnemies(spawns, grid) {
+    return spawns.map((spawn) => {
+      const safe = nearestWalkableFpsPoint(grid, spawn.x, spawn.y);
+      return {
+        x: safe.x,
+        y: safe.y,
       hp: spawn.hp,
       alive: true,
       lastShotAt: -999,
       hitFlashUntil: 0
-    }));
+      };
+    });
   }
 
   function createMissionRun(missionId) {
@@ -543,7 +571,7 @@
           enemyDamage: config.fps.enemyDamage,
           enemyAggroRange: config.fps.enemyAggroRange,
           enemyShootInterval: config.fps.enemyShootInterval,
-          enemies: createFpsEnemies(config.fps.enemySpawns),
+          enemies: createFpsEnemies(config.fps.enemySpawns, parsed.grid),
           bolts: []
         }
       };
