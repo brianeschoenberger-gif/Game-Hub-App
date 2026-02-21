@@ -1,5 +1,5 @@
 import { loadGames } from './data.js';
-import { emptyState, gameCard, hero } from './ui.js?v=20260221-1';
+import { emptyState, gameCard, hero } from './ui.js';
 
 async function renderHome() {
   const featuredNode = document.querySelector('#featured-hero');

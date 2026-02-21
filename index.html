@@ -31,6 +31,9 @@
       </section>
     </main>
 
-    <script type="module" src="./src/home.js?v=20260221-1"></script>
+    <script type="module">
+      import { APP_VERSION } from './src/app-version.js';
+      import(`./src/home.js?v=${APP_VERSION}`);
+    </script>
   </body>
 </html>

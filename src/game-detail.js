@@ -1,5 +1,6 @@
 import { findGame, formatDate, loadGames } from './data.js';
 import { archiveUrl, playUrl } from './paths.js';
+import { escapeHtml } from './sanitize.js';
 import { emptyState } from './ui.js';
 
 async function renderDetail() {
@@ -20,13 +21,21 @@ async function renderDetail() {
       return;
     }
 
-    document.title = `${game.title} - Daily Arcade`;
+    const pageTitle = String(game.title ?? '');
+    const safeTitle = escapeHtml(game.title);
+    const safeDescription = escapeHtml(game.description);
+    const safeReleaseDate = escapeHtml(formatDate(game.releaseDate));
+    const safeDuration = escapeHtml(game.durationEstimate);
+    const safeTopic = escapeHtml(game.newsTopic);
+    const safeTags = game.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join(' ');
+
+    document.title = `${pageTitle} - Daily Arcade`;
     root.innerHTML = `
       <article class="details-layout">
-        <p class="meta">${formatDate(game.releaseDate)} - ${game.durationEstimate} - ${game.newsTopic}</p>
-        <h1>${game.title}</h1>
-        <p>${game.description}</p>
-        <p>${game.tags.map((tag) => `<span class="tag">${tag}</span>`).join(' ')}</p>
+        <p class="meta">${safeReleaseDate} - ${safeDuration} - ${safeTopic}</p>
+        <h1>${safeTitle}</h1>
+        <p>${safeDescription}</p>
+        <p>${safeTags}</p>
         <div>
           <a class="btn-primary" href="${playUrl(game.slug)}">Play now</a>
           <a class="btn-secondary" href="${archiveUrl()}">Browse archive</a>

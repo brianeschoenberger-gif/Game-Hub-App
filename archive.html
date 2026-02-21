@@ -17,6 +17,9 @@
 
     <main id="archive-page" class="page-shell archive-page"></main>
 
-    <script type="module" src="./src/archive.js?v=20260221-1"></script>
+    <script type="module">
+      import { APP_VERSION } from './src/app-version.js';
+      import(`./src/archive.js?v=${APP_VERSION}`);
+    </script>
   </body>
 </html>
