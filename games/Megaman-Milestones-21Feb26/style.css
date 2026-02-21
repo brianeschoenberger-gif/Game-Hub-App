@@ -88,6 +88,26 @@ body {
   grid-column: span 1;
 }
 
+.status-chip-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.status-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid rgba(126, 193, 226, 0.5);
+  background: rgba(20, 41, 62, 0.7);
+  color: #cbf1ff;
+  box-shadow: 0 0 9px rgba(99, 194, 236, 0.2);
+}
+
 .status-chip {
   display: block;
   padding: 0.22rem 0.45rem;
@@ -95,6 +115,29 @@ body {
   border: 1px solid rgba(126, 193, 226, 0.36);
   background: rgba(8, 21, 33, 0.5);
   color: #d6f5ff;
+  flex: 1;
+}
+
+.status-chip[data-state="active"] {
+  border-color: rgba(121, 218, 255, 0.55);
+  background: rgba(8, 30, 45, 0.56);
+}
+
+.status-chip[data-state="hub"] {
+  border-color: rgba(130, 183, 224, 0.45);
+  background: rgba(11, 23, 36, 0.5);
+}
+
+.status-chip[data-state="complete"] {
+  border-color: rgba(140, 255, 189, 0.58);
+  color: #d9ffe6;
+  background: rgba(14, 48, 31, 0.5);
+}
+
+.status-chip[data-state="warn"] {
+  border-color: rgba(255, 198, 122, 0.58);
+  color: #ffe4c0;
+  background: rgba(62, 37, 15, 0.5);
 }
 
 .status-chip[data-state="fail"] {
@@ -113,6 +156,36 @@ body {
   border-color: rgba(128, 236, 255, 0.58);
   color: #d7fbff;
   background: rgba(5, 35, 51, 0.56);
+}
+
+.status-chip-wrap .status-icon[data-state="fail"] {
+  border-color: rgba(255, 127, 159, 0.62);
+  color: #ffd1dc;
+  background: rgba(58, 16, 29, 0.62);
+}
+
+.status-chip-wrap .status-icon[data-state="boss"] {
+  border-color: rgba(255, 177, 109, 0.66);
+  color: #ffe2be;
+  background: rgba(60, 29, 10, 0.6);
+}
+
+.status-chip-wrap .status-icon[data-state="charge"] {
+  border-color: rgba(128, 236, 255, 0.64);
+  color: #d7fbff;
+  background: rgba(5, 35, 51, 0.65);
+}
+
+.status-chip-wrap .status-icon[data-state="complete"] {
+  border-color: rgba(140, 255, 189, 0.66);
+  color: #d9ffe6;
+  background: rgba(14, 48, 31, 0.62);
+}
+
+.status-chip-wrap .status-icon[data-state="warn"] {
+  border-color: rgba(255, 198, 122, 0.65);
+  color: #ffe4c0;
+  background: rgba(62, 37, 15, 0.62);
 }
 
 .cooldown-item {
@@ -152,6 +225,10 @@ body {
 
 .cooldown-fill[style*="scaleX(1"] {
   animation: ready-pulse 0.9s ease-in-out infinite;
+}
+
+.cooldown-fill[data-ready="true"] {
+  animation: ready-pulse 0.85s ease-in-out infinite;
 }
 
 .viewport-wrap {

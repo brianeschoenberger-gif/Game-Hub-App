@@ -6,6 +6,7 @@
   const cannonEl = document.getElementById('cannon-mode');
   const cooldownFillEl = document.getElementById('cooldown-fill');
   const statusEl = document.getElementById('status-text');
+  const statusIconEl = document.getElementById('status-icon');
 
   const WIDTH = canvas.width;
   const HEIGHT = canvas.height;
@@ -675,6 +676,30 @@
   function setFeedback(text, duration = 1.8) {
     game.feedbackText = text;
     game.feedbackUntil = game.now + duration;
+  }
+
+  function setStatusState(state, text) {
+    statusEl.textContent = text;
+    statusEl.dataset.state = state;
+    if (!statusIconEl) {
+      return;
+    }
+    statusIconEl.dataset.state = state;
+    if (state === 'fail') {
+      statusIconEl.textContent = '!';
+    } else if (state === 'boss') {
+      statusIconEl.textContent = 'B';
+    } else if (state === 'charge') {
+      statusIconEl.textContent = 'C';
+    } else if (state === 'complete') {
+      statusIconEl.textContent = 'OK';
+    } else if (state === 'warn') {
+      statusIconEl.textContent = '!';
+    } else if (state === 'active') {
+      statusIconEl.textContent = '>';
+    } else {
+      statusIconEl.textContent = 'i';
+    }
   }
 
   function giveXp(amount) {
@@ -1979,31 +2004,26 @@
         readiness = Math.max(0, Math.min(1, elapsed / player.cooldownSeconds));
       }
       cooldownFillEl.style.transform = `scaleX(${readiness})`;
+      cooldownFillEl.dataset.ready = readiness >= 0.995 ? 'true' : 'false';
 
       if (game.phase === 'mission_failed') {
-        statusEl.textContent = 'Mission failed. Press R to retry or H for Hub';
-        statusEl.dataset.state = 'fail';
+        setStatusState('fail', 'Mission failed. Press R to retry or H for Hub');
       } else if (game.mission?.mode === 'fps') {
         const alive = game.mission.fps.enemies.filter((enemy) => enemy.alive).length;
         if (game.mission.fps.isCharging) {
-          statusEl.textContent = `${game.mission.name} | Charge ${(game.mission.fps.chargePower * 100).toFixed(0)}% (RMB release)`;
-          statusEl.dataset.state = 'charge';
+          setStatusState('charge', `${game.mission.name} | Charge ${(game.mission.fps.chargePower * 100).toFixed(0)}% (RMB release)`);
         } else {
-          statusEl.textContent =
-            alive > 0
-              ? `${game.mission.name} | Eliminate hostiles (${alive} left)`
-              : `${game.mission.name} | Reach extraction`;
-          statusEl.dataset.state = 'active';
+          setStatusState(
+            alive > 0 ? 'active' : 'complete',
+            alive > 0 ? `${game.mission.name} | Eliminate hostiles (${alive} left)` : `${game.mission.name} | Reach extraction`
+          );
         }
       } else if (game.mission?.bossActive && game.mission?.boss?.alive) {
-        statusEl.textContent = `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))}`;
-        statusEl.dataset.state = 'boss';
+        setStatusState('boss', `${game.mission.name} | Mini-Boss HP: ${Math.max(0, Math.ceil(game.mission.boss.hp))}`);
       } else if (player.isCharging) {
-        statusEl.textContent = `${game.mission?.name || 'Mission'} | Charging ${Math.round(player.currentCharge * 100)}%`;
-        statusEl.dataset.state = 'charge';
+        setStatusState('charge', `${game.mission?.name || 'Mission'} | Charging ${Math.round(player.currentCharge * 100)}%`);
       } else {
-        statusEl.textContent = `${game.mission?.name || 'Mission'} active: reach and clear mini-boss gate`;
-        statusEl.dataset.state = 'active';
+        setStatusState('active', `${game.mission?.name || 'Mission'} active: reach and clear mini-boss gate`);
       }
       return;
     }
@@ -2017,35 +2037,33 @@
           ? 'Rapid Shot'
           : 'Single Shot';
     cooldownFillEl.style.transform = 'scaleX(1)';
-    statusEl.dataset.state = 'hub';
+    cooldownFillEl.dataset.ready = 'true';
 
     if (game.phase === 'intro') {
-      statusEl.textContent = 'Press Enter to activate hub';
-      statusEl.dataset.state = 'hub';
+      setStatusState('hub', 'Press Enter to activate hub');
       return;
     }
 
     if (!m1.accepted) {
-      statusEl.textContent = 'Talk to Commander Rho to accept Level 1';
+      setStatusState('warn', 'Talk to Commander Rho to accept Level 1');
     } else if (!m1.completed) {
-      statusEl.textContent = 'Level 1 accepted. Use lift to deploy';
+      setStatusState('active', 'Level 1 accepted. Use lift to deploy');
     } else if (!m1.turnedIn) {
-      statusEl.textContent = 'Turn in Level 1 report with Engineer Vale';
+      setStatusState('warn', 'Turn in Level 1 report with Engineer Vale');
     } else if (!m2.accepted) {
-      statusEl.textContent = 'Talk to Commander Rho to unlock Level 2';
+      setStatusState('warn', 'Talk to Commander Rho to unlock Level 2');
     } else if (!m2.completed) {
-      statusEl.textContent = 'Level 2 accepted. Use lift to deploy';
+      setStatusState('active', 'Level 2 accepted. Use lift to deploy');
     } else if (!m2.turnedIn) {
-      statusEl.textContent = 'Turn in Level 2 report with Engineer Vale';
+      setStatusState('warn', 'Turn in Level 2 report with Engineer Vale');
     } else if (!m3.accepted) {
-      statusEl.textContent = 'Talk to Commander Rho to unlock Level 3';
+      setStatusState('warn', 'Talk to Commander Rho to unlock Level 3');
     } else if (!m3.completed) {
-      statusEl.textContent = 'Level 3 accepted. Use lift to deploy';
+      setStatusState('active', 'Level 3 accepted. Use lift to deploy');
     } else if (!m3.turnedIn) {
-      statusEl.textContent = 'Turn in Level 3 report with Engineer Vale';
+      setStatusState('warn', 'Turn in Level 3 report with Engineer Vale');
     } else {
-      statusEl.textContent = `Campaign complete. Lvl ${profile.level} | Credits ${profile.credits}`;
-      statusEl.dataset.state = 'complete';
+      setStatusState('complete', `Campaign complete. Lvl ${profile.level} | Credits ${profile.credits}`);
     }
     if (shellEl) {
       shellEl.dataset.healthState = 'normal';
@@ -2951,15 +2969,37 @@
   function drawOverlay() {
     if (game.feedbackUntil > game.now) {
       const alpha = Math.min(1, (game.feedbackUntil - game.now) / 0.4);
-      ctx.fillStyle = `rgba(6, 13, 23, ${Math.min(0.82, alpha)})`;
-      ctx.fillRect(0, 0, WIDTH, 78);
-      ctx.strokeStyle = `rgba(124, 216, 255, ${0.55 * alpha})`;
+      const txt = game.feedbackText || '';
+      const isUnlock = /unlock/i.test(txt);
+      const isFail = /failed/i.test(txt);
+      const isComplete = /complete/i.test(txt);
+      const icon = isUnlock ? 'UNLOCK' : isFail ? '!' : isComplete ? 'OK' : 'INFO';
+      const badgeW = Math.min(WIDTH - 20, Math.max(380, Math.min(760, txt.length * 10.2)));
+      const badgeX = (WIDTH - badgeW) / 2;
+      const badgeY = 12;
+
+      ctx.fillStyle = `rgba(8, 16, 28, ${Math.min(0.86, alpha)})`;
+      ctx.fillRect(badgeX, badgeY, badgeW, 58);
+      ctx.strokeStyle = isUnlock
+        ? `rgba(130, 245, 204, ${0.66 * alpha})`
+        : isFail
+          ? `rgba(255, 142, 171, ${0.66 * alpha})`
+          : `rgba(124, 216, 255, ${0.6 * alpha})`;
       ctx.lineWidth = 2;
-      ctx.strokeRect(6, 6, WIDTH - 12, 66);
-      ctx.fillStyle = '#d9f7ff';
-      ctx.font = 'bold 24px Segoe UI';
+      ctx.strokeRect(badgeX, badgeY, badgeW, 58);
+
+      const iconW = 72;
+      ctx.fillStyle = isUnlock ? 'rgba(20, 63, 43, 0.78)' : isFail ? 'rgba(66, 21, 32, 0.78)' : 'rgba(20, 42, 63, 0.78)';
+      ctx.fillRect(badgeX + 8, badgeY + 9, iconW, 40);
+      ctx.fillStyle = isUnlock ? '#d9ffe8' : isFail ? '#ffd4df' : '#d9f7ff';
+      ctx.font = 'bold 13px Segoe UI';
       ctx.textAlign = 'center';
-      ctx.fillText(game.feedbackText, WIDTH / 2, 49);
+      ctx.fillText(icon, badgeX + 8 + iconW / 2, badgeY + 33);
+
+      ctx.fillStyle = '#e7f6ff';
+      ctx.font = 'bold 20px Segoe UI';
+      ctx.textAlign = 'left';
+      ctx.fillText(txt, badgeX + 90, badgeY + 36);
       ctx.textAlign = 'left';
     }
 
