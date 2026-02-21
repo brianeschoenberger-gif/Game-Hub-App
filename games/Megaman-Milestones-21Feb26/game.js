@@ -2281,8 +2281,9 @@
     const moving = Math.abs(player.vx) > 35 && (game.scene === 'hub' || game.mission?.mode !== 'fps');
     const speedNorm = Math.max(0.25, Math.min(1.4, Math.abs(player.vx) / Math.max(1, player.speed)));
     const walkT = game.now * (moving ? (8 + speedNorm * 4) : 2.2);
-    const legSwing = moving ? Math.sin(walkT) * 5.6 : Math.sin(walkT) * 0.9;
-    const armSwing = moving ? Math.cos(walkT) * 3.8 : Math.cos(walkT) * 0.6;
+    const legSwing = moving ? Math.sin(walkT) * 8.5 : Math.sin(walkT) * 1.1;
+    const legLift = moving ? Math.abs(Math.sin(walkT)) * 3.2 : 0;
+    const armSwing = moving ? Math.cos(walkT) * 2.2 : Math.cos(walkT) * 0.45;
     const breath = Math.sin(game.now * 3.4) * 1.1;
     const chargePulse = player.isCharging ? Math.sin(game.now * 20) * 0.5 + 0.5 : 0;
     const shotKick = Math.max(0, 1 - (game.now - player.lastShotAt) * 10);
@@ -2300,25 +2301,29 @@
     ctx.fill();
 
     ctx.save();
-    ctx.translate(-8, 34 + Math.max(0, legSwing * 0.2));
-    ctx.rotate((-0.14 - legSwing * 0.013) * 0.65);
+    ctx.translate(-8, 34 + legLift * 0.35);
+    ctx.rotate((-0.2 - legSwing * 0.022) * 0.8);
     const backLegGrad = ctx.createLinearGradient(0, -2, 0, 28);
     backLegGrad.addColorStop(0, '#8f9aa8');
     backLegGrad.addColorStop(1, '#4b5868');
     ctx.fillStyle = backLegGrad;
-    ctx.fillRect(-8, -2, 14, 26);
+    ctx.fillRect(-7, -2, 13, 16);
+    ctx.fillStyle = '#7f8d9d';
+    ctx.fillRect(-6, 13, 11, 13);
     ctx.fillStyle = '#0e1823';
     ctx.fillRect(-10, 20, 18, 8);
     ctx.restore();
 
     ctx.save();
-    ctx.translate(8, 33);
-    ctx.rotate(0.18 + legSwing * 0.02);
+    ctx.translate(8, 33 - legLift * 0.55);
+    ctx.rotate(0.1 + legSwing * 0.03);
     const frontLegGrad = ctx.createLinearGradient(0, 0, 0, 31);
     frontLegGrad.addColorStop(0, '#2f8df1');
     frontLegGrad.addColorStop(1, '#11418d');
     ctx.fillStyle = frontLegGrad;
-    ctx.fillRect(-8, 0, 16, 29);
+    ctx.fillRect(-8, 0, 16, 15);
+    ctx.fillStyle = '#2366bb';
+    ctx.fillRect(-7, 13, 14, 16);
     ctx.fillStyle = '#0b1725';
     ctx.fillRect(-11, 24, 22, 9);
     ctx.fillStyle = '#8dd4ff';
@@ -2356,34 +2361,34 @@
     ctx.restore();
 
     ctx.save();
-    const cannonY = 18 - armSwing * 0.5 + shotKick * 1.2;
-    ctx.translate(-21 - shotKick * 2.8, cannonY);
-    ctx.rotate(-0.08 - armSwing * 0.01);
+    const cannonY = 19 - armSwing * 0.3 + shotKick * 1.1;
+    ctx.translate(-30 - shotKick * 4.1, cannonY);
+    ctx.rotate(-0.015 - armSwing * 0.005);
     const cannonGrad = ctx.createLinearGradient(-8, -8, 24, 8);
     cannonGrad.addColorStop(0, '#2f8ced');
     cannonGrad.addColorStop(1, '#163f88');
     ctx.fillStyle = cannonGrad;
-    ctx.fillRect(-6, -8, 21, 16);
+    ctx.fillRect(-10, -8, 31, 16);
     ctx.beginPath();
-    ctx.ellipse(-6, 0, 8, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(-10, 0, 8, 8, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(15, 0, 8, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(21, 0, 8, 8, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#6e7b8c';
     ctx.beginPath();
-    ctx.ellipse(20, 0, 8, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(25, 0, 8, 8, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#171e2a';
     ctx.beginPath();
-    ctx.ellipse(22, 0, 5, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(27, 0, 5, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
     if (player.isCharging || shotKick > 0) {
       ctx.globalAlpha = 0.35 + player.currentCharge * 0.4 + shotKick * 0.2;
       ctx.fillStyle = '#86f0ff';
       ctx.beginPath();
-      ctx.ellipse(22, 0, 10 + player.currentCharge * 8 + shotKick * 5, 10 + player.currentCharge * 8 + shotKick * 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(27, 0, 10 + player.currentCharge * 8 + shotKick * 5, 10 + player.currentCharge * 8 + shotKick * 5, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
@@ -2392,7 +2397,7 @@
       ctx.lineWidth = 2;
       ctx.globalAlpha = 0.45 + chargePulse * 0.45;
       ctx.beginPath();
-      ctx.arc(22, 0, 13 + player.currentCharge * 10 + chargePulse * 2, 0, Math.PI * 2);
+      ctx.arc(27, 0, 13 + player.currentCharge * 10 + chargePulse * 2, 0, Math.PI * 2);
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
