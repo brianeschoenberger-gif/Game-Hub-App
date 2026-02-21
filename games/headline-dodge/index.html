@@ -29,7 +29,7 @@
   <body>
     <div class="wrap">
       <h1>Headline Dodge</h1>
-      <p>Use ← and → to dodge incoming headline blocks for 30 seconds.</p>
+      <p>Use A and D to dodge incoming headline blocks for 30 seconds.</p>
       <canvas id="game" width="720" height="400"></canvas>
       <p id="status"></p>
     </div>
@@ -58,8 +58,8 @@
       function tick() {
         frame += 1;
         if (frame % 30 === 0) spawn();
-        if (keys.has('ArrowLeft')) player.x -= player.speed;
-        if (keys.has('ArrowRight')) player.x += player.speed;
+        if (keys.has('a') || keys.has('A')) player.x -= player.speed;
+        if (keys.has('d') || keys.has('D')) player.x += player.speed;
         player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -91,3 +91,4 @@
     </script>
   </body>
 </html>
+
