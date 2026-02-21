@@ -243,6 +243,11 @@
     profile.chargeUnlocked = true;
   }
 
+  // Migration: if Level 2 was already completed in an older build, ensure Level 3 is unlocked.
+  if (profile.missions?.[LEVEL_2_ID]?.completed && !profile.missions?.[LEVEL_3_ID]?.accepted) {
+    profile.missions[LEVEL_3_ID].accepted = true;
+  }
+
   function saveProfile() {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     if (profile.rapidUnlocked) {
@@ -297,6 +302,10 @@
 
   function tryLaunchMissionById(missionId, lockMessage = true) {
     const state = missionState(missionId);
+    if (missionId === LEVEL_3_ID && missionState(LEVEL_2_ID).completed && !state?.accepted) {
+      state.accepted = true;
+      saveProfile();
+    }
     if (!state?.accepted) {
       if (lockMessage) {
         setDialogue('Mission Lift', 'Mission lock active. Talk to Commander Rho first.', 3.2);
@@ -1204,6 +1213,7 @@
       if (mission.boss && mission.boss.alive && !projectile._dead && circleHitsRect(projectile, mission.boss)) {
         mission.boss.hp -= projectile.damage;
         mission.boss.hitFlashUntil = game.now + 0.1;
+        playEnemyHitSfx(1.15 + projectile.power * 0.85);
         projectile._dead = true;
         spawnHitSpark(projectile.x, projectile.y, '#9df0ff', 1 + projectile.power);
 
