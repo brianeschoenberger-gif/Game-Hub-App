@@ -221,8 +221,14 @@
     dialogueText: '',
     mission: null,
     activeMissionId: LEVEL_1_ID,
+    shakeTime: 0,
+    shakeMagnitude: 0,
+    shakeX: 0,
+    shakeY: 0,
     fpsSafeDt: 1 / 30
   };
+
+  let audioContext = null;
 
   function missionState(missionId) {
     return profile.missions[missionId];
@@ -427,6 +433,73 @@
     return game.now - player.lastShotAt >= player.cooldownSeconds;
   }
 
+  function ensureAudioContext() {
+    if (!audioContext) {
+      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextCtor) {
+        audioContext = new AudioContextCtor();
+      }
+    }
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume().catch(() => {});
+    }
+    return audioContext;
+  }
+
+  function triggerCameraShake(magnitude = 0, duration = 0.18) {
+    game.shakeMagnitude = Math.max(game.shakeMagnitude, magnitude);
+    game.shakeTime = Math.max(game.shakeTime, duration);
+  }
+
+  function updateCameraShake(dt) {
+    if (game.shakeTime <= 0) {
+      game.shakeTime = 0;
+      game.shakeMagnitude = 0;
+      game.shakeX = 0;
+      game.shakeY = 0;
+      return;
+    }
+
+    game.shakeTime = Math.max(0, game.shakeTime - dt);
+    game.shakeMagnitude *= 0.88;
+    game.shakeX = (Math.random() * 2 - 1) * game.shakeMagnitude;
+    game.shakeY = (Math.random() * 2 - 1) * game.shakeMagnitude;
+  }
+
+  function playChargeShotSfx(power) {
+    const ctxAudio = ensureAudioContext();
+    if (!ctxAudio) {
+      return;
+    }
+
+    const now = ctxAudio.currentTime;
+    const safePower = Math.max(0.35, Math.min(1, power));
+    const duration = 0.16 + safePower * 0.16;
+
+    const master = ctxAudio.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(0.22 + safePower * 0.22, now + 0.02);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    master.connect(ctxAudio.destination);
+
+    const oscA = ctxAudio.createOscillator();
+    oscA.type = 'sawtooth';
+    oscA.frequency.setValueAtTime(220 + safePower * 180, now);
+    oscA.frequency.exponentialRampToValueAtTime(520 + safePower * 520, now + duration * 0.9);
+    oscA.connect(master);
+    oscA.start(now);
+    oscA.stop(now + duration);
+
+    const oscB = ctxAudio.createOscillator();
+    oscB.type = 'square';
+    oscB.frequency.setValueAtTime(140 + safePower * 130, now);
+    oscB.frequency.exponentialRampToValueAtTime(320 + safePower * 280, now + duration);
+    oscB.detune.value = 9;
+    oscB.connect(master);
+    oscB.start(now);
+    oscB.stop(now + duration * 0.9);
+  }
+
   function fireProjectile(power = 0, forcedDamage = null, forcedCooldown = null) {
     if (!game.mission) {
       return;
@@ -572,6 +645,8 @@
       const chargePower = Math.max(0.35, player.currentCharge);
       fireProjectile(chargePower, null, 0.3);
       spawnHitSpark(player.x + player.w / 2 + player.facing * 14, player.y + 24, '#8df6ff', 1 + player.currentCharge * 0.8);
+      playChargeShotSfx(chargePower);
+      triggerCameraShake(3 + chargePower * 7, 0.15 + chargePower * 0.2);
       player.isCharging = false;
       player.currentCharge = 0;
     }
@@ -1025,12 +1100,14 @@
       if (justPressed.has('Enter')) {
         enterHub('Hub online. Press E near NPCs to interact.');
       }
+      updateCameraShake(dt);
       updateHud();
       return;
     }
 
     if (game.scene === 'hub') {
       updateHubInput();
+      updateCameraShake(dt);
       updateHud();
       return;
     }
@@ -1042,6 +1119,7 @@
       if (justPressed.has('h') || justPressed.has('H')) {
         enterHub('Returned to hub after failed sortie.');
       }
+      updateCameraShake(dt);
       updateHud();
       return;
     }
@@ -1053,6 +1131,7 @@
     updateMissionProjectiles(dt);
     updateMissionSparks(dt);
     updateMissionCamera(dt);
+    updateCameraShake(dt);
     updateHud();
   }
 
@@ -1390,6 +1469,11 @@
   }
 
   function render() {
+    ctx.save();
+    if (game.scene === 'mission' && game.shakeTime > 0) {
+      ctx.translate(game.shakeX, game.shakeY);
+    }
+
     if (game.scene === 'hub' || game.phase === 'intro') {
       drawHubBackground();
       drawHubWorld();
@@ -1399,6 +1483,7 @@
     }
 
     drawOverlay();
+    ctx.restore();
   }
 
   function frame(timeMs) {
@@ -1423,6 +1508,7 @@
   }
 
   window.addEventListener('keydown', (event) => {
+    ensureAudioContext();
     const key = event.key;
     if (!keys.has(key)) {
       justPressed.add(key);
