@@ -14,6 +14,11 @@ const FALLBACK_STORIES = [
 ];
 
 const MAX_STORIES = 5;
+const RSS_FEEDS = [
+  'https://feeds.bbci.co.uk/news/world/rss.xml',
+  'https://www.reutersagency.com/feed/?best-topics=world&post_type=best',
+  'https://apnews.com/hub/ap-top-news?output=rss'
+];
 
 function getTodayLabel() {
   return new Intl.DateTimeFormat(undefined, {
@@ -23,18 +28,17 @@ function getTodayLabel() {
   }).format(new Date());
 }
 
-function isCreatedToday(createdAtEpochSeconds) {
-  if (typeof createdAtEpochSeconds !== 'number' || Number.isNaN(createdAtEpochSeconds)) {
+function isPublishedToday(dateValue) {
+  const publishedDate = new Date(dateValue);
+  if (Number.isNaN(publishedDate.getTime())) {
     return false;
   }
 
-  const createdDate = new Date(createdAtEpochSeconds * 1000);
   const now = new Date();
-
   return (
-    createdDate.getFullYear() === now.getFullYear() &&
-    createdDate.getMonth() === now.getMonth() &&
-    createdDate.getDate() === now.getDate()
+    publishedDate.getFullYear() === now.getFullYear() &&
+    publishedDate.getMonth() === now.getMonth() &&
+    publishedDate.getDate() === now.getDate()
   );
 }
 
@@ -47,16 +51,48 @@ function normalizeStory(story) {
 }
 
 async function loadTopStories() {
-  const response = await fetch('https://hn.algolia.com/api/v1/search?tags=front_page');
-  if (!response.ok) {
-    throw new Error(`News lookup failed (${response.status})`);
-  }
+  const feedResults = await Promise.allSettled(
+    RSS_FEEDS.map(async (feedUrl) => {
+      const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`News lookup failed (${response.status})`);
+      }
 
-  const data = await response.json();
-  return (data?.hits ?? [])
-    .map((hit) => normalizeStory({ title: hit.title, url: hit.url ?? hit.story_url, createdAt: hit.created_at_i }))
-    .filter((story) => story.title && story.url && isCreatedToday(story.createdAt))
-    .slice(0, MAX_STORIES);
+      const xmlText = await response.text();
+      const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
+      return Array.from(xml.querySelectorAll('item')).map((item) => {
+        const title = item.querySelector('title')?.textContent ?? '';
+        const link = item.querySelector('link')?.textContent ?? '';
+        const pubDate = item.querySelector('pubDate')?.textContent ?? '';
+
+        return {
+          title: title.trim(),
+          url: link.trim(),
+          publishedAt: new Date(pubDate).getTime()
+        };
+      });
+    })
+  );
+
+  const seenTitles = new Set();
+  const stories = feedResults
+    .flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+    .filter((story) => story.title && story.url && isPublishedToday(story.publishedAt))
+    .filter((story) => {
+      const key = story.title.toLowerCase();
+      if (seenTitles.has(key)) {
+        return false;
+      }
+
+      seenTitles.add(key);
+      return true;
+    })
+    .sort((a, b) => b.publishedAt - a.publishedAt)
+    .slice(0, MAX_STORIES)
+    .map((story) => normalizeStory({ title: story.title, url: story.url, createdAt: story.publishedAt / 1000 }));
+
+  return stories;
 }
 
 function buildStoryLink(story) {
