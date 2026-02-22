@@ -27,6 +27,7 @@
 
   const LEVEL_1_ID = 'reactor_sweep';
   const LEVEL_2_ID = 'sky_foundry';
+  const LEVEL_3_ID = 'iron_descent';
 
   const keys = new Set();
   const justPressed = new Set();
@@ -244,6 +245,134 @@
         dash: { duration: 0.46, speedMult: 3.35, impactRadius: 104, impactDamage: 22 },
         areaDenial: { zoneCount: 3, warning: 0.7, active: 1.25, radius: 72, damage: 16, tickInterval: 0.22 }
       }
+    },
+    [LEVEL_3_ID]: {
+      name: 'Level 3 - Iron Descent',
+      mode: '2d',
+      visualThemeId: 'level3',
+      worldWidth: 10200,
+      spawn: { x: 120, y: 210 },
+      finishGate: { x: 8720, y: 132, w: 56, h: 268 },
+      blocks: [
+        { x: 0, y: 300, w: 620, h: 240 },
+        { x: 500, y: 350, w: 520, h: 190 },
+        { x: 960, y: 390, w: 560, h: 150 },
+        { x: 1460, y: 430, w: 620, h: 110 },
+        { x: 2060, y: 440, w: 660, h: 100 },
+        { x: 2820, y: 398, w: 460, h: 142 },
+        { x: 3270, y: 430, w: 580, h: 110 },
+        { x: 3860, y: 452, w: 710, h: 88 },
+        { x: 4520, y: 418, w: 560, h: 122 },
+        { x: 5100, y: 448, w: 700, h: 92 },
+        { x: 5860, y: 470, w: 920, h: 70 },
+
+        { x: 6040, y: 420, w: 180, h: 20 },
+        { x: 6280, y: 376, w: 180, h: 20 },
+        { x: 6520, y: 332, w: 180, h: 20 },
+        { x: 6760, y: 292, w: 180, h: 20 },
+        { x: 7000, y: 256, w: 180, h: 20 },
+        { x: 7240, y: 224, w: 180, h: 20 },
+        { x: 7480, y: 194, w: 190, h: 20 },
+        { x: 7730, y: 174, w: 210, h: 20 },
+        { x: 8040, y: 156, w: 250, h: 20 },
+        { x: 8360, y: 142, w: 300, h: 20 },
+
+        { x: 8680, y: 250, w: 80, h: 220 },
+        { x: 8760, y: 470, w: 1440, h: 70 }
+      ],
+      crates: [
+        { x: 636, y: 314, w: 36, h: 36, hp: 3 },
+        { x: 994, y: 354, w: 36, h: 36, hp: 3 },
+        { x: 1530, y: 394, w: 36, h: 36, hp: 3 },
+        { x: 2860, y: 362, w: 36, h: 36, hp: 3 },
+        { x: 4550, y: 382, w: 36, h: 36, hp: 3 },
+        { x: 5900, y: 434, w: 36, h: 36, hp: 4 },
+        { x: 6540, y: 296, w: 36, h: 36, hp: 4 },
+        { x: 7260, y: 188, w: 36, h: 36, hp: 4 },
+        { x: 8070, y: 120, w: 36, h: 36, hp: 4 },
+        { x: 8840, y: 434, w: 36, h: 36, hp: 4 }
+      ],
+      pickups: [
+        { x: 7488, y: 156, w: 24, h: 24, credits: 160, xp: 110, label: 'Deep Rail Cache' }
+      ],
+      hazards: [
+        {
+          id: 'l3_laser_drop',
+          type: 'laser_gate',
+          x1: 3330,
+          x2: 4520,
+          y: 430,
+          thickness: 14,
+          cycleTime: 2.9,
+          warningDuration: 0.62,
+          activeDuration: 0.98,
+          damage: 18,
+          tickInterval: 0.24,
+          activeRegion: { x: 3280, y: 320, w: 1300, h: 205 }
+        },
+        {
+          id: 'l3_crusher_stair',
+          type: 'conveyor_crusher',
+          conveyor: { x: 5800, y: 430, w: 540, h: 40, push: 240 },
+          crusher: { x: 6200, topY: 250, bottomY: 376, w: 104, h: 64 },
+          cycleTime: 3.3,
+          warningDuration: 0.65,
+          descendDuration: 0.66,
+          holdDuration: 0.44,
+          retractDuration: 0.76,
+          damage: 24,
+          tickInterval: 0.2,
+          activeRegion: { x: 5840, y: 226, w: 460, h: 270 }
+        },
+        {
+          id: 'l3_debris_funnel',
+          type: 'debris_zone',
+          triggerX: 7100,
+          zoneX: 7100,
+          zoneW: 980,
+          yTop: 14,
+          yBottom: 520,
+          spawnInterval: 0.92,
+          warningDuration: 0.58,
+          damage: 18,
+          fallSpeed: 610
+        }
+      ],
+      enemySpawns: [
+        { x: 700, y: 298, minX: 540, maxX: 980, hp: 5, speed: 126 },
+        { x: 1260, y: 338, minX: 1030, maxX: 1490, hp: 5, speed: 128 },
+        { x: 2140, y: 388, minX: 1780, maxX: 2660, hp: 5, speed: 130 },
+        { x: 3430, y: 378, minX: 3300, maxX: 3820, hp: 6, speed: 132 },
+        { x: 4640, y: 366, minX: 4540, maxX: 5060, hp: 6, speed: 136 },
+        { x: 6170, y: 418, minX: 5880, maxX: 6760, hp: 6, speed: 138 },
+        { x: 7020, y: 220, minX: 6940, maxX: 7400, hp: 7, speed: 142 },
+        { x: 8200, y: 120, minX: 8060, maxX: 8640, hp: 7, speed: 146 },
+        { x: 9380, y: 418, minX: 8880, maxX: 10140, hp: 7, speed: 148 }
+      ],
+      boss: {
+        x: 9300,
+        y: 300,
+        w: 132,
+        h: 146,
+        hp: 146,
+        speed: 142,
+        moveMinX: 8760,
+        moveMaxX: 10100,
+        attackInterval: 0.8,
+        projectileSpeeds: [320, 360, 400, 440],
+        spread: [-0.38, -0.15, 0.15, 0.38],
+        contactDamage: 30,
+        projectileDamage: 16,
+        phaseThresholds: [0.72, 0.38],
+        attackPatternByPhase: [
+          ['spread', 'dash', 'area', 'spread', 'dash'],
+          ['dash', 'spread', 'area', 'dash', 'spread', 'area'],
+          ['dash', 'area', 'spread', 'dash', 'area', 'spread', 'dash']
+        ],
+        stateDurations: { reposition: 0.58, telegraph: 0.46, recover: 0.54 },
+        dash: { duration: 0.5, speedMult: 3.6, impactRadius: 112, impactDamage: 24 },
+        areaDenial: { zoneCount: 3, warning: 0.62, active: 1.28, radius: 78, damage: 18, tickInterval: 0.2 }
+      }
     }
   };
 
@@ -304,7 +433,8 @@
   function createDefaultMissions() {
     return {
       [LEVEL_1_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
-      [LEVEL_2_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 }
+      [LEVEL_2_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
+      [LEVEL_3_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 }
     };
   }
 
@@ -439,10 +569,16 @@
       lead: [50, 53, null, 57, 60, null, 57, 53, 50, 53, null, 57, 62, null, 57, 53],
       bass: [38, null, 38, null, 41, null, 41, null, 36, null, 36, null, 33, null, 33, null]
     },
+    level3: {
+      beat: 0.3,
+      lead: [47, null, 50, 54, null, 57, 54, null, 52, null, 55, 59, null, 62, 59, 55],
+      bass: [35, null, 35, null, 38, null, 38, null, 33, null, 33, null, 31, null, 31, null]
+    },
   };
   const MUSIC_LEVELS = {
     level1: 0.1,
-    level2: 0.095
+    level2: 0.095,
+    level3: 0.092
   };
 
   const VISUAL_THEME = {
@@ -475,6 +611,16 @@
       edge: '#6fd1ff',
       floorAccent: '#2b6f87',
       vignette: 0.34
+    },
+    level3: {
+      skyTop: '#3a220f',
+      skyBottom: '#150d06',
+      haze: 'rgba(255, 167, 94, 0.09)',
+      panelTop: '#6c431f',
+      panelBottom: '#2a180b',
+      edge: '#f5bf79',
+      floorAccent: '#8d5d2c',
+      vignette: 0.38
     },
     fps: {
       skyTop: '#3d5885',
@@ -561,6 +707,9 @@
     }
     if (!missionState(LEVEL_2_ID).completed) {
       return LEVEL_2_ID;
+    }
+    if (!missionState(LEVEL_3_ID).completed) {
+      return LEVEL_3_ID;
     }
     return null;
   }
@@ -1082,6 +1231,9 @@
     }
     if (missionId === LEVEL_2_ID) {
       return 'level2';
+    }
+    if (missionId === LEVEL_3_ID) {
+      return 'level3';
     }
     return null;
   }
@@ -1717,6 +1869,8 @@
       tryLaunchMissionById(LEVEL_1_ID);
     } else if (justPressed.has('2')) {
       tryLaunchMissionById(LEVEL_2_ID);
+    } else if (justPressed.has('3')) {
+      tryLaunchMissionById(LEVEL_3_ID);
     } else if (justPressed.has('t') || justPressed.has('T')) {
       if (rectDistance(player, hub.dataTerminal) < 120) {
         resetProgressProfile();
@@ -1728,6 +1882,7 @@
   function interactInHub() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
+    const m3 = missionState(LEVEL_3_ID);
 
     if (rectDistance(player, hub.commander) < 90) {
       if (!m1.accepted) {
@@ -1746,6 +1901,14 @@
         setDialogue(hub.commander.name, 'Sky Foundry is live. Hold your cannon charge for bigger impact.');
       } else if (m2.completed && !m2.turnedIn) {
         setDialogue(hub.commander.name, 'Turn in your Sky Foundry clear at engineering for final sync.');
+      } else if (!m3.accepted) {
+        m3.accepted = true;
+        saveProfile();
+        setDialogue(hub.commander.name, 'Level 3 unlocked: Iron Descent. Expect long downhill sectors and heavy debris fire.');
+      } else if (m3.accepted && !m3.completed) {
+        setDialogue(hub.commander.name, 'Iron Descent is active. Keep moving through the stepped furnace lanes.');
+      } else if (m3.completed && !m3.turnedIn) {
+        setDialogue(hub.commander.name, 'Iron Descent clear verified. Final engineering payout is waiting.');
       } else {
         setDialogue(hub.commander.name, 'Sector clear confirmed. All available missions are complete.');
       }
@@ -1775,7 +1938,18 @@
         } else {
           setDialogue(hub.engineer.name, 'Sky Foundry payout complete. Charge cannon calibration finalized.');
         }
-      } else if (m2.completed && m2.turnedIn) {
+      } else if (m3.completed && !m3.turnedIn) {
+        m3.turnedIn = true;
+        profile.credits += 260;
+        const leveled = giveXp(190);
+        saveProfile();
+
+        if (leveled) {
+          setDialogue(hub.engineer.name, `Iron Descent payout complete. +260 credits, +190 XP. Level ${profile.level} reached.`);
+        } else {
+          setDialogue(hub.engineer.name, 'Iron Descent payout complete. Campaign operations are fully synced.');
+        }
+      } else if (m3.completed && m3.turnedIn) {
         setDialogue(hub.engineer.name, 'All systems tuned. Current campaign objectives are complete.');
       } else {
         setDialogue(hub.engineer.name, 'Bring me completed mission logs and I can issue upgrades.');
@@ -1809,6 +1983,13 @@
           : missionState(LEVEL_2_ID).accepted
             ? 'L2 in progress'
             : 'L2 locked';
+      const missionText3 = missionState(LEVEL_3_ID).turnedIn
+        ? 'L3 archived'
+        : missionState(LEVEL_3_ID).completed
+          ? 'L3 complete, pending turn-in'
+          : missionState(LEVEL_3_ID).accepted
+            ? 'L3 in progress'
+            : 'L3 locked';
       const upgrades = profile.pierceUnlocked
         ? `Rapid + Charge + Pierce${profile.airDashUnlocked ? ' + Air Dash' : ''} online`
         : profile.chargeUnlocked
@@ -1820,7 +2001,7 @@
               : 'Base cannon';
       setDialogue(
         hub.dataTerminal.name,
-        `Lvl ${profile.level} | Cr ${profile.credits} | ${missionText1} | ${missionText2} | ${upgrades} | Press T to reset save`
+        `Lvl ${profile.level} | Cr ${profile.credits} | ${missionText1} | ${missionText2} | ${missionText3} | ${upgrades} | Press T to reset save`
       );
     }
   }
@@ -2797,6 +2978,7 @@
   function updateHud() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
+    const m3 = missionState(LEVEL_3_ID);
 
     if (game.scene === 'mission') {
       healthEl.textContent = String(Math.max(0, Math.ceil(player.hp)));
@@ -3110,6 +3292,7 @@
   function drawHubObjectives() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
+    const m3 = missionState(LEVEL_3_ID);
     let objective;
 
     if (!m1.accepted) {
@@ -3124,6 +3307,12 @@
       objective = 'Objective: Use Mission Lift (E) to clear Level 2';
     } else if (!m2.turnedIn) {
       objective = 'Objective: Turn in Level 2 mission with Engineer Vale';
+    } else if (!m3.accepted) {
+      objective = 'Objective: Talk to Commander Rho to unlock Level 3';
+    } else if (!m3.completed) {
+      objective = 'Objective: Use Mission Lift (E) to clear Level 3';
+    } else if (!m3.turnedIn) {
+      objective = 'Objective: Turn in Level 3 mission with Engineer Vale';
     } else {
       objective = `Objective: Campaign complete | Level ${profile.level} | Credits ${profile.credits}`;
     }
