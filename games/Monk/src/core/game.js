@@ -56,4 +56,16 @@ export function createGame() {
   window.addEventListener('resize', () => {
     engine.resize();
   });
+
+  let disposed = false;
+  const cleanup = () => {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    playerInput.dispose?.();
+  };
+
+  scene.onDisposeObservable.add(cleanup);
+  window.addEventListener('beforeunload', cleanup, { once: true });
 }

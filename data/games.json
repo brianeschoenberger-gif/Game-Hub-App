@@ -182,7 +182,7 @@
     ],
     "thumbnailUrl": "/assets/thumbnails/monk-awakening.svg",
     "bannerUrl": "",
-    "gamePath": "/games/Monk/index.html",
+    "gamePath": "/games/Monk/dist/index.html",
     "featured": false,
     "status": "published",
     "durationEstimate": "5 min"

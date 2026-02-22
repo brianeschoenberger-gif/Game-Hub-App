@@ -1,4 +1,5 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { Ray } from '@babylonjs/core/Culling/ray';
 import { gameConfig } from '../../config/gameConfig.js';
 import { createPlayerMesh } from './playerFactory.js';
 
@@ -6,11 +7,37 @@ const flatForward = new Vector3();
 const flatRight = new Vector3();
 const desiredDirection = new Vector3();
 const moveDelta = new Vector3();
+const groundRayOrigin = new Vector3();
+const downDir = new Vector3(0, -1, 0);
 
 export function createPlayerController(scene, world, playerInput) {
   const player = createPlayerMesh(scene);
   const velocity = new Vector3(0, 0, 0);
+  const halfHeight = gameConfig.movement.playerHeight / 2;
+  const groundSnap = 0.03;
+  const groundedThreshold = 0.14;
+  const groundRay = new Ray(groundRayOrigin, downDir, halfHeight + 0.3);
   let isGrounded = false;
+
+  function refreshGroundedState() {
+    groundRayOrigin.set(player.position.x, player.position.y + 0.05, player.position.z);
+    groundRay.length = halfHeight + 0.35;
+    const hit = scene.pickWithRay(groundRay, (mesh) => mesh !== player && mesh.checkCollisions === true);
+    if (!hit?.hit || !hit.pickedPoint) {
+      isGrounded = false;
+      return;
+    }
+
+    const footY = player.position.y - halfHeight;
+    const groundY = hit.pickedPoint.y;
+    const distToGround = footY - groundY;
+    isGrounded = distToGround <= groundedThreshold;
+
+    if (isGrounded && velocity.y <= 0) {
+      velocity.y = 0;
+      player.position.y = groundY + halfHeight + groundSnap;
+    }
+  }
 
   function update(deltaTime) {
     const camera = scene.activeCamera;
@@ -45,25 +72,24 @@ export function createPlayerController(scene, world, playerInput) {
     velocity.x += (targetVelocityX - velocity.x) * blend;
     velocity.z += (targetVelocityZ - velocity.z) * blend;
 
-    isGrounded = player.position.y <= gameConfig.movement.playerHeight / 2 + 0.16;
-    if (isGrounded && velocity.y < 0) {
-      velocity.y = 0;
-      player.position.y = gameConfig.movement.playerHeight / 2 + 0.1;
-    }
+    refreshGroundedState();
 
-    if (isGrounded && playerInput.keys.jump) {
+    if (isGrounded && playerInput.consumeJumpPress()) {
       velocity.y = gameConfig.movement.jumpSpeed;
+      isGrounded = false;
     }
 
     velocity.y += gameConfig.movement.gravity * deltaTime;
 
     moveDelta.set(velocity.x * deltaTime, velocity.y * deltaTime, velocity.z * deltaTime);
     player.moveWithCollisions(moveDelta);
+    refreshGroundedState();
 
     if (hasInput) {
       const targetRotationY = Math.atan2(desiredDirection.x, desiredDirection.z);
       const rotationBlend = Math.min(1, gameConfig.movement.rotationLerp * deltaTime);
-      player.rotation.y += (targetRotationY - player.rotation.y) * rotationBlend;
+      const deltaYaw = Math.atan2(Math.sin(targetRotationY - player.rotation.y), Math.cos(targetRotationY - player.rotation.y));
+      player.rotation.y += deltaYaw * rotationBlend;
     }
   }
 

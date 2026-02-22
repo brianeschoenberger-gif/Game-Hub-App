@@ -1,3 +1,8 @@
-import { createGame } from './core/game.js';
+async function bootstrap() {
+  const { createGame } = await import('./core/game.js');
+  createGame();
+}
 
-createGame();
+bootstrap().catch((error) => {
+  console.error('Failed to bootstrap Monk Awakening', error);
+});

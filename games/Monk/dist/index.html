@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monk Awakening</title>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@babylonjs/core/Helpers/sceneHelpers": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Helpers/sceneHelpers.js",
+          "@babylonjs/core/Maths/math.vector": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Maths/math.vector.js",
+          "@babylonjs/core/Maths/math.color": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Maths/math.color.js",
+          "@babylonjs/core/Lights/hemisphericLight": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Lights/hemisphericLight.js",
+          "@babylonjs/core/Lights/directionalLight": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Lights/directionalLight.js",
+          "@babylonjs/core/Engines/engine": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Engines/engine.js",
+          "@babylonjs/core/scene": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/scene.js",
+          "@babylonjs/core/Cameras/arcRotateCamera": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Cameras/arcRotateCamera.js",
+          "@babylonjs/core/Culling/ray": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Culling/ray.js",
+          "@babylonjs/core/Meshes/meshBuilder": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Meshes/meshBuilder.js",
+          "@babylonjs/core/Materials/standardMaterial": "https://cdn.jsdelivr.net/npm/@babylonjs/core@7.29.0/Materials/standardMaterial.js"
+        }
+      }
+    </script>
+    <script type="module" crossorigin src="/Game-Hub-App/games/Monk/dist/assets/index-Ciqr9f2v.js"></script>
+    <link rel="modulepreload" crossorigin href="/Game-Hub-App/games/Monk/dist/assets/babylon-core-CPYENeWg.js">
+    <link rel="stylesheet" crossorigin href="/Game-Hub-App/games/Monk/dist/assets/index-EzyEdTw_.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="renderCanvas"></canvas>
+      <div id="startScreen" class="overlay visible">
+        <div class="panel">
+          <h1>Monk Awakening</h1>
+          <p>Wake, breathe, and explore the quiet monastery.</p>
+          <button id="playButton">Play</button>
+        </div>
+      </div>
+      <div id="hud" class="hud hidden">
+        <p id="objectiveText" class="objective">Objective: Explore the monastery</p>
+        <div id="storyBox" class="story hidden"></div>
+      </div>
+      <div id="fadeLayer" class="fade-layer"></div>
+    </div>
+  </body>
+</html>
