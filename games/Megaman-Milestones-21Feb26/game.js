@@ -27,9 +27,6 @@
 
   const LEVEL_1_ID = 'reactor_sweep';
   const LEVEL_2_ID = 'sky_foundry';
-  const LEVEL_3_ID = 'black_site_breach';
-  const LEVEL_3_CLEAR_VIDEO = 'assets/20260220_2235_01khzefgdhes6bhs7sbhjhgrw7.mp4';
-  const LEVEL_3_MUSIC_MP3 = '../../assets/Mega-Man vs Mike.mp3';
 
   const keys = new Set();
   const justPressed = new Set();
@@ -247,43 +244,6 @@
         dash: { duration: 0.46, speedMult: 3.35, impactRadius: 104, impactDamage: 22 },
         areaDenial: { zoneCount: 3, warning: 0.7, active: 1.25, radius: 72, damage: 16, tickInterval: 0.22 }
       }
-    },
-    [LEVEL_3_ID]: {
-      name: 'Level 3 - Black Site Breach',
-      mode: 'fps',
-      visualThemeId: 'fps',
-      fps: {
-        map: [
-          '########################',
-          '#S...#.................#',
-          '#.##.#.#####.#########.#',
-          '#....#.....#.....#....##',
-          '####.#####.#####.#.##..#',
-          '#....#...#.....#.#..#..#',
-          '#.####.#.#####.#.##.#..#',
-          '#......#...#...#....#..#',
-          '#.########.#.########..#',
-          '#.....#....#......#....#',
-          '#.###.#.#########.#.##.#',
-          '#.#...#....#......#..#.#',
-          '#.#.######.#.#######.#.#',
-          '#...#.....E#.....#...#.#',
-          '########################'
-        ],
-        moveSpeed: 3.6,
-        sprintMultiplier: 1.55,
-        lookSpeed: 0.0026,
-        fireCooldown: 0.2,
-        enemyDamage: 14,
-        enemyAggroRange: 6.5,
-        enemyShootInterval: 1.1,
-        enemySpawns: [
-          { x: 3.5, y: 1.5, hp: 3 },
-          { x: 2.5, y: 3.5, hp: 3 },
-          { x: 3.5, y: 5.5, hp: 4 },
-          { x: 7.5, y: 5.5, hp: 4 }
-        ]
-      }
     }
   };
 
@@ -344,8 +304,7 @@
   function createDefaultMissions() {
     return {
       [LEVEL_1_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
-      [LEVEL_2_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 },
-      [LEVEL_3_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 }
+      [LEVEL_2_ID]: { accepted: false, completed: false, turnedIn: false, deaths: 0 }
     };
   }
 
@@ -414,11 +373,6 @@
     profile.chargeUnlocked = true;
   }
 
-  // Migration: if Level 2 was already completed in an older build, ensure Level 3 is unlocked.
-  if (profile.missions?.[LEVEL_2_ID]?.completed && !profile.missions?.[LEVEL_3_ID]?.accepted) {
-    profile.missions[LEVEL_3_ID].accepted = true;
-  }
-
   // Migration: if Level 2 was already completed in an older build, grant air dash unlock now.
   if (!profile.airDashUnlocked) {
     profile.airDashUnlocked = true;
@@ -465,15 +419,13 @@
   let audioContext = null;
   let mouseLeftDown = false;
   let mouseRightDown = false;
-  let level3CutsceneOverlay = null;
   const shellEl = document.querySelector('.game-shell');
   const musicState = {
     trackId: null,
     step: 0,
     nextNoteAt: 0,
     beat: 0.34,
-    gain: null,
-    level3Audio: null
+    gain: null
   };
 
   const MUSIC_TRACKS = {
@@ -487,16 +439,10 @@
       lead: [50, 53, null, 57, 60, null, 57, 53, 50, 53, null, 57, 62, null, 57, 53],
       bass: [38, null, 38, null, 41, null, 41, null, 36, null, 36, null, 33, null, 33, null]
     },
-    level3: {
-      beat: 0.28,
-      lead: [45, null, 48, 50, null, 52, 53, null, 50, null, 48, 45, null, 43, 41, null],
-      bass: [33, null, null, 36, null, null, 31, null, null, 33, null, null, 29, null, null, 31]
-    }
   };
   const MUSIC_LEVELS = {
     level1: 0.1,
-    level2: 0.095,
-    level3: 0.34
+    level2: 0.095
   };
 
   const VISUAL_THEME = {
@@ -616,18 +562,11 @@
     if (!missionState(LEVEL_2_ID).completed) {
       return LEVEL_2_ID;
     }
-    if (!missionState(LEVEL_3_ID).completed) {
-      return LEVEL_3_ID;
-    }
     return null;
   }
 
   function tryLaunchMissionById(missionId, lockMessage = true) {
     const state = missionState(missionId);
-    if (missionId === LEVEL_3_ID && missionState(LEVEL_2_ID).completed && !state?.accepted) {
-      state.accepted = true;
-      saveProfile();
-    }
     if (!state?.accepted) {
       if (lockMessage) {
         setDialogue('Mission Lift', 'Mission lock active. Talk to Commander Rho first.', 3.2);
@@ -929,96 +868,12 @@
     saveProfile();
   }
 
-  function clearLevel3CutsceneOverlay() {
-    if (level3CutsceneOverlay && level3CutsceneOverlay.parentNode) {
-      level3CutsceneOverlay.parentNode.removeChild(level3CutsceneOverlay);
-    }
-    level3CutsceneOverlay = null;
-    if (game.phase === 'cutscene') {
-      game.phase = 'mission';
-    }
-  }
-
-  function playLevel3ClearVideo(onDone) {
-    clearLevel3CutsceneOverlay();
-    game.phase = 'cutscene';
-    clearTransientInputState();
-    stopBackgroundMusic();
-
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.left = '0';
-    overlay.style.top = '0';
-    overlay.style.width = '100vw';
-    overlay.style.height = '100vh';
-    overlay.style.background = 'rgba(0, 0, 0, 0.92)';
-    overlay.style.display = 'flex';
-    overlay.style.alignItems = 'center';
-    overlay.style.justifyContent = 'center';
-    overlay.style.zIndex = '9999';
-
-    const wrap = document.createElement('div');
-    wrap.style.width = 'min(92vw, 1120px)';
-    wrap.style.height = 'min(88vh, 720px)';
-    wrap.style.display = 'flex';
-    wrap.style.flexDirection = 'column';
-    wrap.style.gap = '10px';
-    wrap.style.alignItems = 'stretch';
-
-    const video = document.createElement('video');
-    video.src = LEVEL_3_CLEAR_VIDEO;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.controls = true;
-    video.style.width = '100%';
-    video.style.height = '100%';
-    video.style.objectFit = 'contain';
-    video.style.background = '#000';
-    video.style.border = '1px solid rgba(110, 190, 255, 0.45)';
-
-    const skip = document.createElement('button');
-    skip.textContent = 'Skip (Enter Hub)';
-    skip.style.alignSelf = 'flex-end';
-    skip.style.padding = '8px 14px';
-    skip.style.border = '1px solid rgba(140, 210, 255, 0.65)';
-    skip.style.background = 'rgba(18, 38, 66, 0.85)';
-    skip.style.color = '#d6f0ff';
-    skip.style.font = '600 14px Segoe UI, sans-serif';
-    skip.style.cursor = 'pointer';
-
-    wrap.appendChild(video);
-    wrap.appendChild(skip);
-    overlay.appendChild(wrap);
-    document.body.appendChild(overlay);
-    level3CutsceneOverlay = overlay;
-
-    let finished = false;
-    const finalize = () => {
-      if (finished) {
-        return;
-      }
-      finished = true;
-      clearLevel3CutsceneOverlay();
-      if (typeof onDone === 'function') {
-        onDone();
-      }
-    };
-
-    skip.addEventListener('click', finalize);
-    overlay.addEventListener('click', (event) => {
-      if (event.target === overlay) {
-        finalize();
-      }
-    });
-    video.addEventListener('ended', finalize);
-    video.addEventListener('error', finalize);
-    video.play().catch(() => {});
-  }
+  function clearMissionOverlay() {}
 
   function enterHub(message) {
     mouseLeftDown = false;
     mouseRightDown = false;
-    clearLevel3CutsceneOverlay();
+    clearMissionOverlay();
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
@@ -1222,19 +1077,12 @@
       return 'level1';
     }
     if (missionId === LEVEL_2_ID) {
-      return 'level3';
-    }
-    if (missionId === LEVEL_3_ID) {
       return 'level2';
     }
     return null;
   }
 
   function stopBackgroundMusic() {
-    if (musicState.level3Audio) {
-      musicState.level3Audio.pause();
-      musicState.level3Audio.currentTime = 0;
-    }
     if (musicState.gain && audioContext) {
       const now = audioContext.currentTime;
       musicState.gain.gain.cancelScheduledValues(now);
@@ -1259,29 +1107,6 @@
       musicState.gain = ctxAudio.createGain();
       musicState.gain.gain.value = 0.0001;
       musicState.gain.connect(ctxAudio.destination);
-    }
-
-    if (trackId === 'level3') {
-      if (!musicState.level3Audio) {
-        musicState.level3Audio = new Audio(LEVEL_3_MUSIC_MP3);
-        musicState.level3Audio.loop = true;
-        musicState.level3Audio.preload = 'auto';
-        musicState.level3Audio.volume = MUSIC_LEVELS.level3;
-      }
-      if (musicState.gain) {
-        musicState.gain.gain.cancelScheduledValues(ctxAudio.currentTime);
-      musicState.gain.gain.setTargetAtTime(0.0001, ctxAudio.currentTime, 0.02);
-      }
-      musicState.trackId = 'level3';
-      musicState.step = 0;
-      musicState.nextNoteAt = 0;
-      musicState.level3Audio.play().catch(() => {});
-      return;
-    }
-
-    if (musicState.level3Audio) {
-      musicState.level3Audio.pause();
-      musicState.level3Audio.currentTime = 0;
     }
 
     if (musicState.trackId === trackId) {
@@ -1324,9 +1149,6 @@
   }
 
   function updateBackgroundMusic() {
-    if (musicState.trackId === 'level3') {
-      return;
-    }
     if (!audioContext || !musicState.trackId || !musicState.gain) {
       return;
     }
@@ -1891,8 +1713,6 @@
       tryLaunchMissionById(LEVEL_1_ID);
     } else if (justPressed.has('2')) {
       tryLaunchMissionById(LEVEL_2_ID);
-    } else if (justPressed.has('3')) {
-      tryLaunchMissionById(LEVEL_3_ID);
     } else if (justPressed.has('t') || justPressed.has('T')) {
       if (rectDistance(player, hub.dataTerminal) < 120) {
         resetProgressProfile();
@@ -1904,7 +1724,6 @@
   function interactInHub() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
-    const m3 = missionState(LEVEL_3_ID);
 
     if (rectDistance(player, hub.commander) < 90) {
       if (!m1.accepted) {
@@ -1923,16 +1742,8 @@
         setDialogue(hub.commander.name, 'Sky Foundry is live. Hold your cannon charge for bigger impact.');
       } else if (m2.completed && !m2.turnedIn) {
         setDialogue(hub.commander.name, 'Turn in your Sky Foundry clear at engineering for final sync.');
-      } else if (!m3.accepted) {
-        m3.accepted = true;
-        saveProfile();
-        setDialogue(hub.commander.name, 'Level 3 unlocked: Black Site Breach. Switch to first-person and clear hostiles.');
-      } else if (m3.accepted && !m3.completed) {
-        setDialogue(hub.commander.name, 'Black Site Breach active. Eliminate all hostiles and reach extraction.');
-      } else if (m3.completed && !m3.turnedIn) {
-        setDialogue(hub.commander.name, 'Report to Engineer Vale for Tier-3 cannon sync.');
       } else {
-        setDialogue(hub.commander.name, 'Sector clear confirmed. Awaiting Milestone 3 expansion orders.');
+        setDialogue(hub.commander.name, 'Sector clear confirmed. All available missions are complete.');
       }
       return;
     }
@@ -1960,21 +1771,8 @@
         } else {
           setDialogue(hub.engineer.name, 'Sky Foundry payout complete. Charge cannon calibration finalized.');
         }
-      } else if (m3.completed && !m3.turnedIn) {
-        m3.turnedIn = true;
-        profile.credits += 240;
-        const leveled = giveXp(170);
-        saveProfile();
-
-        if (leveled) {
-          setDialogue(hub.engineer.name, `Tier-3 sync complete. +240 credits, +170 XP. Level ${profile.level} reached.`);
-        } else {
-          setDialogue(hub.engineer.name, 'Tier-3 sync complete. Piercing rapid shots are now online.');
-        }
-      } else if (m3.completed && m3.turnedIn) {
-        setDialogue(hub.engineer.name, 'All systems tuned. Piercing cannon profile is stable.');
-      } else if (m2.completed && m2.turnedIn && !m3.completed) {
-        setDialogue(hub.engineer.name, 'Black Site package is queued. Complete Level 3 for Tier-3 unlock.');
+      } else if (m2.completed && m2.turnedIn) {
+        setDialogue(hub.engineer.name, 'All systems tuned. Current campaign objectives are complete.');
       } else {
         setDialogue(hub.engineer.name, 'Bring me completed mission logs and I can issue upgrades.');
       }
@@ -2007,14 +1805,6 @@
           : missionState(LEVEL_2_ID).accepted
             ? 'L2 in progress'
             : 'L2 locked';
-      const missionText3 = missionState(LEVEL_3_ID).turnedIn
-        ? 'L3 archived'
-        : missionState(LEVEL_3_ID).completed
-          ? 'L3 complete, pending turn-in'
-          : missionState(LEVEL_3_ID).accepted
-            ? 'L3 in progress'
-            : 'L3 locked';
-
       const upgrades = profile.pierceUnlocked
         ? `Rapid + Charge + Pierce${profile.airDashUnlocked ? ' + Air Dash' : ''} online`
         : profile.chargeUnlocked
@@ -2026,7 +1816,7 @@
               : 'Base cannon';
       setDialogue(
         hub.dataTerminal.name,
-        `Lvl ${profile.level} | Cr ${profile.credits} | ${missionText1} | ${missionText2} | ${missionText3} | ${upgrades} | Press T to reset save`
+        `Lvl ${profile.level} | Cr ${profile.credits} | ${missionText1} | ${missionText2} | ${upgrades} | Press T to reset save`
       );
     }
   }
@@ -2549,13 +2339,9 @@
   function completeMissionRun() {
     const missionId = game.activeMissionId;
     const ms = missionState(missionId);
-    const m3 = missionState(LEVEL_3_ID);
     ms.completed = true;
     profile.clears += 1;
     let unlockBanner = '';
-    const appendUnlockBanner = (text) => {
-      unlockBanner = unlockBanner ? `${unlockBanner} ${text}` : text;
-    };
 
     if (missionId === LEVEL_1_ID && !profile.rapidUnlocked) {
       profile.rapidUnlocked = true;
@@ -2566,31 +2352,10 @@
     if (missionId === LEVEL_1_ID && !profile.chargeUnlocked) {
       profile.chargeUnlocked = true;
       player.chargeUnlocked = true;
-      appendUnlockBanner('Charge Shot Unlocked! Hold K and release to fire.');
-    }
-
-    if (missionId === LEVEL_2_ID && !m3.accepted) {
-      m3.accepted = true;
-      appendUnlockBanner('Level 3 Unlocked! Launch Black Site Breach from the lift.');
-    }
-
-    if (missionId === LEVEL_3_ID && !profile.pierceUnlocked) {
-      profile.pierceUnlocked = true;
-      appendUnlockBanner('Tier-3 Unlock: Piercing Rapid Shot online.');
+      unlockBanner = 'Charge Shot Unlocked! Hold K and release to fire.';
     }
 
     saveProfile();
-
-    if (missionId === LEVEL_3_ID) {
-      playLevel3ClearVideo(() => {
-        enterHub(`${missionName(missionId)} complete. Report to Engineer Vale.`);
-        if (unlockBanner) {
-          setFeedback(unlockBanner, 3.2);
-        }
-      });
-      return;
-    }
-
     enterHub(`${missionName(missionId)} complete. Report to Engineer Vale.`);
 
     if (unlockBanner) {
@@ -3028,7 +2793,6 @@
   function updateHud() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
-    const m3 = missionState(LEVEL_3_ID);
 
     if (game.scene === 'mission') {
       healthEl.textContent = String(Math.max(0, Math.ceil(player.hp)));
@@ -3141,12 +2905,6 @@
       setStatusState('active', 'Level 2 accepted. Use lift to deploy');
     } else if (!m2.turnedIn) {
       setStatusState('warn', 'Turn in Level 2 report with Engineer Vale');
-    } else if (!m3.accepted) {
-      setStatusState('warn', 'Talk to Commander Rho to unlock Level 3');
-    } else if (!m3.completed) {
-      setStatusState('active', 'Level 3 accepted. Use lift to deploy');
-    } else if (!m3.turnedIn) {
-      setStatusState('warn', 'Turn in Level 3 report with Engineer Vale');
     } else {
       setStatusState('complete', `Campaign complete. Lvl ${profile.level} | Credits ${profile.credits}`);
     }
@@ -3192,7 +2950,7 @@
 
     if (game.phase === 'cutscene') {
       if (justPressed.has('Escape')) {
-        clearLevel3CutsceneOverlay();
+        clearMissionOverlay();
         enterHub('Cutscene skipped. Returned to hub.');
       }
       updateCameraShake(dt);
@@ -3348,7 +3106,6 @@
   function drawHubObjectives() {
     const m1 = missionState(LEVEL_1_ID);
     const m2 = missionState(LEVEL_2_ID);
-    const m3 = missionState(LEVEL_3_ID);
     let objective;
 
     if (!m1.accepted) {
@@ -3363,12 +3120,6 @@
       objective = 'Objective: Use Mission Lift (E) to clear Level 2';
     } else if (!m2.turnedIn) {
       objective = 'Objective: Turn in Level 2 mission with Engineer Vale';
-    } else if (!m3.accepted) {
-      objective = 'Objective: Talk to Commander Rho to unlock Level 3';
-    } else if (!m3.completed) {
-      objective = 'Objective: Use Mission Lift (E) to clear Level 3 (FPS)';
-    } else if (!m3.turnedIn) {
-      objective = 'Objective: Turn in Level 3 mission with Engineer Vale';
     } else {
       objective = `Objective: Campaign complete | Level ${profile.level} | Credits ${profile.credits}`;
     }
