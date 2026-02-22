@@ -1042,6 +1042,10 @@
     return game.now - player.lastShotAt >= player.cooldownSeconds;
   }
 
+  function normalizeInputKey(key) {
+    return typeof key === 'string' && key.length === 1 ? key.toLowerCase() : key;
+  }
+
   function clearTransientInputState() {
     keys.clear();
     justPressed.clear();
@@ -4334,7 +4338,7 @@
 
   window.addEventListener('keydown', (event) => {
     ensureAudioContext();
-    const key = event.key;
+    const key = normalizeInputKey(event.key);
     if (!keys.has(key)) {
       justPressed.add(key);
     }
@@ -4346,7 +4350,8 @@
   });
 
   window.addEventListener('keyup', (event) => {
-    keys.delete(event.key);
+    const key = normalizeInputKey(event.key);
+    keys.delete(key);
   });
 
   window.addEventListener('blur', () => {
