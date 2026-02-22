@@ -4,8 +4,6 @@ export function createUiSystem() {
   const hud = document.getElementById('hud');
   const objectiveText = document.getElementById('objectiveText');
   const storyBox = document.getElementById('storyBox');
-  const fadeLayer = document.getElementById('fadeLayer');
-
   let playing = false;
 
   function beginPlay(onBegin) {
@@ -14,14 +12,12 @@ export function createUiSystem() {
     }
 
     playing = true;
-    fadeLayer.classList.add('active');
 
     setTimeout(() => {
       startScreen.classList.remove('visible');
       hud.classList.remove('hidden');
-      fadeLayer.classList.remove('active');
       onBegin?.();
-    }, 450);
+    }, 120);
   }
 
   function bindStart(onBegin) {
