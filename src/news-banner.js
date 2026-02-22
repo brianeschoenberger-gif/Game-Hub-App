@@ -23,10 +23,26 @@ function getTodayLabel() {
   }).format(new Date());
 }
 
+function isCreatedToday(createdAtEpochSeconds) {
+  if (typeof createdAtEpochSeconds !== 'number' || Number.isNaN(createdAtEpochSeconds)) {
+    return false;
+  }
+
+  const createdDate = new Date(createdAtEpochSeconds * 1000);
+  const now = new Date();
+
+  return (
+    createdDate.getFullYear() === now.getFullYear() &&
+    createdDate.getMonth() === now.getMonth() &&
+    createdDate.getDate() === now.getDate()
+  );
+}
+
 function normalizeStory(story) {
   return {
     title: typeof story?.title === 'string' ? story.title.trim() : '',
-    url: typeof story?.url === 'string' ? story.url.trim() : ''
+    url: typeof story?.url === 'string' ? story.url.trim() : '',
+    createdAt: typeof story?.createdAt === 'number' ? story.createdAt : NaN
   };
 }
 
@@ -38,8 +54,8 @@ async function loadTopStories() {
 
   const data = await response.json();
   return (data?.hits ?? [])
-    .map((hit) => normalizeStory({ title: hit.title, url: hit.url ?? hit.story_url }))
-    .filter((story) => story.title && story.url)
+    .map((hit) => normalizeStory({ title: hit.title, url: hit.url ?? hit.story_url, createdAt: hit.created_at_i }))
+    .filter((story) => story.title && story.url && isCreatedToday(story.createdAt))
     .slice(0, MAX_STORIES);
 }
 
@@ -53,7 +69,7 @@ function buildStoryLink(story) {
   return link;
 }
 
-function renderStories(root, stories, isFallback = false) {
+function renderStories(root, stories, statusText = '') {
   root.textContent = '';
 
   const label = document.createElement('span');
@@ -66,10 +82,10 @@ function renderStories(root, stories, isFallback = false) {
   stories.forEach((story) => ticker.appendChild(buildStoryLink(story)));
   root.appendChild(ticker);
 
-  if (isFallback) {
+  if (statusText) {
     const note = document.createElement('span');
     note.className = 'news-banner__status';
-    note.textContent = 'Showing backup headlines.';
+    note.textContent = statusText;
     root.appendChild(note);
   }
 }
@@ -81,12 +97,14 @@ export async function mountNewsBanner(selector = '#news-banner') {
   }
 
   root.setAttribute('aria-live', 'polite');
-  renderStories(root, FALLBACK_STORIES, true);
+  renderStories(root, FALLBACK_STORIES, 'Showing backup headlines.');
 
   try {
     const stories = await loadTopStories();
     if (stories.length) {
       renderStories(root, stories);
+    } else {
+      renderStories(root, FALLBACK_STORIES, 'No new stories yet today.');
     }
   } catch {
     // Keep fallback content visible when live headlines are unavailable.
