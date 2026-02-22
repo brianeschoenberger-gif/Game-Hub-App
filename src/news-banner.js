@@ -1,24 +1,11 @@
 const FALLBACK_STORIES = [
   {
-    title: 'Global markets react to central bank signals.',
-    url: 'https://www.reuters.com/world/'
-  },
-  {
-    title: 'Major climate summit opens with new emissions pledges.',
-    url: 'https://apnews.com/hub/climate-and-environment'
-  },
-  {
-    title: 'Breakthrough AI policy debate reaches national legislatures.',
-    url: 'https://www.bbc.com/news/technology'
+    title: 'Open Google News top stories',
+    url: 'https://news.google.com/topstories?hl=en-US&gl=US&ceid=US:en'
   }
 ];
 
-const MAX_STORIES = 5;
-const RSS_FEEDS = [
-  'https://feeds.bbci.co.uk/news/world/rss.xml',
-  'https://www.reutersagency.com/feed/?best-topics=world&post_type=best',
-  'https://apnews.com/hub/ap-top-news?output=rss'
-];
+const GOOGLE_NEWS_TOP_STORIES_RSS = 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en';
 
 function getTodayLabel() {
   return new Intl.DateTimeFormat(undefined, {
@@ -26,20 +13,6 @@ function getTodayLabel() {
     month: 'short',
     day: 'numeric'
   }).format(new Date());
-}
-
-function isPublishedToday(dateValue) {
-  const publishedDate = new Date(dateValue);
-  if (Number.isNaN(publishedDate.getTime())) {
-    return false;
-  }
-
-  const now = new Date();
-  return (
-    publishedDate.getFullYear() === now.getFullYear() &&
-    publishedDate.getMonth() === now.getMonth() &&
-    publishedDate.getDate() === now.getDate()
-  );
 }
 
 function normalizeStory(story) {
@@ -51,45 +24,29 @@ function normalizeStory(story) {
 }
 
 async function loadTopStories() {
-  const feedResults = await Promise.allSettled(
-    RSS_FEEDS.map(async (feedUrl) => {
-      const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
-      const response = await fetch(url, { cache: 'no-store' });
-      if (!response.ok) {
-        throw new Error(`News lookup failed (${response.status})`);
-      }
+  const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(GOOGLE_NEWS_TOP_STORIES_RSS)}`;
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`News lookup failed (${response.status})`);
+  }
 
-      const xmlText = await response.text();
-      const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
-      return Array.from(xml.querySelectorAll('item')).map((item) => {
-        const title = item.querySelector('title')?.textContent ?? '';
-        const link = item.querySelector('link')?.textContent ?? '';
-        const pubDate = item.querySelector('pubDate')?.textContent ?? '';
+  const xmlText = await response.text();
+  const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
+  const stories = Array.from(xml.querySelectorAll('item'))
+    .map((item) => {
+      const title = item.querySelector('title')?.textContent ?? '';
+      const link = item.querySelector('link')?.textContent ?? '';
+      const pubDate = item.querySelector('pubDate')?.textContent ?? '';
 
-        return {
-          title: title.trim(),
-          url: link.trim(),
-          publishedAt: new Date(pubDate).getTime()
-        };
-      });
+      return {
+        title: title.trim(),
+        url: link.trim(),
+        publishedAt: new Date(pubDate).getTime()
+      };
     })
-  );
-
-  const seenTitles = new Set();
-  const stories = feedResults
-    .flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
-    .filter((story) => story.title && story.url && isPublishedToday(story.publishedAt))
-    .filter((story) => {
-      const key = story.title.toLowerCase();
-      if (seenTitles.has(key)) {
-        return false;
-      }
-
-      seenTitles.add(key);
-      return true;
-    })
+    .filter((story) => story.title && story.url)
     .sort((a, b) => b.publishedAt - a.publishedAt)
-    .slice(0, MAX_STORIES)
+    .slice(0, 1)
     .map((story) => normalizeStory({ title: story.title, url: story.url, createdAt: story.publishedAt / 1000 }));
 
   return stories;
@@ -110,7 +67,7 @@ function renderStories(root, stories, statusText = '') {
 
   const label = document.createElement('span');
   label.className = 'news-banner__label';
-  label.textContent = `Top stories · ${getTodayLabel()}`;
+  label.textContent = `Top story · ${getTodayLabel()}`;
   root.appendChild(label);
 
   const ticker = document.createElement('div');
@@ -133,14 +90,14 @@ export async function mountNewsBanner(selector = '#news-banner') {
   }
 
   root.setAttribute('aria-live', 'polite');
-  renderStories(root, FALLBACK_STORIES, 'Showing backup headlines.');
+  renderStories(root, FALLBACK_STORIES, 'Loading top story…');
 
   try {
     const stories = await loadTopStories();
     if (stories.length) {
       renderStories(root, stories);
     } else {
-      renderStories(root, FALLBACK_STORIES, 'No new stories yet today.');
+      renderStories(root, FALLBACK_STORIES, 'Could not load Google News right now.');
     }
   } catch {
     // Keep fallback content visible when live headlines are unavailable.
