@@ -1,5 +1,8 @@
+import { mountNewsBanner } from './news-banner.js';
 import { loadGames } from './data.js';
 import { emptyState, gameCard } from './ui.js';
+
+mountNewsBanner();
 
 async function renderArchive() {
   const root = document.querySelector('#archive-page');
