@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monk Awakening</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="renderCanvas"></canvas>
+      <div id="startScreen" class="overlay visible">
+        <div class="panel">
+          <h1>Monk Awakening</h1>
+          <p>Wake, breathe, and explore the quiet monastery.</p>
+          <button id="playButton">Play</button>
+        </div>
+      </div>
+      <div id="hud" class="hud hidden">
+        <p id="objectiveText" class="objective">Objective: Explore the monastery</p>
+        <div id="storyBox" class="story hidden"></div>
+      </div>
+      <div id="fadeLayer" class="fade-layer"></div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

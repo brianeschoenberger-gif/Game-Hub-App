@@ -6,59 +6,59 @@ This file tracks milestone-based implementation for the Monk Awakening prototype
 ## Milestone 0 - Playable Exploration Vertical Slice (Current Goal)
 
 ### M0.1 Project Setup
-- [ ] Create Vite project
-- [ ] Install Babylon.js
-- [ ] Set up ES module structure
-- [ ] Create base folder structure (`core`, `systems`, `entities`, `scenes`, `config`)
-- [ ] Add README with run instructions
+- [x] Create Vite project
+- [x] Install Babylon.js
+- [x] Set up ES module structure
+- [x] Create base folder structure (`core`, `systems`, `entities`, `scenes`, `config`)
+- [x] Add README with run instructions
 
 ### M0.2 Core App Bootstrap
-- [ ] Create Babylon engine + canvas bootstrap
-- [ ] Create main render loop
-- [ ] Add window resize handling
-- [ ] Add scene initialization flow
+- [x] Create Babylon engine + canvas bootstrap
+- [x] Create main render loop
+- [x] Add window resize handling
+- [x] Add scene initialization flow
 
 ### M0.3 Monastery Prototype Level
-- [ ] Create sleeping cell area
-- [ ] Create hallway and courtyard area
-- [ ] Create shrine and altar area
-- [ ] Add collidable walls and obstacles
-- [ ] Add basic ground and floor meshes
-- [ ] Add placeholder materials (stone/wood/cloth colors)
+- [x] Create sleeping cell area
+- [x] Create hallway and courtyard area
+- [x] Create shrine and altar area
+- [x] Add collidable walls and obstacles
+- [x] Add basic ground and floor meshes
+- [x] Add placeholder materials (stone/wood/cloth colors)
 
 ### M0.4 Player Controller
-- [ ] Add WASD movement
-- [ ] Add sprint (Shift)
-- [ ] Add jump (Space)
-- [ ] Add smooth acceleration/deceleration
-- [ ] Add smooth player rotation toward movement direction
-- [ ] Add gravity and grounded checks
+- [x] Add WASD movement
+- [x] Add sprint (Shift)
+- [x] Add jump (Space)
+- [x] Add smooth acceleration/deceleration
+- [x] Add smooth player rotation toward movement direction
+- [x] Add gravity and grounded checks
 
 ### M0.5 Third-Person Camera
-- [ ] Add follow camera
-- [ ] Add mouse orbit/look
-- [ ] Tune distance/height
-- [ ] Add smoothing
-- [ ] Add basic camera obstruction handling (if feasible in M0)
+- [x] Add follow camera
+- [x] Add mouse orbit/look
+- [x] Tune distance/height
+- [x] Add smoothing
+- [x] Add basic camera obstruction handling (if feasible in M0)
 
 ### M0.6 UI and Flow
-- [ ] Add start screen with Play button
-- [ ] Add objective text ("Explore the monastery")
-- [ ] Add story message UI box
-- [ ] Add subtle fade-in when gameplay starts
+- [x] Add start screen with Play button
+- [x] Add objective text ("Explore the monastery")
+- [x] Add story message UI box
+- [x] Add subtle fade-in when gameplay starts
 
 ### M0.7 Shrine Trigger (Prototype Moment)
-- [ ] Add trigger zone at shrine
-- [ ] Fire story event when player enters trigger
-- [ ] Show text: "A distant bell rings. Something calls you beyond the monastery."
-- [ ] Mark prototype objective complete
+- [x] Add trigger zone at shrine
+- [x] Fire story event when player enters trigger
+- [x] Show text: "A distant bell rings. Something calls you beyond the monastery."
+- [x] Mark prototype objective complete
 
 ### M0.8 Polish and Cleanup
-- [ ] Tune movement feel
-- [ ] Tune camera feel
-- [ ] Improve lighting atmosphere (warm dawn)
-- [ ] Remove obvious bugs
-- [ ] Confirm code organization is clean
+- [x] Tune movement feel
+- [x] Tune camera feel
+- [x] Improve lighting atmosphere (warm dawn)
+- [x] Remove obvious bugs
+- [x] Confirm code organization is clean
 
 ### Milestone 0 Acceptance Checklist
 - [ ] Average frame rate >= 55 FPS in desktop Chrome/Edge
