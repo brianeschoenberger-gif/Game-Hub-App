@@ -1,4 +1,5 @@
 import '@babylonjs/core/Helpers/sceneHelpers';
+import '@babylonjs/core/Collisions/collisionCoordinator';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
