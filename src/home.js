@@ -1,5 +1,8 @@
 import { loadGames } from './data.js';
 import { emptyState, gameCard, hero } from './ui.js';
+import { mountNewsBanner } from './news-banner.js';
+
+mountNewsBanner();
 
 async function renderHome() {
   const featuredNode = document.querySelector('#featured-hero');
