@@ -1,0 +1,28 @@
+export const gameConfig = {
+  movement: {
+    walkSpeed: 6,
+    sprintSpeed: 9.5,
+    acceleration: 28,
+    deceleration: 20,
+    jumpSpeed: 7.2,
+    gravity: -18,
+    rotationLerp: 10,
+    playerRadius: 0.45,
+    playerHeight: 1.8
+  },
+  camera: {
+    distance: 6,
+    minDistance: 2.2,
+    maxDistance: 7.5,
+    heightOffset: 2.2,
+    mouseSensitivity: 0.0026,
+    pitchMin: -0.7,
+    pitchMax: 0.95,
+    followLerp: 14,
+    obstructionLerp: 22
+  },
+  world: {
+    groundY: 0,
+    shrineTriggerRadius: 2.4
+  }
+};

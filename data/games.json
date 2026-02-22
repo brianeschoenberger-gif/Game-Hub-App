@@ -167,5 +167,24 @@
     "featured": false,
     "status": "published",
     "durationEstimate": "3 min"
+  },
+  {
+    "id": "monk-awakening-2026-02-22",
+    "slug": "monk-awakening-22feb26",
+    "title": "Monk Awakening",
+    "releaseDate": "2026-02-22",
+    "description": "Wake in a quiet monastery, explore the dawn-lit grounds, and uncover the shrine's call.",
+    "newsTopic": "Atmospheric prototype milestone",
+    "tags": [
+      "3D",
+      "Exploration",
+      "Story"
+    ],
+    "thumbnailUrl": "/assets/thumbnails/monk-awakening.svg",
+    "bannerUrl": "",
+    "gamePath": "/games/Monk/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "5 min"
   }
 ]
