@@ -8,7 +8,12 @@ export const gameConfig = {
     gravity: -18,
     rotationLerp: 10,
     playerRadius: 0.45,
-    playerHeight: 1.8
+    playerHeight: 1.8,
+    spawnPosition: {
+      x: -6.5,
+      y: 1.1,
+      z: 0
+    }
   },
   camera: {
     distance: 3.6,

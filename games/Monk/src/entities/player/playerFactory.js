@@ -2,6 +2,7 @@ import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Color3 } from '@babylonjs/core/Maths/math.color';
+import { gameConfig } from '../../config/gameConfig.js';
 
 function createMonkMaterials(scene) {
   const skinMaterial = new StandardMaterial('monkSkinMaterial', scene);
@@ -56,7 +57,8 @@ export function createPlayerMesh(scene) {
   collider.ellipsoid = new Vector3(0.45, 0.9, 0.45);
   collider.ellipsoidOffset = new Vector3(0, 0.9, 0);
   collider.checkCollisions = true;
-  collider.position = new Vector3(-11.5, 1.1, 0);
+  const spawn = gameConfig.movement.spawnPosition;
+  collider.position = new Vector3(spawn.x, spawn.y, spawn.z);
 
   createMonkVisual(collider, scene);
 
