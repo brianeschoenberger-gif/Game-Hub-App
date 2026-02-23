@@ -82,10 +82,10 @@ This file tracks milestone-based implementation for the Monk Awakening prototype
 - [x] Align movement/camera with animation pacing
 
 ## Milestone 3 - Prototype Expansion
-- [ ] Add one more story trigger
-- [ ] Add monastery gate and exterior tease
-- [ ] Add interactable object (scroll, bell, candle, etc.)
-- [ ] Add simple checkpoint/reset flow (session-only, no save system)
+- [x] Add one more story trigger
+- [x] Add monastery gate and exterior tease
+- [x] Add interactable object (scroll, bell, candle, etc.)
+- [x] Add simple checkpoint/reset flow (session-only, no save system)
 
 ## Notes for Codex
 - Work milestone by milestone

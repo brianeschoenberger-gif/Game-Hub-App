@@ -139,8 +139,40 @@ export function createMonasteryScene(scene) {
   createStaticBox(scene, 'mapBoundaryNorth', { width: 48, depth: 0.6, height: 3 }, new Vector3(-10.5, 1.5, -20.5), stoneMaterial);
   createStaticBox(scene, 'mapBoundarySouth', { width: 66, depth: 0.6, height: 3 }, new Vector3(-2, 1.5, 24.2), stoneMaterial);
 
+  const gateMaterial = new StandardMaterial('gateMaterial', scene);
+  gateMaterial.diffuseColor = new Color3(0.38, 0.26, 0.16);
+
+  const gateFrame = createStaticBox(scene, 'monasteryGateFrame', { width: 6, depth: 0.8, height: 4.6 }, new Vector3(13.5, 2.3, -4), stoneMaterial);
+  gateFrame.checkCollisions = false;
+  const gateOpening = createStaticBox(scene, 'monasteryGateOpening', { width: 4.1, depth: 0.82, height: 3.2 }, new Vector3(13.5, 1.6, -4), gardenMaterial);
+  gateOpening.isVisible = false;
+  gateOpening.checkCollisions = false;
+  const gateDoorLeft = createStaticBox(scene, 'monasteryGateDoorLeft', { width: 1.7, depth: 0.45, height: 2.9 }, new Vector3(12.35, 1.45, -4), gateMaterial);
+  const gateDoorRight = createStaticBox(scene, 'monasteryGateDoorRight', { width: 1.7, depth: 0.45, height: 2.9 }, new Vector3(14.65, 1.45, -4), gateMaterial);
+  gateDoorLeft.checkCollisions = false;
+  gateDoorRight.checkCollisions = false;
+
+  const exteriorPath = createStaticBox(scene, 'exteriorPath', { width: 22, depth: 8, height: 0.45 }, new Vector3(24.5, 0.18, -4), clothMaterial);
+  exteriorPath.checkCollisions = false;
+  const exteriorRidge = createStaticBox(scene, 'exteriorRidge', { width: 28, depth: 4, height: 1.8 }, new Vector3(31, 0.9, -11), stoneMaterial);
+  exteriorRidge.checkCollisions = false;
+
+  const incenseBowl = MeshBuilder.CreateCylinder('incenseBowl', { height: 0.45, diameterTop: 0.85, diameterBottom: 0.55, tessellation: 24 }, scene);
+  incenseBowl.position = new Vector3(-9.6, 0.9, -1.6);
+  incenseBowl.material = woodMaterial;
+  incenseBowl.checkCollisions = false;
+
+  const incenseFlame = MeshBuilder.CreateSphere('incenseFlame', { diameter: 0.22, segments: 12 }, scene);
+  incenseFlame.material = clothMaterial;
+  incenseFlame.isVisible = false;
+  incenseFlame.checkCollisions = false;
+
   return {
     ground,
-    shrinePosition: shrine.position.clone()
+    shrinePosition: shrine.position.clone(),
+    gatePosition: new Vector3(13.5, 0, -4),
+    interactablePosition: incenseBowl.position.clone(),
+    interactableFlame: incenseFlame
   };
 }
+
