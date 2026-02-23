@@ -148,6 +148,11 @@ export function createPlayerController(scene, world, playerInput) {
     mesh: player,
     update,
     getPosition: () => player.position,
+    setPosition: (nextPosition) => {
+      player.position.copyFrom(nextPosition);
+      velocity.set(0, 0, 0);
+      isGrounded = false;
+    },
     isGrounded: () => isGrounded,
     getFacingDirection: () => facingDirection,
     getHorizontalSpeed: () => Math.hypot(velocity.x, velocity.z),

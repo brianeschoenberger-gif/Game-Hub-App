@@ -54,6 +54,9 @@ export const gameConfig = {
   },
   world: {
     groundY: 0,
-    shrineTriggerRadius: 2.4
+    shrineTriggerRadius: 2.4,
+    gateTriggerRadius: 2.8,
+    interactRange: 2.2,
+    checkpointResetCooldown: 0.35
   }
 };

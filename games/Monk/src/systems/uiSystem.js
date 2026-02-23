@@ -4,7 +4,9 @@ export function createUiSystem() {
   const hud = document.getElementById('hud');
   const objectiveText = document.getElementById('objectiveText');
   const storyBox = document.getElementById('storyBox');
+  const interactPrompt = document.getElementById('interactPrompt');
   let playing = false;
+  let interactPressed = false;
 
   function beginPlay(onBegin) {
     if (playing) {
@@ -33,10 +35,37 @@ export function createUiSystem() {
     objectiveText.textContent = `Objective: ${message}`;
   }
 
+  function showInteractPrompt(message) {
+    interactPrompt.textContent = message;
+    interactPrompt.classList.remove('hidden');
+  }
+
+  function hideInteractPrompt() {
+    interactPrompt.classList.add('hidden');
+  }
+
+  function onKeyDown(event) {
+    if (event.code === 'KeyE' && !event.repeat) {
+      interactPressed = true;
+    }
+  }
+
+  window.addEventListener('keydown', onKeyDown);
+
   return {
     bindStart,
     showStory,
     setObjective,
-    isPlaying: () => playing
+    showInteractPrompt,
+    hideInteractPrompt,
+    consumeInteractPressed() {
+      const consumed = interactPressed;
+      interactPressed = false;
+      return consumed;
+    },
+    isPlaying: () => playing,
+    dispose() {
+      window.removeEventListener('keydown', onKeyDown);
+    }
   };
 }

@@ -82,6 +82,26 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+
+.checkpointHint {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  color: rgba(238, 225, 202, 0.85);
+}
+
+.interact {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(12, 16, 21, 0.76);
+  border: 1px solid rgba(231, 204, 158, 0.42);
+  font-size: 0.95rem;
+}
+
 .story {
   position: absolute;
   left: 50%;

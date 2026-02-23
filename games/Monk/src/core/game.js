@@ -13,6 +13,7 @@ import { createUiSystem } from '../systems/uiSystem.js';
 import { createTriggerSystem } from '../systems/triggerSystem.js';
 import { createAmbientEffectsSystem } from '../systems/ambientEffectsSystem.js';
 import { createAudioSystem } from '../systems/audioSystem.js';
+import { createInteractionSystem } from '../systems/interactionSystem.js';
 import { setupDebugOverlay } from '../utils/debug.js';
 
 export function createGame() {
@@ -35,6 +36,7 @@ export function createGame() {
   const triggerSystem = createTriggerSystem(world, playerController, uiSystem);
   const ambientEffects = createAmbientEffectsSystem(scene);
   const audioSystem = createAudioSystem();
+  const interactionSystem = createInteractionSystem(world, playerController, uiSystem);
   const debug = setupDebugOverlay();
 
   uiSystem.bindStart(() => {
@@ -56,7 +58,8 @@ export function createGame() {
     playerController.update(dt);
     cameraSystem.update(dt);
     ambientEffects.update(dt);
-    triggerSystem.update();
+    triggerSystem.update(dt);
+    interactionSystem.update(dt);
     debug.update(scene.getEngine().getFps());
   });
 
@@ -75,6 +78,8 @@ export function createGame() {
     }
     disposed = true;
     playerInput.dispose?.();
+    triggerSystem.dispose?.();
+    uiSystem.dispose?.();
   };
 
   scene.onDisposeObservable.add(cleanup);
