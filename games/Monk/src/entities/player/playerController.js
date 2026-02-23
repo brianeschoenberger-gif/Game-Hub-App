@@ -9,6 +9,7 @@ const desiredDirection = new Vector3();
 const moveDelta = new Vector3();
 const groundRayOrigin = new Vector3();
 const downDir = new Vector3(0, -1, 0);
+const facingDirection = new Vector3(0, 0, 1);
 
 export function createPlayerController(scene, world, playerInput) {
   const player = createPlayerMesh(scene);
@@ -18,6 +19,8 @@ export function createPlayerController(scene, world, playerInput) {
   const groundedThreshold = 0.14;
   const groundRay = new Ray(groundRayOrigin, downDir, halfHeight + 0.3);
   let isGrounded = false;
+  let coyoteTimer = 0;
+  let jumpBufferTimer = 0;
 
   function refreshGroundedState() {
     groundRayOrigin.set(player.position.x, player.position.y + 0.05, player.position.z);
@@ -66,7 +69,10 @@ export function createPlayerController(scene, world, playerInput) {
     const targetVelocityX = hasInput ? desiredDirection.x * speed : 0;
     const targetVelocityZ = hasInput ? desiredDirection.z * speed : 0;
 
-    const accel = hasInput ? gameConfig.movement.acceleration : gameConfig.movement.deceleration;
+    let accel = hasInput ? gameConfig.movement.acceleration : gameConfig.movement.deceleration;
+    if (!isGrounded && hasInput) {
+      accel = gameConfig.movement.airAcceleration;
+    }
     const blend = Math.min(1, accel * deltaTime);
 
     velocity.x += (targetVelocityX - velocity.x) * blend;
@@ -74,12 +80,33 @@ export function createPlayerController(scene, world, playerInput) {
 
     refreshGroundedState();
 
-    if (isGrounded && playerInput.consumeJumpPress()) {
-      velocity.y = gameConfig.movement.jumpSpeed;
-      isGrounded = false;
+    if (isGrounded) {
+      coyoteTimer = gameConfig.movement.coyoteTime;
+    } else {
+      coyoteTimer = Math.max(0, coyoteTimer - deltaTime);
     }
 
-    velocity.y += gameConfig.movement.gravity * deltaTime;
+    if (playerInput.consumeJumpPress()) {
+      jumpBufferTimer = gameConfig.movement.jumpBufferTime;
+    } else {
+      jumpBufferTimer = Math.max(0, jumpBufferTimer - deltaTime);
+    }
+
+    if (jumpBufferTimer > 0 && (isGrounded || coyoteTimer > 0)) {
+      velocity.y = gameConfig.movement.jumpSpeed;
+      isGrounded = false;
+      coyoteTimer = 0;
+      jumpBufferTimer = 0;
+    }
+
+    let gravityScale = 1;
+    if (velocity.y < 0) {
+      gravityScale = gameConfig.movement.fallGravityMultiplier;
+    } else if (velocity.y > 0 && !playerInput.keys.jump) {
+      gravityScale = gameConfig.movement.lowJumpGravityMultiplier;
+    }
+
+    velocity.y += gameConfig.movement.gravity * gravityScale * deltaTime;
 
     moveDelta.set(velocity.x * deltaTime, velocity.y * deltaTime, velocity.z * deltaTime);
     player.moveWithCollisions(moveDelta);
@@ -90,6 +117,7 @@ export function createPlayerController(scene, world, playerInput) {
       const rotationBlend = Math.min(1, gameConfig.movement.rotationLerp * deltaTime);
       const deltaYaw = Math.atan2(Math.sin(targetRotationY - player.rotation.y), Math.cos(targetRotationY - player.rotation.y));
       player.rotation.y += deltaYaw * rotationBlend;
+      facingDirection.set(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
     }
   }
 
@@ -97,6 +125,8 @@ export function createPlayerController(scene, world, playerInput) {
     mesh: player,
     update,
     getPosition: () => player.position,
-    isGrounded: () => isGrounded
+    isGrounded: () => isGrounded,
+    getFacingDirection: () => facingDirection,
+    getHorizontalSpeed: () => Math.hypot(velocity.x, velocity.z)
   };
 }

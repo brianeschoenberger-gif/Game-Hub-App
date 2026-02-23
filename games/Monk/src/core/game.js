@@ -11,6 +11,8 @@ import { createPlayerInput } from '../entities/player/playerInput.js';
 import { createCameraSystem } from '../systems/cameraSystem.js';
 import { createUiSystem } from '../systems/uiSystem.js';
 import { createTriggerSystem } from '../systems/triggerSystem.js';
+import { createAmbientEffectsSystem } from '../systems/ambientEffectsSystem.js';
+import { createAudioSystem } from '../systems/audioSystem.js';
 import { setupDebugOverlay } from '../utils/debug.js';
 
 export function createGame() {
@@ -31,11 +33,18 @@ export function createGame() {
   const cameraSystem = createCameraSystem(scene, canvas, playerController);
   const uiSystem = createUiSystem();
   const triggerSystem = createTriggerSystem(world, playerController, uiSystem);
+  const ambientEffects = createAmbientEffectsSystem(scene);
+  const audioSystem = createAudioSystem();
   const debug = setupDebugOverlay();
 
   uiSystem.bindStart(() => {
     canvas.focus();
     cameraSystem.activatePointerLock();
+    audioSystem.start();
+  });
+
+  triggerSystem.setOnShrineTriggered(() => {
+    audioSystem.playShrineBell();
   });
 
   scene.onBeforeRenderObservable.add(() => {
@@ -46,6 +55,7 @@ export function createGame() {
     const dt = scene.getEngine().getDeltaTime() / 1000;
     playerController.update(dt);
     cameraSystem.update(dt);
+    ambientEffects.update(dt);
     triggerSystem.update();
     debug.update(scene.getEngine().getFps());
   });
