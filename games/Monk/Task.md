@@ -68,12 +68,12 @@ This file tracks milestone-based implementation for the Monk Awakening prototype
 - [ ] New player can complete prototype in <= 5 minutes
 
 ## Milestone 1 - Feel Polish (Next)
-- [ ] Refine movement tuning (responsive but grounded)
-- [ ] Improve jump arc and landing feel
-- [ ] Improve camera collision and obstacle behavior
-- [ ] Add subtle camera lag and rotation smoothing
-- [ ] Add simple ambient particles (dust/light motes)
-- [ ] Add basic ambient audio and bell SFX
+- [x] Refine movement tuning (responsive but grounded)
+- [x] Improve jump arc and landing feel
+- [x] Improve camera collision and obstacle behavior
+- [x] Add subtle camera lag and rotation smoothing
+- [x] Add simple ambient particles (dust/light motes)
+- [x] Add basic ambient audio and bell SFX
 
 ## Milestone 2 - Character and Animation
 - [ ] Replace placeholder player with monk character model (GLB)
@@ -91,3 +91,28 @@ This file tracks milestone-based implementation for the Monk Awakening prototype
 - Work milestone by milestone
 - Do not build future systems early
 - Prioritize feel and clarity over extra features
+
+
+## Near-Term Execution Plan (Suggested Next Steps)
+
+### Step 1 - Close Milestone 0 Acceptance Gaps
+- [ ] Add lightweight FPS + frame-time sampling pass and record baseline results
+- [ ] Verify shrine trigger one-shot behavior across multiple fresh runs
+- [ ] Run a timed "new player" walkthrough and confirm completion in <= 5 minutes
+
+### Step 2 - Milestone 1 (Feel Polish) in Priority Order
+- [ ] Tune movement acceleration/deceleration + jump arc first (highest player-impact)
+- [ ] Improve camera obstacle handling in tight hallway/cell spaces
+- [ ] Add subtle camera lag/smoothing pass after movement tuning is stable
+- [ ] Add ambient audio + shrine bell cue for stronger atmosphere
+- [ ] Add optional light dust motes only if performance budget remains healthy
+
+### Step 3 - Milestone 2 Prep (Before Importing Character Assets)
+- [ ] Lock movement speed targets so animation pacing has a stable baseline
+- [ ] Define animation state list (idle, walk/run, jump, land) and transition rules
+- [ ] Add a placeholder animation controller interface before wiring GLB assets
+
+### Definition of Done for "Next Steps"
+- [ ] Milestone 0 acceptance checklist fully checked
+- [ ] Milestone 1 gameplay feel tasks completed without FPS regression
+- [ ] Character integration can begin with a stable movement/camera foundation
