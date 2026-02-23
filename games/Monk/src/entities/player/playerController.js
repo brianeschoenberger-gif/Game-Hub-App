@@ -1,7 +1,7 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Ray } from '@babylonjs/core/Culling/ray';
 import { gameConfig } from '../../config/gameConfig.js';
-import { createPlayerMesh } from './playerFactory.js';
+import { createPlayerMesh, createPlayerVisual } from './playerFactory.js';
 
 const flatForward = new Vector3();
 const flatRight = new Vector3();
@@ -13,12 +13,24 @@ const facingDirection = new Vector3(0, 0, 1);
 
 export function createPlayerController(scene, world, playerInput) {
   const player = createPlayerMesh(scene);
+  const playerVisual = {
+    setAnimationState: () => {},
+    update: () => {},
+    loadedFromGlb: false
+  };
+  createPlayerVisual(player, scene).then((visual) => {
+    playerVisual.setAnimationState = visual.setAnimationState;
+    playerVisual.update = visual.update;
+    playerVisual.loadedFromGlb = visual.loadedFromGlb;
+  });
+
   const velocity = new Vector3(0, 0, 0);
   const halfHeight = gameConfig.movement.playerHeight / 2;
   const groundSnap = 0.03;
   const groundedThreshold = 0.14;
   const groundRay = new Ray(groundRayOrigin, downDir, halfHeight + 0.3);
   let isGrounded = false;
+  let elapsedTime = 0;
   let coyoteTimer = 0;
   let jumpBufferTimer = 0;
 
@@ -43,6 +55,7 @@ export function createPlayerController(scene, world, playerInput) {
   }
 
   function update(deltaTime) {
+    elapsedTime += deltaTime;
     const camera = scene.activeCamera;
     if (!camera) {
       return;
@@ -112,6 +125,16 @@ export function createPlayerController(scene, world, playerInput) {
     player.moveWithCollisions(moveDelta);
     refreshGroundedState();
 
+    const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
+    const normalizedSpeed = horizontalSpeed / gameConfig.movement.sprintSpeed;
+    const animationState = !isGrounded ? 'jump' : horizontalSpeed > 0.35 ? 'run' : 'idle';
+    playerVisual.setAnimationState(animationState);
+    playerVisual.update(deltaTime, {
+      elapsedTime,
+      normalizedSpeed,
+      isGrounded
+    });
+
     if (hasInput) {
       const targetRotationY = Math.atan2(desiredDirection.x, desiredDirection.z);
       const rotationBlend = Math.min(1, gameConfig.movement.rotationLerp * deltaTime);
@@ -127,6 +150,7 @@ export function createPlayerController(scene, world, playerInput) {
     getPosition: () => player.position,
     isGrounded: () => isGrounded,
     getFacingDirection: () => facingDirection,
-    getHorizontalSpeed: () => Math.hypot(velocity.x, velocity.z)
+    getHorizontalSpeed: () => Math.hypot(velocity.x, velocity.z),
+    usesGlbCharacter: () => playerVisual.loadedFromGlb
   };
 }

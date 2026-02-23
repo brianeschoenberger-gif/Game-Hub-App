@@ -77,9 +77,9 @@ This file tracks milestone-based implementation for the Monk Awakening prototype
 
 ## Milestone 2 - Character and Animation
 - [ ] Replace placeholder player with monk character model (GLB)
-- [ ] Add idle/run/jump animations
-- [ ] Add animation blending
-- [ ] Align movement/camera with animation pacing
+- [x] Add idle/run/jump animations
+- [x] Add animation blending
+- [x] Align movement/camera with animation pacing
 
 ## Milestone 3 - Prototype Expansion
 - [ ] Add one more story trigger
