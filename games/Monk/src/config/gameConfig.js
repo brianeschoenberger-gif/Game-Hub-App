@@ -11,11 +11,11 @@ export const gameConfig = {
     playerHeight: 1.8
   },
   camera: {
-    distance: 6,
+    distance: 4.5,
     minDistance: 2.2,
     maxDistance: 7.5,
     heightOffset: 2.2,
-    mouseSensitivity: 0.0026,
+    mouseSensitivity: 0.0018,
     pitchMin: -0.7,
     pitchMax: 0.95,
     followLerp: 14,
