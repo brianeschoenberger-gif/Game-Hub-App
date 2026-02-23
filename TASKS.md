@@ -25,4 +25,4 @@
 - [x] Add smoke checks for metadata and JS syntax.
 - [x] Verify responsive behavior with browser screenshot.
 - [x] Ensure subpath-safe links and metadata fetches for static hosting.
-- [ ] Add hosting-specific CI deploy workflow (optional post-MVP).
+- [x] Add hosting-specific CI deploy workflow (optional post-MVP).
