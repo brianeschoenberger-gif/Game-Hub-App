@@ -10,9 +10,9 @@ export const gameConfig = {
     playerRadius: 0.45,
     playerHeight: 1.8,
     spawnPosition: {
-      x: -6.5,
+      x: -22,
       y: 1.1,
-      z: 0
+      z: 1.8
     }
   },
   camera: {
