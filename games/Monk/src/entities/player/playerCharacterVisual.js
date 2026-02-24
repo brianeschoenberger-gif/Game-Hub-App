@@ -14,6 +14,17 @@ const WALK_ANIMATION_URL = new URL('../../../Assets/Monk/Meshy_AI_Animation_Walk
 const RUN_ANIMATION_URL = new URL('../../../Assets/Monk/Meshy_AI_Animation_Running_withSkin.glb', import.meta.url).href;
 
 let gltfLoaderScriptPromise = null;
+let hasLoggedGlbFallbackWarning = false;
+
+function logGlbFallbackWarning(reason) {
+  if (hasLoggedGlbFallbackWarning) {
+    return;
+  }
+
+  hasLoggedGlbFallbackWarning = true;
+  const detail = reason instanceof Error ? reason.message : String(reason ?? 'unknown reason');
+  console.warn(`Falling back to procedural monk character: ${detail}`);
+}
 
 function ensureGltfLoaderScript() {
   if (SceneLoader.IsPluginForExtensionAvailable('.glb')) {
@@ -187,7 +198,12 @@ async function createGlbCharacterModel(collider, scene) {
   result.transformNodes.forEach((node) => byName.set(node.name, node));
   result.skeletons.forEach((skeleton) => byName.set(skeleton.name, skeleton));
 
-  const targetConverter = (target) => byName.get(target.name) ?? null;
+  const targetConverter = (target) => {
+    if (!target?.name) {
+      return null;
+    }
+    return byName.get(target.name) ?? null;
+  };
 
   await SceneLoader.ImportAnimationsAsync('', WALK_ANIMATION_URL, scene, false, undefined, targetConverter, undefined, undefined, undefined, '.glb');
   await SceneLoader.ImportAnimationsAsync('', RUN_ANIMATION_URL, scene, false, undefined, targetConverter, undefined, undefined, undefined, '.glb');
@@ -213,7 +229,7 @@ export async function createPlayerCharacterVisual(collider, scene) {
       loadedFromGlb: true
     };
   } catch (error) {
-    console.warn('Falling back to procedural monk character.', error);
+    logGlbFallbackWarning(error);
     const rig = createFallbackCharacterModel(collider, scene);
     const animationGroups = createFallbackAnimationGroups(scene, rig);
     const animationController = createPlayerAnimationController(animationGroups);
