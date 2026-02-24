@@ -9,8 +9,8 @@ import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { createPlayerAnimationController } from './playerAnimationController.js';
 
-const CHARACTER_MODEL_URL = new URL('../../../Assets/Monk/Meshy_AI_Monastic_Contemplatio_0223043241_texture.glb', import.meta.url).href;
 const WALK_ANIMATION_URL = new URL('../../../Assets/Monk/Meshy_AI_Animation_Walking_withSkin.glb', import.meta.url).href;
+const CHARACTER_MODEL_URL = WALK_ANIMATION_URL;
 const RUN_ANIMATION_URL = new URL('../../../Assets/Monk/Meshy_AI_Animation_Running_withSkin.glb', import.meta.url).href;
 
 let hasLoggedGlbFallbackWarning = false;
@@ -111,6 +111,29 @@ function createFallbackAnimationGroups(scene, rig) {
     { frame: 30, value: 0.6 }
   ]);
 
+  const walkBob = new Animation('walk-bob', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  walkBob.setKeys([
+    { frame: 0, value: rig.root.position.y - 0.02 },
+    { frame: 8, value: rig.root.position.y + 0.03 },
+    { frame: 15, value: rig.root.position.y - 0.02 },
+    { frame: 22, value: rig.root.position.y + 0.03 },
+    { frame: 30, value: rig.root.position.y - 0.02 }
+  ]);
+
+  const walkArmLeft = new Animation('walk-arm-left', 'rotation.x', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  walkArmLeft.setKeys([
+    { frame: 0, value: -0.35 },
+    { frame: 15, value: 0.35 },
+    { frame: 30, value: -0.35 }
+  ]);
+
+  const walkArmRight = new Animation('walk-arm-right', 'rotation.x', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  walkArmRight.setKeys([
+    { frame: 0, value: 0.35 },
+    { frame: 15, value: -0.35 },
+    { frame: 30, value: 0.35 }
+  ]);
+
   const jumpLift = new Animation('jump-lift', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
   jumpLift.setKeys([
     { frame: 0, value: rig.root.position.y },
@@ -134,12 +157,17 @@ function createFallbackAnimationGroups(scene, rig) {
   run.addTargetedAnimation(runArmLeft, rig.armLeft);
   run.addTargetedAnimation(runArmRight, rig.armRight);
 
+  const walk = new AnimationGroup('walk');
+  walk.addTargetedAnimation(walkBob, rig.root);
+  walk.addTargetedAnimation(walkArmLeft, rig.armLeft);
+  walk.addTargetedAnimation(walkArmRight, rig.armRight);
+
   const jump = new AnimationGroup('jump');
   jump.addTargetedAnimation(jumpLift, rig.root);
   jump.addTargetedAnimation(jumpArms, rig.armLeft);
   jump.addTargetedAnimation(jumpArms.clone(), rig.armRight);
 
-  return [idle, run, jump];
+  return [idle, walk, run, jump];
 }
 
 function createIdleJumpProxyGroups(scene, modelRoot) {
@@ -192,6 +220,31 @@ function createRunProxyGroup(scene, modelRoot) {
   run.addTargetedAnimation(runBob, modelRoot);
   run.addTargetedAnimation(runSway, modelRoot);
   return run;
+}
+
+function createWalkProxyGroup(scene, modelRoot) {
+  const baseY = modelRoot.position.y;
+
+  const walkBob = new Animation('walk-bob-proxy', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  walkBob.setKeys([
+    { frame: 0, value: baseY - 0.02 },
+    { frame: 8, value: baseY + 0.03 },
+    { frame: 15, value: baseY - 0.02 },
+    { frame: 22, value: baseY + 0.03 },
+    { frame: 30, value: baseY - 0.02 }
+  ]);
+
+  const walkSway = new Animation('walk-sway-proxy', 'rotation.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  walkSway.setKeys([
+    { frame: 0, value: -0.02 },
+    { frame: 15, value: 0.02 },
+    { frame: 30, value: -0.02 }
+  ]);
+
+  const walk = new AnimationGroup('walk');
+  walk.addTargetedAnimation(walkBob, modelRoot);
+  walk.addTargetedAnimation(walkSway, modelRoot);
+  return walk;
 }
 
 function getActiveAnimationGroups(scene, existingGroupNames) {
@@ -313,7 +366,9 @@ async function createGlbCharacterModel(collider, scene) {
   let modelRoot = null;
 
   try {
+    const existingGroupNames = new Set(scene.animationGroups.map((group) => group.name));
     result = await SceneLoader.ImportMeshAsync('', '', CHARACTER_MODEL_URL, scene, undefined, '.glb');
+    const importedGroups = getActiveAnimationGroups(scene, existingGroupNames);
 
     modelRoot = result.meshes.find((mesh) => !mesh.parent) ?? result.meshes[0];
     if (!modelRoot) {
@@ -328,23 +383,31 @@ async function createGlbCharacterModel(collider, scene) {
 
     const targetNodesByName = createNodeLookup(result);
     const targetSkeleton = result.skeletons[0] ?? null;
+    if (!targetSkeleton) {
+      throw new Error('Monk character does not include a usable skeleton.');
+    }
 
-    const [walkGroup, runGroup] = await Promise.all([
-      importRetargetedGroup(scene, WALK_ANIMATION_URL, 'walk', targetNodesByName, targetSkeleton),
-      importRetargetedGroup(scene, RUN_ANIMATION_URL, 'run', targetNodesByName, targetSkeleton)
-    ]);
+    const walkGroup = pickSourceAnimationGroup(importedGroups, 'walk');
+    if (walkGroup) {
+      walkGroup.name = 'walk';
+    }
+
+    const runGroup = await importRetargetedGroup(scene, RUN_ANIMATION_URL, 'run', targetNodesByName, targetSkeleton);
 
     const [idleProxy, jumpProxy] = createIdleJumpProxyGroups(scene, modelRoot);
-    const resolvedRun = runGroup ?? walkGroup ?? createRunProxyGroup(scene, modelRoot);
+    const resolvedWalk = walkGroup ?? createWalkProxyGroup(scene, modelRoot);
+    const resolvedRun = runGroup ?? createRunProxyGroup(scene, modelRoot);
+    resolvedWalk.name = 'walk';
     resolvedRun.name = 'run';
 
-    return [idleProxy, resolvedRun, jumpProxy];
+    return [idleProxy, resolvedWalk, resolvedRun, jumpProxy];
   } catch (error) {
     if (modelRoot && !modelRoot.isDisposed()) {
       // Keep the monk mesh if it loaded, even when animation setup fails.
       const [idleProxy, jumpProxy] = createIdleJumpProxyGroups(scene, modelRoot);
+      const walkProxy = createWalkProxyGroup(scene, modelRoot);
       const runProxy = createRunProxyGroup(scene, modelRoot);
-      return [idleProxy, runProxy, jumpProxy];
+      return [idleProxy, walkProxy, runProxy, jumpProxy];
     }
 
     disposeImportResult(result);

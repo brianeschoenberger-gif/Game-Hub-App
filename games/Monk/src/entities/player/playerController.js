@@ -127,7 +127,13 @@ export function createPlayerController(scene, world, playerInput) {
 
     const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
     const normalizedSpeed = horizontalSpeed / gameConfig.movement.sprintSpeed;
-    const animationState = !isGrounded ? 'jump' : horizontalSpeed > 0.35 ? 'run' : 'idle';
+    const moveAnimationThreshold = 0.35;
+    let animationState = 'idle';
+    if (!isGrounded) {
+      animationState = 'jump';
+    } else if (horizontalSpeed > moveAnimationThreshold) {
+      animationState = playerInput.keys.sprint ? 'run' : 'walk';
+    }
     playerVisual.setAnimationState(animationState);
     playerVisual.update(deltaTime, {
       elapsedTime,

@@ -3,7 +3,8 @@ import { Scalar } from '@babylonjs/core/Maths/math.scalar';
 
 const CLIP_HINTS = {
   idle: ['idle', 'breath', 'stand'],
-  run: ['run', 'walk', 'jog'],
+  walk: ['walk', 'stride'],
+  run: ['run', 'sprint', 'jog'],
   jump: ['jump', 'fall']
 };
 
@@ -28,11 +29,12 @@ function createJumpProxy(runGroup) {
 
 export function createPlayerAnimationController(animationGroups = []) {
   const idle = resolveClip(animationGroups, CLIP_HINTS.idle);
+  const walk = resolveClip(animationGroups, CLIP_HINTS.walk);
   const run = resolveClip(animationGroups, CLIP_HINTS.run);
-  const jump = resolveClip(animationGroups, CLIP_HINTS.jump) ?? createJumpProxy(run);
+  const jump = resolveClip(animationGroups, CLIP_HINTS.jump) ?? createJumpProxy(run ?? walk);
 
-  const clips = { idle, run, jump };
-  const weights = { idle: 0, run: 0, jump: 0 };
+  const clips = { idle, walk, run, jump };
+  const weights = { idle: 0, walk: 0, run: 0, jump: 0 };
   let activeState = 'idle';
   let ready = false;
 
@@ -67,6 +69,7 @@ export function createPlayerAnimationController(animationGroups = []) {
 
     const targets = {
       idle: activeState === 'idle' ? 1 : 0,
+      walk: activeState === 'walk' ? 1 : 0,
       run: activeState === 'run' ? 1 : 0,
       jump: activeState === 'jump' ? 1 : 0
     };
@@ -76,6 +79,12 @@ export function createPlayerAnimationController(animationGroups = []) {
     if (clips.idle) {
       weights.idle = Scalar.Lerp(weights.idle, targets.idle, blendLerp);
       clips.idle.setWeightForAllAnimatables(weights.idle);
+    }
+
+    if (clips.walk) {
+      weights.walk = Scalar.Lerp(weights.walk, targets.walk, blendLerp);
+      clips.walk.speedRatio = Scalar.Lerp(0.8, 1.1, Scalar.Clamp(locomotion.normalizedSpeed, 0, 0.75) / 0.75);
+      clips.walk.setWeightForAllAnimatables(weights.walk);
     }
 
     if (clips.run) {
