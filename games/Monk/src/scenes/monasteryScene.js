@@ -128,20 +128,15 @@ function instantiateTemplate(scene, container, name, placement, collisions = fal
 
 async function createVillageVisuals(scene) {
   const templateFiles = {
-    corner: 'Corner_Exterior_Brick.gltf',
+    corner: 'Corner_ExteriorWide_Brick.gltf',
     wallBrick: 'Wall_UnevenBrick_Straight.gltf',
-    wallDoor: 'Wall_Plaster_Door_Flat.gltf',
-    wallWindow: 'Wall_Plaster_Window_Wide_Flat.gltf',
     wallPlain: 'Wall_Plaster_Straight.gltf',
     floor: 'Floor_WoodDark.gltf',
     roofHouse: 'Roof_RoundTiles_8x14.gltf',
-    roofSide: 'Roof_RoundTiles_4x8.gltf',
+    roofFront: 'Roof_Front_Brick8.gltf',
     stairs: 'Stairs_Exterior_Straight.gltf',
-    balcony: 'Balcony_Simple_Straight.gltf',
-    support: 'Prop_Support.gltf',
     fence: 'Prop_WoodenFence_Single.gltf',
-    crate: 'Prop_Crate.gltf',
-    vine: 'Prop_Vine2.gltf'
+    crate: 'Prop_Crate.gltf'
   };
 
   const templateEntries = await Promise.all(
@@ -151,123 +146,78 @@ async function createVillageVisuals(scene) {
   const templates = Object.fromEntries(templateEntries);
 
   const buildingCenter = new Vector3(0, 0, -10);
-  const halfWidth = 6.9;
-  const halfDepth = 5.9;
-  const lowerY = 0;
-  const upperY = 3.7;
+  const halfWidth = 7.2;
+  const halfDepth = 6.2;
+  const levelHeight = 3.9;
 
   instantiateTemplate(scene, templates.floor, 'mainBuildingFloorLower', {
-    size: new Vector3(14.2, 0.65, 12),
+    size: new Vector3(14.8, 0.6, 12.8),
     position: new Vector3(buildingCenter.x, 0.05, buildingCenter.z),
     rotationY: 0
   });
   instantiateTemplate(scene, templates.floor, 'mainBuildingFloorUpper', {
-    size: new Vector3(14.6, 0.65, 12.4),
-    position: new Vector3(buildingCenter.x, 4.1, buildingCenter.z),
+    size: new Vector3(14.8, 0.6, 12.8),
+    position: new Vector3(buildingCenter.x, 4.0, buildingCenter.z),
     rotationY: 0
   });
 
-  instantiateTemplate(scene, templates.wallDoor, 'mainBuildingFrontDoor', {
-    size: new Vector3(6.2, 4, 1.25),
-    position: new Vector3(buildingCenter.x, lowerY, buildingCenter.z + halfDepth),
-    rotationY: Math.PI
-  });
-  instantiateTemplate(scene, templates.wallWindow, 'mainBuildingFrontWindowL', {
-    size: new Vector3(3.8, 4, 1.25),
-    position: new Vector3(buildingCenter.x - 4.9, lowerY, buildingCenter.z + halfDepth),
-    rotationY: Math.PI
-  });
-  instantiateTemplate(scene, templates.wallWindow, 'mainBuildingFrontWindowR', {
-    size: new Vector3(3.8, 4, 1.25),
-    position: new Vector3(buildingCenter.x + 4.9, lowerY, buildingCenter.z + halfDepth),
-    rotationY: Math.PI
-  });
-  instantiateTemplate(scene, templates.wallBrick, 'mainBuildingBackLower', {
-    size: new Vector3(14.2, 4.1, 1.25),
-    position: new Vector3(buildingCenter.x, lowerY, buildingCenter.z - halfDepth),
-    rotationY: 0
-  });
-  instantiateTemplate(scene, templates.wallPlain, 'mainBuildingLeftLower', {
-    size: new Vector3(12.1, 4.1, 1.25),
-    position: new Vector3(buildingCenter.x - halfWidth, lowerY, buildingCenter.z),
-    rotationY: -Math.PI / 2
-  });
-  instantiateTemplate(scene, templates.wallPlain, 'mainBuildingRightLower', {
-    size: new Vector3(12.1, 4.1, 1.25),
-    position: new Vector3(buildingCenter.x + halfWidth, lowerY, buildingCenter.z),
-    rotationY: Math.PI / 2
-  });
-
-  instantiateTemplate(scene, templates.wallWindow, 'mainBuildingFrontUpper', {
-    size: new Vector3(14.4, 3.7, 1.15),
-    position: new Vector3(buildingCenter.x, upperY, buildingCenter.z + halfDepth + 0.05),
-    rotationY: Math.PI
-  });
-  instantiateTemplate(scene, templates.wallWindow, 'mainBuildingBackUpper', {
-    size: new Vector3(14.4, 3.7, 1.15),
-    position: new Vector3(buildingCenter.x, upperY, buildingCenter.z - halfDepth - 0.05),
-    rotationY: 0
-  });
-  instantiateTemplate(scene, templates.wallWindow, 'mainBuildingLeftUpper', {
-    size: new Vector3(12.2, 3.7, 1.15),
-    position: new Vector3(buildingCenter.x - halfWidth - 0.05, upperY, buildingCenter.z),
-    rotationY: -Math.PI / 2
-  });
-  instantiateTemplate(scene, templates.wallWindow, 'mainBuildingRightUpper', {
-    size: new Vector3(12.2, 3.7, 1.15),
-    position: new Vector3(buildingCenter.x + halfWidth + 0.05, upperY, buildingCenter.z),
-    rotationY: Math.PI / 2
+  const storyY = [0, levelHeight];
+  storyY.forEach((y, index) => {
+    const suffix = index === 0 ? 'Lower' : 'Upper';
+    instantiateTemplate(scene, templates.wallPlain, `mainBuildingFront${suffix}`, {
+      size: new Vector3(14.6, 4.0, 1.3),
+      position: new Vector3(buildingCenter.x, y, buildingCenter.z + halfDepth),
+      rotationY: Math.PI
+    });
+    instantiateTemplate(scene, templates.wallBrick, `mainBuildingBack${suffix}`, {
+      size: new Vector3(14.6, 4.0, 1.3),
+      position: new Vector3(buildingCenter.x, y, buildingCenter.z - halfDepth),
+      rotationY: 0
+    });
+    instantiateTemplate(scene, templates.wallBrick, `mainBuildingLeft${suffix}`, {
+      size: new Vector3(12.8, 4.0, 1.3),
+      position: new Vector3(buildingCenter.x - halfWidth, y, buildingCenter.z),
+      rotationY: -Math.PI / 2
+    });
+    instantiateTemplate(scene, templates.wallBrick, `mainBuildingRight${suffix}`, {
+      size: new Vector3(12.8, 4.0, 1.3),
+      position: new Vector3(buildingCenter.x + halfWidth, y, buildingCenter.z),
+      rotationY: Math.PI / 2
+    });
   });
 
   const cornerOffsets = [
-    new Vector3(-halfWidth, lowerY, -halfDepth),
-    new Vector3(halfWidth, lowerY, -halfDepth),
-    new Vector3(-halfWidth, lowerY, halfDepth),
-    new Vector3(halfWidth, lowerY, halfDepth),
-    new Vector3(-halfWidth, upperY, -halfDepth),
-    new Vector3(halfWidth, upperY, -halfDepth),
-    new Vector3(-halfWidth, upperY, halfDepth),
-    new Vector3(halfWidth, upperY, halfDepth)
+    new Vector3(-halfWidth, 0, -halfDepth),
+    new Vector3(halfWidth, 0, -halfDepth),
+    new Vector3(-halfWidth, 0, halfDepth),
+    new Vector3(halfWidth, 0, halfDepth),
+    new Vector3(-halfWidth, levelHeight, -halfDepth),
+    new Vector3(halfWidth, levelHeight, -halfDepth),
+    new Vector3(-halfWidth, levelHeight, halfDepth),
+    new Vector3(halfWidth, levelHeight, halfDepth)
   ];
-
   cornerOffsets.forEach((offset, index) => {
     instantiateTemplate(scene, templates.corner, `mainBuildingCorner_${index}`, {
-      size: new Vector3(1.45, 4.1, 1.45),
+      size: new Vector3(1.5, 4.0, 1.5),
       position: buildingCenter.add(offset),
       rotationY: (index % 4) * (Math.PI / 2)
     });
   });
 
   instantiateTemplate(scene, templates.roofHouse, 'mainBuildingRoofMain', {
-    size: new Vector3(17.5, 7.1, 15.2),
+    size: new Vector3(18.6, 7.5, 16),
     position: new Vector3(buildingCenter.x, 7.2, buildingCenter.z),
     rotationY: 0
   });
-  instantiateTemplate(scene, templates.roofSide, 'mainBuildingRoofDoor', {
-    size: new Vector3(6.7, 2.8, 5.2),
-    position: new Vector3(buildingCenter.x + 3.2, 3.9, buildingCenter.z + halfDepth + 1.7),
+  instantiateTemplate(scene, templates.roofFront, 'mainBuildingRoofFront', {
+    size: new Vector3(8.2, 2.8, 1.2),
+    position: new Vector3(buildingCenter.x, 6.3, buildingCenter.z + halfDepth + 0.45),
     rotationY: Math.PI
-  });
-
-  instantiateTemplate(scene, templates.balcony, 'mainBuildingBalcony', {
-    size: new Vector3(7.2, 1.8, 1.6),
-    position: new Vector3(buildingCenter.x - 4.7, 4.2, buildingCenter.z + halfDepth + 1.1),
-    rotationY: Math.PI
-  });
-  instantiateTemplate(scene, templates.support, 'mainBuildingSupportA', {
-    size: new Vector3(0.9, 3.8, 0.9),
-    position: new Vector3(buildingCenter.x - 7.2, 0, buildingCenter.z + halfDepth + 0.7),
-    rotationY: 0
-  });
-  instantiateTemplate(scene, templates.support, 'mainBuildingSupportB', {
-    size: new Vector3(0.9, 3.8, 0.9),
-    position: new Vector3(buildingCenter.x - 2.2, 0, buildingCenter.z + halfDepth + 0.7),
-    rotationY: 0
   });
 
   instantiateTemplate(scene, templates.stairs, 'mainBuildingStairs', {
-    size: new Vector3(6.2, 3.2, 4.4),
-    position: new Vector3(buildingCenter.x + 0.2, 0, buildingCenter.z + halfDepth + 4.4),
+    size: new Vector3(6.2, 3.2, 4.6),
+    position: new Vector3(buildingCenter.x, 0, buildingCenter.z + halfDepth + 4.4),
     rotationY: Math.PI
   });
 
@@ -295,16 +245,6 @@ async function createVillageVisuals(scene) {
     rotationY: -0.35
   });
 
-  instantiateTemplate(scene, templates.vine, 'mainBuildingVineA', {
-    size: new Vector3(2.6, 4.3, 1.4),
-    position: new Vector3(buildingCenter.x - 5.6, 0.2, buildingCenter.z + 4.4),
-    rotationY: 0.7
-  });
-  instantiateTemplate(scene, templates.vine, 'mainBuildingVineB', {
-    size: new Vector3(2.6, 4.3, 1.4),
-    position: new Vector3(buildingCenter.x + 4.3, 3.6, buildingCenter.z - 3.8),
-    rotationY: -0.4
-  });
 }
 
 function createCollisionLayout(scene, terrainMaterial, roadMaterial, hiddenCollisionMaterial) {
