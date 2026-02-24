@@ -1,12 +1,42 @@
 import { Animation } from '@babylonjs/core/Animations/animation';
+import * as BabylonLegacy from '@babylonjs/core/Legacy/legacy';
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup';
+import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { createPlayerAnimationController } from './playerAnimationController.js';
 
-function createCharacterModel(collider, scene) {
+const GLTF_LOADER_URL = 'https://cdn.jsdelivr.net/npm/babylonjs-loaders@7.54.3/babylonjs.loaders.min.js';
+const CHARACTER_MODEL_URL = new URL('../../../Assets/Monk/Meshy_AI_Monastic_Contemplatio_0223043241_texture.glb', import.meta.url).href;
+const WALK_ANIMATION_URL = new URL('../../../Assets/Monk/Meshy_AI_Animation_Walking_withSkin.glb', import.meta.url).href;
+const RUN_ANIMATION_URL = new URL('../../../Assets/Monk/Meshy_AI_Animation_Running_withSkin.glb', import.meta.url).href;
+
+let gltfLoaderScriptPromise = null;
+
+function ensureGltfLoaderScript() {
+  if (SceneLoader.IsPluginForExtensionAvailable('.glb')) {
+    return Promise.resolve();
+  }
+
+  if (!gltfLoaderScriptPromise) {
+    gltfLoaderScriptPromise = new Promise((resolve, reject) => {
+      globalThis.BABYLON = globalThis.BABYLON ?? BabylonLegacy;
+
+      const script = document.createElement('script');
+      script.src = GLTF_LOADER_URL;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Babylon UMD loaders script.'));
+      document.head.appendChild(script);
+    });
+  }
+
+  return gltfLoaderScriptPromise;
+}
+
+function createFallbackCharacterModel(collider, scene) {
   const skinMaterial = new StandardMaterial('monkSkinMaterial', scene);
   skinMaterial.diffuseColor = new Color3(0.86, 0.73, 0.58);
 
@@ -61,7 +91,7 @@ function createCharacterModel(collider, scene) {
   return { root, armLeft, armRight };
 }
 
-function createCharacterAnimationGroups(scene, rig) {
+function createFallbackAnimationGroups(scene, rig) {
   const idleBob = new Animation('idle-bob', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
   idleBob.setKeys([
     { frame: 0, value: rig.root.position.y },
@@ -123,14 +153,75 @@ function createCharacterAnimationGroups(scene, rig) {
   return [idle, run, jump];
 }
 
-export async function createPlayerCharacterVisual(collider, scene) {
-  const rig = createCharacterModel(collider, scene);
-  const animationGroups = createCharacterAnimationGroups(scene, rig);
-  const animationController = createPlayerAnimationController(animationGroups);
 
-  return {
-    setAnimationState: animationController.setState,
-    update: (dt, locomotion) => animationController.update(dt, locomotion),
-    loadedFromGlb: false
-  };
+
+function hasValidAnimationTargets(group) {
+  return group.targetedAnimations.every((entry) => Boolean(entry.target));
+}
+
+function getActiveAnimationGroups(scene, existingGroupNames) {
+  return scene.animationGroups.filter((group) => !existingGroupNames.has(group.name));
+}
+
+async function createGlbCharacterModel(collider, scene) {
+  await ensureGltfLoaderScript();
+  if (!SceneLoader.IsPluginForExtensionAvailable('.glb')) {
+    throw new Error('GLTF loader script did not register a .glb plugin.');
+  }
+
+  const existingNames = new Set(scene.animationGroups.map((group) => group.name));
+  const result = await SceneLoader.ImportMeshAsync('', '', CHARACTER_MODEL_URL, scene, undefined, '.glb');
+
+  const modelRoot = result.meshes.find((mesh) => !mesh.parent) ?? result.meshes[0];
+  if (!modelRoot) {
+    throw new Error('Unable to find GLB model root mesh for monk character.');
+  }
+
+  modelRoot.parent = collider;
+  modelRoot.position = new Vector3(0, -0.9, 0);
+  modelRoot.scaling = new Vector3(0.9, 0.9, 0.9);
+  modelRoot.rotationQuaternion = null;
+
+  const byName = new Map();
+  result.meshes.forEach((mesh) => byName.set(mesh.name, mesh));
+  result.transformNodes.forEach((node) => byName.set(node.name, node));
+  result.skeletons.forEach((skeleton) => byName.set(skeleton.name, skeleton));
+
+  const targetConverter = (target) => byName.get(target.name) ?? null;
+
+  await SceneLoader.ImportAnimationsAsync('', WALK_ANIMATION_URL, scene, false, undefined, targetConverter, undefined, undefined, undefined, '.glb');
+  await SceneLoader.ImportAnimationsAsync('', RUN_ANIMATION_URL, scene, false, undefined, targetConverter, undefined, undefined, undefined, '.glb');
+
+  const importedGroups = getActiveAnimationGroups(scene, existingNames);
+  const validGroups = importedGroups.filter(hasValidAnimationTargets);
+
+  if (validGroups.length === 0) {
+    throw new Error('Imported GLB animations could not be retargeted to the loaded character rig.');
+  }
+
+  return validGroups;
+}
+
+export async function createPlayerCharacterVisual(collider, scene) {
+  try {
+    const animationGroups = await createGlbCharacterModel(collider, scene);
+    const animationController = createPlayerAnimationController(animationGroups);
+
+    return {
+      setAnimationState: animationController.setState,
+      update: (dt, locomotion) => animationController.update(dt, locomotion),
+      loadedFromGlb: true
+    };
+  } catch (error) {
+    console.warn('Falling back to procedural monk character.', error);
+    const rig = createFallbackCharacterModel(collider, scene);
+    const animationGroups = createFallbackAnimationGroups(scene, rig);
+    const animationController = createPlayerAnimationController(animationGroups);
+
+    return {
+      setAnimationState: animationController.setState,
+      update: (dt, locomotion) => animationController.update(dt, locomotion),
+      loadedFromGlb: false
+    };
+  }
 }
