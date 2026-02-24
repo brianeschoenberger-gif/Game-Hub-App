@@ -6,7 +6,12 @@ import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 
-const ASSET_ROOT = './Assets/Medieval%20Village%20MegaKit%5BStandard%5D/glTF/';
+function resolveAssetRoot() {
+  const moduleDir = new URL('.', import.meta.url);
+  return new URL('../../Assets/Medieval%20Village%20MegaKit%5BStandard%5D/glTF/', moduleDir).href;
+}
+
+const ASSET_ROOT = resolveAssetRoot();
 
 function createStaticBox(scene, name, options, position, material, isVisible = true) {
   const mesh = MeshBuilder.CreateBox(name, options, scene);
