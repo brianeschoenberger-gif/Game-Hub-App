@@ -1,4 +1,4 @@
-import * as BabylonLegacy from '@babylonjs/core/Legacy/legacy';
+import '@babylonjs/loaders/glTF';
 import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
@@ -6,31 +6,7 @@ import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 
-const ASSET_ROOT = new URL('../../Assets/Medieval Village MegaKit[Standard]/glTF/', import.meta.url).href;
-const GLTF_LOADER_URL = 'https://cdn.jsdelivr.net/npm/babylonjs-loaders@7.54.3/babylonjs.loaders.min.js';
-
-let gltfLoaderScriptPromise = null;
-
-function ensureGltfLoaderScript() {
-  if (SceneLoader.IsPluginForExtensionAvailable('.gltf')) {
-    return Promise.resolve();
-  }
-
-  if (!gltfLoaderScriptPromise) {
-    gltfLoaderScriptPromise = new Promise((resolve, reject) => {
-      globalThis.BABYLON = globalThis.BABYLON ?? BabylonLegacy;
-
-      const script = document.createElement('script');
-      script.src = GLTF_LOADER_URL;
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Babylon glTF loader script.'));
-      document.head.appendChild(script);
-    });
-  }
-
-  return gltfLoaderScriptPromise;
-}
+const ASSET_ROOT = '/Assets/Medieval%20Village%20MegaKit%5BStandard%5D/glTF/';
 
 function createStaticBox(scene, name, options, position, material, isVisible = true) {
   const mesh = MeshBuilder.CreateBox(name, options, scene);
@@ -99,7 +75,7 @@ function fitRootToPlacement(root, targetSize, targetPosition, rotationY = 0) {
 }
 
 async function loadTemplateContainer(scene, fileName) {
-  const url = new URL(fileName, ASSET_ROOT).href;
+  const url = `${ASSET_ROOT}${fileName}`;
   const container = await SceneLoader.LoadAssetContainerAsync('', url, scene, undefined, '.gltf');
   container.removeAllFromScene();
   return container;
@@ -289,7 +265,9 @@ function createCollisionLayout(scene, terrainMaterial, roadMaterial, hiddenColli
 
 export async function createMonasteryScene(scene) {
   scene.collisionsEnabled = true;
-  await ensureGltfLoaderScript();
+  if (!SceneLoader.IsPluginForExtensionAvailable('.gltf')) {
+    throw new Error('GLTF loader plugin is not available.');
+  }
 
   const terrainMaterial = new StandardMaterial('terrainMaterial', scene);
   terrainMaterial.diffuseColor = new Color3(0.25, 0.5, 0.24);

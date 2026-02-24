@@ -309,16 +309,13 @@ async function importRetargetedGroup(scene, animationUrl, clipName, targetNodesB
 }
 
 async function createGlbCharacterModel(collider, scene) {
-  if (!SceneLoader.IsPluginForExtensionAvailable('.glb')) {
-    throw new Error('GLTF loader plugin is not available.');
-  }
-
   let result = null;
+  let modelRoot = null;
 
   try {
     result = await SceneLoader.ImportMeshAsync('', '', CHARACTER_MODEL_URL, scene, undefined, '.glb');
 
-    const modelRoot = result.meshes.find((mesh) => !mesh.parent) ?? result.meshes[0];
+    modelRoot = result.meshes.find((mesh) => !mesh.parent) ?? result.meshes[0];
     if (!modelRoot) {
       throw new Error('Unable to find GLB model root mesh for monk character.');
     }
@@ -343,6 +340,13 @@ async function createGlbCharacterModel(collider, scene) {
 
     return [idleProxy, resolvedRun, jumpProxy];
   } catch (error) {
+    if (modelRoot && !modelRoot.isDisposed()) {
+      // Keep the monk mesh if it loaded, even when animation setup fails.
+      const [idleProxy, jumpProxy] = createIdleJumpProxyGroups(scene, modelRoot);
+      const runProxy = createRunProxyGroup(scene, modelRoot);
+      return [idleProxy, runProxy, jumpProxy];
+    }
+
     disposeImportResult(result);
     throw error;
   }
