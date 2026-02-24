@@ -164,6 +164,53 @@ function createFallbackAnimationGroups(scene, rig) {
   return [idle, run, jump];
 }
 
+function createProxyAnimationGroupsForModel(scene, modelRoot) {
+  const baseY = modelRoot.position.y;
+
+  const idleBob = new Animation('idle-bob-proxy', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  idleBob.setKeys([
+    { frame: 0, value: baseY },
+    { frame: 15, value: baseY + 0.025 },
+    { frame: 30, value: baseY }
+  ]);
+
+  const runBob = new Animation('run-bob-proxy', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  runBob.setKeys([
+    { frame: 0, value: baseY - 0.03 },
+    { frame: 8, value: baseY + 0.045 },
+    { frame: 15, value: baseY - 0.03 },
+    { frame: 22, value: baseY + 0.045 },
+    { frame: 30, value: baseY - 0.03 }
+  ]);
+
+  const runSway = new Animation('run-sway-proxy', 'rotation.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  runSway.setKeys([
+    { frame: 0, value: -0.03 },
+    { frame: 15, value: 0.03 },
+    { frame: 30, value: -0.03 }
+  ]);
+
+  const jumpLift = new Animation('jump-lift-proxy', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  jumpLift.setKeys([
+    { frame: 0, value: baseY },
+    { frame: 12, value: baseY + 0.16 },
+    { frame: 22, value: baseY + 0.08 },
+    { frame: 30, value: baseY }
+  ]);
+
+  const idle = new AnimationGroup('idle');
+  idle.addTargetedAnimation(idleBob, modelRoot);
+
+  const run = new AnimationGroup('run');
+  run.addTargetedAnimation(runBob, modelRoot);
+  run.addTargetedAnimation(runSway, modelRoot);
+
+  const jump = new AnimationGroup('jump');
+  jump.addTargetedAnimation(jumpLift, modelRoot);
+
+  return [idle, run, jump];
+}
+
 
 
 function hasValidAnimationTargets(group) {
@@ -260,12 +307,25 @@ async function createGlbCharacterModel(collider, scene) {
     const importedGroups = getActiveAnimationGroups(scene, existingNames);
     const validGroups = importedGroups.filter(hasValidAnimationTargets);
 
-    return validGroups;
+    if (validGroups.length > 0) {
+      return validGroups;
+    }
+
+    const modelRoot = result.meshes.find((mesh) => mesh.parent === collider) ?? result.meshes[0];
+    if (modelRoot) {
+      return createProxyAnimationGroupsForModel(scene, modelRoot);
+    }
+
+    return [];
   } catch (error) {
     // Keep the imported monk mesh visible even if animation retargeting fails.
     const leakedGroups = getActiveAnimationGroups(scene, existingNames);
     leakedGroups.forEach((group) => group.dispose());
     console.warn(`Monk GLB loaded but animation import failed. Using static model. ${error instanceof Error ? error.message : String(error)}`);
+    const modelRoot = result?.meshes?.find((mesh) => mesh.parent === collider) ?? result?.meshes?.[0];
+    if (modelRoot) {
+      return createProxyAnimationGroupsForModel(scene, modelRoot);
+    }
     return [];
   }
 }
