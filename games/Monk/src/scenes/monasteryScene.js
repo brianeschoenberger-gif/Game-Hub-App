@@ -6,7 +6,7 @@ import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 
-const ASSET_ROOT = '/Assets/Medieval%20Village%20MegaKit%5BStandard%5D/glTF/';
+const ASSET_ROOT = './Assets/Medieval%20Village%20MegaKit%5BStandard%5D/glTF/';
 
 function createStaticBox(scene, name, options, position, material, isVisible = true) {
   const mesh = MeshBuilder.CreateBox(name, options, scene);
@@ -75,8 +75,7 @@ function fitRootToPlacement(root, targetSize, targetPosition, rotationY = 0) {
 }
 
 async function loadTemplateContainer(scene, fileName) {
-  const url = `${ASSET_ROOT}${fileName}`;
-  const container = await SceneLoader.LoadAssetContainerAsync('', url, scene, undefined, '.gltf');
+  const container = await SceneLoader.LoadAssetContainerAsync(ASSET_ROOT, fileName, scene, undefined, '.gltf');
   container.removeAllFromScene();
   return container;
 }
