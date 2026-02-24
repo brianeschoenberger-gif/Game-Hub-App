@@ -16,7 +16,7 @@ import { createAudioSystem } from '../systems/audioSystem.js';
 import { createInteractionSystem } from '../systems/interactionSystem.js';
 import { setupDebugOverlay } from '../utils/debug.js';
 
-export function createGame() {
+export async function createGame() {
   const { canvas, engine, scene } = createAppContext();
   scene.clearColor.set(0.56, 0.62, 0.72, 1);
 
@@ -28,7 +28,7 @@ export function createGame() {
   sun.intensity = 1.6;
   sun.position = new Vector3(15, 30, -10);
 
-  const world = createMonasteryScene(scene);
+  const world = await createMonasteryScene(scene);
   const playerInput = createPlayerInput(canvas);
   const playerController = createPlayerController(scene, world, playerInput);
   const cameraSystem = createCameraSystem(scene, canvas, playerController);

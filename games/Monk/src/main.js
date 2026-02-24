@@ -1,6 +1,6 @@
 async function bootstrap() {
   const { createGame } = await import('./core/game.js');
-  createGame();
+  await createGame();
 }
 
 bootstrap().catch((error) => {
