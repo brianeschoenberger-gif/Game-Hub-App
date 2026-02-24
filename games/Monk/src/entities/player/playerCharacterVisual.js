@@ -1,6 +1,7 @@
+import '@babylonjs/loaders/glTF';
 import { Animation } from '@babylonjs/core/Animations/animation';
-import * as BabylonLegacy from '@babylonjs/core/Legacy/legacy';
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup';
+import { Bone } from '@babylonjs/core/Bones/bone';
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
@@ -8,12 +9,10 @@ import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { createPlayerAnimationController } from './playerAnimationController.js';
 
-const GLTF_LOADER_URL = 'https://cdn.jsdelivr.net/npm/babylonjs-loaders@7.54.3/babylonjs.loaders.min.js';
 const CHARACTER_MODEL_URL = new URL('../../../Assets/Monk/Meshy_AI_Monastic_Contemplatio_0223043241_texture.glb', import.meta.url).href;
 const WALK_ANIMATION_URL = new URL('../../../Assets/Monk/Meshy_AI_Animation_Walking_withSkin.glb', import.meta.url).href;
 const RUN_ANIMATION_URL = new URL('../../../Assets/Monk/Meshy_AI_Animation_Running_withSkin.glb', import.meta.url).href;
 
-let gltfLoaderScriptPromise = null;
 let hasLoggedGlbFallbackWarning = false;
 
 function logGlbFallbackWarning(reason) {
@@ -24,27 +23,6 @@ function logGlbFallbackWarning(reason) {
   hasLoggedGlbFallbackWarning = true;
   const detail = reason instanceof Error ? reason.message : String(reason ?? 'unknown reason');
   console.warn(`Falling back to procedural monk character: ${detail}`);
-}
-
-function ensureGltfLoaderScript() {
-  if (SceneLoader.IsPluginForExtensionAvailable('.glb')) {
-    return Promise.resolve();
-  }
-
-  if (!gltfLoaderScriptPromise) {
-    gltfLoaderScriptPromise = new Promise((resolve, reject) => {
-      globalThis.BABYLON = globalThis.BABYLON ?? BabylonLegacy;
-
-      const script = document.createElement('script');
-      script.src = GLTF_LOADER_URL;
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Babylon UMD loaders script.'));
-      document.head.appendChild(script);
-    });
-  }
-
-  return gltfLoaderScriptPromise;
 }
 
 function createFallbackCharacterModel(collider, scene) {
@@ -164,7 +142,7 @@ function createFallbackAnimationGroups(scene, rig) {
   return [idle, run, jump];
 }
 
-function createProxyAnimationGroupsForModel(scene, modelRoot) {
+function createIdleJumpProxyGroups(scene, modelRoot) {
   const baseY = modelRoot.position.y;
 
   const idleBob = new Animation('idle-bob-proxy', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
@@ -173,6 +151,26 @@ function createProxyAnimationGroupsForModel(scene, modelRoot) {
     { frame: 15, value: baseY + 0.025 },
     { frame: 30, value: baseY }
   ]);
+
+  const jumpLift = new Animation('jump-lift-proxy', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+  jumpLift.setKeys([
+    { frame: 0, value: baseY },
+    { frame: 12, value: baseY + 0.16 },
+    { frame: 22, value: baseY + 0.08 },
+    { frame: 30, value: baseY }
+  ]);
+
+  const idle = new AnimationGroup('idle');
+  idle.addTargetedAnimation(idleBob, modelRoot);
+
+  const jump = new AnimationGroup('jump');
+  jump.addTargetedAnimation(jumpLift, modelRoot);
+
+  return [idle, jump];
+}
+
+function createRunProxyGroup(scene, modelRoot) {
+  const baseY = modelRoot.position.y;
 
   const runBob = new Animation('run-bob-proxy', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
   runBob.setKeys([
@@ -190,31 +188,10 @@ function createProxyAnimationGroupsForModel(scene, modelRoot) {
     { frame: 30, value: -0.03 }
   ]);
 
-  const jumpLift = new Animation('jump-lift-proxy', 'position.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
-  jumpLift.setKeys([
-    { frame: 0, value: baseY },
-    { frame: 12, value: baseY + 0.16 },
-    { frame: 22, value: baseY + 0.08 },
-    { frame: 30, value: baseY }
-  ]);
-
-  const idle = new AnimationGroup('idle');
-  idle.addTargetedAnimation(idleBob, modelRoot);
-
   const run = new AnimationGroup('run');
   run.addTargetedAnimation(runBob, modelRoot);
   run.addTargetedAnimation(runSway, modelRoot);
-
-  const jump = new AnimationGroup('jump');
-  jump.addTargetedAnimation(jumpLift, modelRoot);
-
-  return [idle, run, jump];
-}
-
-
-
-function hasValidAnimationTargets(group) {
-  return group.targetedAnimations.every((entry) => Boolean(entry.target));
+  return run;
 }
 
 function getActiveAnimationGroups(scene, existingGroupNames) {
@@ -241,15 +218,102 @@ function alignModelToColliderFeet(collider, modelRoot, footOffset = 0.02) {
   modelRoot.computeWorldMatrix(true);
 }
 
-async function createGlbCharacterModel(collider, scene) {
-  await ensureGltfLoaderScript();
-  if (!SceneLoader.IsPluginForExtensionAvailable('.glb')) {
-    throw new Error('GLTF loader script did not register a .glb plugin.');
+function disposeImportResult(result) {
+  if (!result) {
+    return;
   }
 
-  const existingNames = new Set(scene.animationGroups.map((group) => group.name));
+  result.meshes?.forEach((mesh) => {
+    if (mesh && !mesh.isDisposed()) {
+      mesh.dispose(false, true);
+    }
+  });
+
+  result.transformNodes?.forEach((node) => {
+    if (node && !node.isDisposed()) {
+      node.dispose(false, true);
+    }
+  });
+
+  result.skeletons?.forEach((skeleton) => {
+    if (skeleton && !skeleton.isDisposed()) {
+      skeleton.dispose();
+    }
+  });
+}
+
+function createNodeLookup(result) {
+  const byName = new Map();
+  result.meshes.forEach((mesh) => byName.set(mesh.name, mesh));
+  result.transformNodes.forEach((node) => byName.set(node.name, node));
+  result.skeletons.forEach((skeleton) => byName.set(skeleton.name, skeleton));
+  return byName;
+}
+
+function pickSourceAnimationGroup(groups, clipHint) {
+  const hint = clipHint.toLowerCase();
+  return groups.find((group) => group.name?.toLowerCase().includes(hint))
+    ?? groups.find((group) => group.targetedAnimations.length > 0)
+    ?? null;
+}
+
+function cloneGroupToTargetRig(scene, sourceGroup, groupName, targetNodesByName, targetSkeleton) {
+  const cloned = new AnimationGroup(groupName, scene);
+  const targetBonesByName = new Map((targetSkeleton?.bones ?? []).map((bone) => [bone.name, bone]));
+
+  sourceGroup.targetedAnimations.forEach((entry) => {
+    const sourceTarget = entry.target;
+    let mappedTarget = null;
+
+    if (sourceTarget instanceof Bone || sourceTarget?.getClassName?.() === 'Bone') {
+      mappedTarget = targetBonesByName.get(sourceTarget.name) ?? null;
+    } else if (sourceTarget?.name) {
+      mappedTarget = targetNodesByName.get(sourceTarget.name) ?? null;
+    }
+
+    if (mappedTarget) {
+      cloned.addTargetedAnimation(entry.animation.clone(`${groupName}_${entry.animation.name || 'anim'}`), mappedTarget);
+    }
+  });
+
+  if (cloned.targetedAnimations.length === 0) {
+    cloned.dispose();
+    return null;
+  }
+
+  return cloned;
+}
+
+async function importRetargetedGroup(scene, animationUrl, clipName, targetNodesByName, targetSkeleton) {
+  const existingGroupNames = new Set(scene.animationGroups.map((group) => group.name));
+  let animationResult = null;
+
+  try {
+    animationResult = await SceneLoader.ImportMeshAsync('', '', animationUrl, scene, undefined, '.glb');
+    const newGroups = getActiveAnimationGroups(scene, existingGroupNames);
+    const sourceGroup = pickSourceAnimationGroup(newGroups, clipName);
+    const retargeted = sourceGroup
+      ? cloneGroupToTargetRig(scene, sourceGroup, clipName, targetNodesByName, targetSkeleton)
+      : null;
+
+    newGroups.forEach((group) => group.dispose());
+    disposeImportResult(animationResult);
+    return retargeted;
+  } catch (error) {
+    const newGroups = getActiveAnimationGroups(scene, existingGroupNames);
+    newGroups.forEach((group) => group.dispose());
+    disposeImportResult(animationResult);
+    console.warn(`Failed to import/retarget ${clipName} clip. ${error instanceof Error ? error.message : String(error)}`);
+    return null;
+  }
+}
+
+async function createGlbCharacterModel(collider, scene) {
+  if (!SceneLoader.IsPluginForExtensionAvailable('.glb')) {
+    throw new Error('GLTF loader plugin is not available.');
+  }
+
   let result = null;
-  let byName = null;
 
   try {
     result = await SceneLoader.ImportMeshAsync('', '', CHARACTER_MODEL_URL, scene, undefined, '.glb');
@@ -265,68 +329,22 @@ async function createGlbCharacterModel(collider, scene) {
     modelRoot.rotationQuaternion = null;
     alignModelToColliderFeet(collider, modelRoot);
 
-    byName = new Map();
-    result.meshes.forEach((mesh) => byName.set(mesh.name, mesh));
-    result.transformNodes.forEach((node) => byName.set(node.name, node));
-    result.skeletons.forEach((skeleton) => byName.set(skeleton.name, skeleton));
-  } catch (error) {
-    if (result) {
-      result.meshes.forEach((mesh) => {
-        if (mesh && !mesh.isDisposed()) {
-          mesh.dispose(false, true);
-        }
-      });
-      result.transformNodes.forEach((node) => {
-        if (node && !node.isDisposed()) {
-          node.dispose(false, true);
-        }
-      });
-      result.skeletons.forEach((skeleton) => {
-        if (skeleton && !skeleton.isDisposed()) {
-          skeleton.dispose();
-        }
-      });
-    }
+    const targetNodesByName = createNodeLookup(result);
+    const targetSkeleton = result.skeletons[0] ?? null;
 
-    const leakedGroups = getActiveAnimationGroups(scene, existingNames);
-    leakedGroups.forEach((group) => group.dispose());
+    const [walkGroup, runGroup] = await Promise.all([
+      importRetargetedGroup(scene, WALK_ANIMATION_URL, 'walk', targetNodesByName, targetSkeleton),
+      importRetargetedGroup(scene, RUN_ANIMATION_URL, 'run', targetNodesByName, targetSkeleton)
+    ]);
+
+    const [idleProxy, jumpProxy] = createIdleJumpProxyGroups(scene, modelRoot);
+    const resolvedRun = runGroup ?? walkGroup ?? createRunProxyGroup(scene, modelRoot);
+    resolvedRun.name = 'run';
+
+    return [idleProxy, resolvedRun, jumpProxy];
+  } catch (error) {
+    disposeImportResult(result);
     throw error;
-  }
-
-  try {
-    const targetConverter = (target) => {
-      if (!target?.name) {
-        return null;
-      }
-      return byName.get(target.name) ?? null;
-    };
-
-    await SceneLoader.ImportAnimationsAsync('', WALK_ANIMATION_URL, scene, false, undefined, targetConverter, undefined, undefined, undefined, '.glb');
-    await SceneLoader.ImportAnimationsAsync('', RUN_ANIMATION_URL, scene, false, undefined, targetConverter, undefined, undefined, undefined, '.glb');
-
-    const importedGroups = getActiveAnimationGroups(scene, existingNames);
-    const validGroups = importedGroups.filter(hasValidAnimationTargets);
-
-    if (validGroups.length > 0) {
-      return validGroups;
-    }
-
-    const modelRoot = result.meshes.find((mesh) => mesh.parent === collider) ?? result.meshes[0];
-    if (modelRoot) {
-      return createProxyAnimationGroupsForModel(scene, modelRoot);
-    }
-
-    return [];
-  } catch (error) {
-    // Keep the imported monk mesh visible even if animation retargeting fails.
-    const leakedGroups = getActiveAnimationGroups(scene, existingNames);
-    leakedGroups.forEach((group) => group.dispose());
-    console.warn(`Monk GLB loaded but animation import failed. Using static model. ${error instanceof Error ? error.message : String(error)}`);
-    const modelRoot = result?.meshes?.find((mesh) => mesh.parent === collider) ?? result?.meshes?.[0];
-    if (modelRoot) {
-      return createProxyAnimationGroupsForModel(scene, modelRoot);
-    }
-    return [];
   }
 }
 
