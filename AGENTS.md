@@ -82,3 +82,7 @@ Prioritize:
 - Keep commits focused and small.
 - Avoid destructive git commands.
 - Do not revert unrelated user changes.
+
+## Local Skill References
+
+- `develop-web-game`: `docs/skills/develop-web-game.SKILL.md`
