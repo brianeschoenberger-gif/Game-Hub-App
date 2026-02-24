@@ -21,10 +21,10 @@ export const gameConfig = {
     }
   },
   camera: {
-    distance: 3.4,
-    minDistance: 1.7,
-    maxDistance: 6.5,
-    heightOffset: 2.2,
+    distance: 2.1,
+    minDistance: 1.2,
+    maxDistance: 3.4,
+    heightOffset: 1.9,
     mouseSensitivity: 0.0011,
     pitchMin: -0.7,
     pitchMax: 0.95,

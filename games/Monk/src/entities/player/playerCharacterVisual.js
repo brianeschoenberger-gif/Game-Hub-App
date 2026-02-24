@@ -174,6 +174,26 @@ function getActiveAnimationGroups(scene, existingGroupNames) {
   return scene.animationGroups.filter((group) => !existingGroupNames.has(group.name));
 }
 
+function alignModelToColliderFeet(collider, modelRoot, footOffset = 0.02) {
+  const childMeshes = modelRoot.getChildMeshes(false);
+  if (childMeshes.length === 0) {
+    return;
+  }
+
+  modelRoot.computeWorldMatrix(true);
+  let minY = Number.POSITIVE_INFINITY;
+  childMeshes.forEach((mesh) => {
+    const meshMinY = mesh.getBoundingInfo().boundingBox.minimumWorld.y;
+    if (meshMinY < minY) {
+      minY = meshMinY;
+    }
+  });
+
+  const desiredMinY = collider.position.y - 0.9 + footOffset;
+  modelRoot.position.y += desiredMinY - minY;
+  modelRoot.computeWorldMatrix(true);
+}
+
 async function createGlbCharacterModel(collider, scene) {
   await ensureGltfLoaderScript();
   if (!SceneLoader.IsPluginForExtensionAvailable('.glb')) {
@@ -193,9 +213,10 @@ async function createGlbCharacterModel(collider, scene) {
     }
 
     modelRoot.parent = collider;
-    modelRoot.position = new Vector3(0, -0.9, 0);
+    modelRoot.position = new Vector3(0, 0, 0);
     modelRoot.scaling = new Vector3(0.9, 0.9, 0.9);
     modelRoot.rotationQuaternion = null;
+    alignModelToColliderFeet(collider, modelRoot);
 
     byName = new Map();
     result.meshes.forEach((mesh) => byName.set(mesh.name, mesh));
