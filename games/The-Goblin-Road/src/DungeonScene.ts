@@ -124,6 +124,7 @@ export class DungeonScene extends Phaser.Scene {
   private torchLights: Phaser.GameObjects.Arc[] = [];
   private hudText!: Phaser.GameObjects.Text;
   private objectiveText!: Phaser.GameObjects.Text;
+  private hintText!: Phaser.GameObjects.Text;
   private roomText!: Phaser.GameObjects.Text;
   private centerText!: Phaser.GameObjects.Text;
   private soundHooks = new SoundHooks();
@@ -145,7 +146,8 @@ export class DungeonScene extends Phaser.Scene {
   };
   private openedChests = new Set<string>();
   private openedDoors = new Set<string>();
-  private objective = "Find a small key and unlock the lower door.";
+  private objective = "Small Key: go east, defeat the guard goblins, then touch the chest.";
+  private hint = "Walk into the right-hand doorway to reach the Goblin Guard Room. Chests open when you touch them.";
 
   constructor() {
     super("DungeonScene");
@@ -239,6 +241,8 @@ export class DungeonScene extends Phaser.Scene {
       this.addBanner(room.x + 180, room.y + 96, 0xc85a3a);
       this.addBanner(room.x + 460, room.y + 96, 0xc85a3a);
       this.addRuneCircle(room.x + 320, room.y + 216, 58, 0xffd86b, 0.22);
+      this.addRoomHint(room.x + 456, room.y + 174, "Small Key ->\nGuard Room");
+      this.addRoomHint(room.x + 320, room.y + 342, "Locked lower door\nneeds Small Key");
       this.addRubble(room.x + 120, room.y + 260, 5);
       this.addRubble(room.x + 510, room.y + 180, 4);
     }
@@ -272,6 +276,11 @@ export class DungeonScene extends Phaser.Scene {
       this.addCrackedWall(room.x + 58, room.y + 210);
       this.addBanner(room.x + 112, room.y + 108, 0x3569a8);
       this.addBanner(room.x + 528, room.y + 108, 0x3569a8);
+    }
+    if (id === "guard") {
+      this.addRoomHint(room.x + 320, room.y + 318, "Defeat guards,\nthen touch chest");
+      this.addSpikeRow(room.x + 142, room.y + 305, 4);
+      this.addRubble(room.x + 102, room.y + 132, 6);
     }
     if (id === "chapel") {
       for (const point of [[135, 180], [505, 180], [250, 305], [390, 305]]) this.addTorch(room.x + point[0], room.y + point[1]);
@@ -486,6 +495,23 @@ export class DungeonScene extends Phaser.Scene {
     g.lineBetween(x, y + 24, x, y + 48);
   }
 
+  private addRoomHint(x: number, y: number, text: string): void {
+    const label = this.add
+      .text(x, y, text, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+        color: "#fff3b8",
+        align: "center",
+        backgroundColor: "rgba(32,22,16,0.78)",
+        padding: { x: 8, y: 5 },
+        stroke: "#201714",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(y + 20);
+    label.setLineSpacing(1);
+  }
+
   private addWall(x: number, y: number, width: number, height: number): void {
     const wall = this.add.rectangle(x + width / 2, y + height / 2, width, height, 0x172022, 0.01);
     this.physics.add.existing(wall, true);
@@ -579,6 +605,17 @@ export class DungeonScene extends Phaser.Scene {
         color: "#f4d777",
         backgroundColor: "rgba(20,16,14,0.62)",
         padding: { x: 12, y: 8 },
+        wordWrap: { width: 560 },
+      })
+      .setScrollFactor(0)
+      .setDepth(10000);
+    this.hintText = this.add
+      .text(18, 118, "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+        color: "#c8f1ff",
+        backgroundColor: "rgba(20,16,14,0.58)",
+        padding: { x: 12, y: 7 },
         wordWrap: { width: 560 },
       })
       .setScrollFactor(0)
@@ -691,7 +728,8 @@ export class DungeonScene extends Phaser.Scene {
     if (enemy.kind !== "boss" && Phaser.Math.Between(0, 100) > 50) this.spawnPickup("coin", enemy.x, enemy.y);
     if (room === "guard" && this.roomEnemies("guard") === 0 && !this.solved.guard) {
       this.solved.guard = true;
-      this.objective = "Open the guard chest for a small key.";
+      this.objective = "Open the guard chest for a Small Key.";
+      this.hint = "Stand on the chest in the Guard Room to pick up the Small Key.";
       this.floatText(enemy.x, enemy.y - 54, "Doors unsealed", "#bff3ff");
     }
     if (room === "chapel" && this.roomEnemies("chapel") === 0 && !this.solved.chapel) {
@@ -768,7 +806,8 @@ export class DungeonScene extends Phaser.Scene {
     if (def.requirement === "none" || this.openedDoors.has(def.id)) return true;
     if (def.requirement === "smallKey") {
       if (this.smallKeys > 0) return true;
-      this.objective = "Find a small key for this door.";
+      this.objective = "This door needs a Small Key from the Guard Room.";
+      this.hint = "From the Entrance Hall, go right/east, defeat the guard goblins, then touch their chest.";
       return false;
     }
     if (def.requirement === "bossKey") {
@@ -797,7 +836,8 @@ export class DungeonScene extends Phaser.Scene {
     chest.setTint(0x777777);
     if (chest.reward === "smallKey") {
       this.smallKeys += 1;
-      this.objective = "Return and unlock a marked door.";
+      this.objective = "Return to the Entrance Hall and walk into the lower silver door.";
+      this.hint = "The Small Key is collected automatically. The locked lower door will spend it when you enter.";
     }
     if (chest.reward === "bossKey") {
       this.bossKey = true;
@@ -857,9 +897,34 @@ export class DungeonScene extends Phaser.Scene {
   }
 
   private updateHud(): void {
+    this.updateGuidance();
     this.hudText.setText(`HP ${"#".repeat(this.hp).padEnd(PLAYER_MAX_HP, "-")}   Coins ${this.coins}   Keys ${this.smallKeys}   Boss Key ${this.bossKey ? "Yes" : "No"}`);
     this.objectiveText.setText(`Objective: ${this.objective}`);
+    this.hintText.setText(`Hint: ${this.hint}`);
     this.roomText.setText(roomOrigins[this.currentRoom].title);
+  }
+
+  private updateGuidance(): void {
+    if (this.openedDoors.has("entrance-puzzle")) return;
+    if (!this.solved.guard) {
+      if (this.currentRoom === "guard") {
+        this.objective = "Defeat the guard goblins, then touch the chest for the Small Key.";
+        this.hint = "Use Space or left click to attack. The chest opens automatically after the guards are gone.";
+      } else if (this.currentRoom === "entrance") {
+        this.objective = "Small Key: go east, defeat the guard goblins, then touch the chest.";
+        this.hint = "Walk into the right-hand doorway to reach the Goblin Guard Room. Chests open when you touch them.";
+      }
+      return;
+    }
+    if (!this.openedChests.has("guard-key")) {
+      this.objective = "Open the guard chest for a Small Key.";
+      this.hint = "Stand on the chest in the Guard Room to pick up the Small Key.";
+      return;
+    }
+    if (this.smallKeys > 0) {
+      this.objective = "Return to the Entrance Hall and walk into the lower silver door.";
+      this.hint = "The Small Key is collected automatically. The locked lower door will spend it when you enter.";
+    }
   }
 
   private updateBossBar(): void {
@@ -897,6 +962,7 @@ export class DungeonScene extends Phaser.Scene {
       level: "The Sunken Watchtower",
       room: this.currentRoom,
       objective: this.objective,
+      hint: this.hint,
       player: { x: Math.round(this.player.x), y: Math.round(this.player.y), hp: this.hp, coins: this.coins, smallKeys: this.smallKeys, bossKey: this.bossKey },
       solved: this.solved,
       openedChests: Array.from(this.openedChests),
