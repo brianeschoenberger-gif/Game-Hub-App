@@ -141,3 +141,33 @@ test('The Sunken Watchtower dungeon has keys, boss key, boss defeat, and complet
   expect(completed.solved.boss).toBe(true);
   expect(completed.mode).toBe('ended');
 });
+
+test('The Sunken Watchtower entrance side door can be entered by walking into it', async ({ page }) => {
+  await page.goto('/games/The-Goblin-Road/dist/index.html');
+  await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+  await page.mouse.click(640, 570);
+  await page.waitForFunction(() => typeof window.render_game_to_text === 'function');
+
+  await page.evaluate(async () => {
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const game = window.goblinRoadGame!;
+    game.scene.start('DungeonScene');
+    await sleep(500);
+    const scene = game.scene.getScene('DungeonScene') as any;
+    scene.player.setPosition(1208, 210);
+    scene.player.body.reset(1208, 210);
+    scene.hp = 8;
+    scene.completed = false;
+    scene.currentRoom = 'entrance';
+  });
+
+  await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(220);
+  await page.keyboard.up('ArrowRight');
+  await page.waitForTimeout(180);
+
+  const state = await page.evaluate(() => JSON.parse(window.render_game_to_text!()));
+  expect(state.room).toBe('guard');
+  expect(state.player.hp).toBeGreaterThan(0);
+  expect(state.objective).toContain('guard goblins');
+});

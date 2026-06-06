@@ -24,3 +24,4 @@ Original prompt: Build a playable browser game prototype inspired by classic top
 - Verified the final pass with `npm.cmd run build:goblin-road`, `npm.cmd run validate`, `npm.cmd run test:e2e`, and an in-browser canvas screenshot/state check against the built static game.
 - Added clearer Sunken Watchtower first-room guidance: objective/hint HUD text now explains that the Small Key is in the east Guard Room chest, visible room plaques point to the Guard Room and locked lower door, and the Guard Room hint updates after entry.
 - Bumped the hub cache version so GitHub Pages iframe URLs refresh to the hint-enabled build.
+- Fixed dungeon doorway usability: door triggers are now larger invisible activation zones separate from the visible door art, and room transitions include a short grace window so entering the Guard Room is reliable and fair.

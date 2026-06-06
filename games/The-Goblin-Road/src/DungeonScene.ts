@@ -72,7 +72,7 @@ const roomOrigins: Record<RoomId, { x: number; y: number; title: string }> = {
 const doors: DoorDef[] = [
   door("entrance-storage", "entrance", "storage", 650, 176, 24, 80, "none", 570, 210),
   door("storage-entrance", "storage", "entrance", 630, 176, 24, 80, "none", 710, 210),
-  door("entrance-guard", "entrance", "guard", 1250, 176, 24, 80, "none", 1350, 210),
+  door("entrance-guard", "entrance", "guard", 1250, 176, 24, 80, "none", 1375, 210),
   door("guard-entrance", "guard", "entrance", 1288, 176, 24, 80, "none", 1210, 210),
   door("entrance-puzzle", "entrance", "puzzle", 932, 390, 100, 24, "smallKey", 960, 500),
   door("puzzle-entrance", "puzzle", "entrance", 932, 420, 100, 24, "none", 960, 320),
@@ -136,6 +136,7 @@ export class DungeonScene extends Phaser.Scene {
   private bossKey = false;
   private attacking = false;
   private lastAttackAt = -999;
+  private roomGraceUntil = 0;
   private completed = false;
   private solved = {
     guard: false,
@@ -522,13 +523,27 @@ export class DungeonScene extends Phaser.Scene {
     for (const def of doors) {
       const locked = def.requirement !== "none";
       const color = def.requirement === "bossKey" ? 0xc96b32 : locked ? 0x53605f : 0xb89a5a;
-      const rect = this.add.rectangle(def.x + def.width / 2, def.y + def.height / 2, def.width, def.height, color, 0.86);
+      const visual = this.add.rectangle(def.x + def.width / 2, def.y + def.height / 2, def.width, def.height, color, 0.86);
+      visual.setDepth(def.y + def.height + 100);
+      if (def.id === "antechamber-boss") this.bossDoorSprite = visual;
+
+      const trigger = this.doorTriggerBounds(def);
+      const rect = this.add.rectangle(trigger.x + trigger.width / 2, trigger.y + trigger.height / 2, trigger.width, trigger.height, color, 0.01);
       rect.setData("door", def);
-      rect.setDepth(def.y + def.height + 100);
+      rect.setDepth(def.y + def.height + 50);
       this.physics.add.existing(rect, true);
       this.doors.add(rect);
-      if (def.id === "antechamber-boss") this.bossDoorSprite = rect;
     }
+  }
+
+  private doorTriggerBounds(def: DoorDef): Phaser.Geom.Rectangle {
+    const verticalDoor = def.height > def.width;
+    const paddingAlongDoor = 18;
+    const approachDepth = 78;
+    if (verticalDoor) {
+      return new Phaser.Geom.Rectangle(def.x - approachDepth / 2, def.y - paddingAlongDoor, def.width + approachDepth, def.height + paddingAlongDoor * 2);
+    }
+    return new Phaser.Geom.Rectangle(def.x - paddingAlongDoor, def.y - approachDepth / 2, def.width + paddingAlongDoor * 2, def.height + approachDepth);
   }
 
   private createPuzzle(): void {
@@ -775,6 +790,7 @@ export class DungeonScene extends Phaser.Scene {
 
   private damagePlayer(enemy: DungeonEnemy): void {
     if (!enemy.active || this.completed) return;
+    if (this.time.now < this.roomGraceUntil) return;
     if (this.time.now < enemy.cooldown) return;
     enemy.cooldown = this.time.now + 900;
     this.hp = Math.max(0, this.hp - (enemy.kind === "boss" ? 2 : 1));
@@ -798,6 +814,8 @@ export class DungeonScene extends Phaser.Scene {
     }
     this.player.setPosition(def.targetX, def.targetY);
     this.player.body.reset(def.targetX, def.targetY);
+    this.player.body.setVelocity(0, 0);
+    this.roomGraceUntil = this.time.now + 700;
     this.currentRoom = def.to;
     this.cameras.main.pan(roomOrigins[def.to].x + ROOM_W / 2, roomOrigins[def.to].y + ROOM_H / 2, 220);
   }
