@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "build:goblin-road": "npm --prefix games/The-Goblin-Road run build",
+    "validate": "node scripts/validate-site.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

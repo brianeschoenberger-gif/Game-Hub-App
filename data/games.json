@@ -1,5 +1,24 @@
 [
   {
+    "id": "the-goblin-road-2026-06-04",
+    "slug": "the-goblin-road",
+    "title": "The Goblin Road",
+    "releaseDate": "2026-06-04",
+    "description": "Recover Brindlebrook's Sunstone Key, open the ruined gate, and reach the ancient watchtower.",
+    "newsTopic": "Fantasy adventure prototype",
+    "tags": [
+      "Action",
+      "Adventure",
+      "RPG"
+    ],
+    "thumbnailUrl": "/assets/thumbnails/the-goblin-road.svg",
+    "bannerUrl": "",
+    "gamePath": "/games/The-Goblin-Road/dist/index.html",
+    "featured": true,
+    "status": "published",
+    "durationEstimate": "4 min"
+  },
+  {
     "id": "headline-dodge-2026-02-20",
     "slug": "headline-dodge",
     "title": "Headline Dodge",

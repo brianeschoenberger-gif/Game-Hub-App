@@ -1,0 +1,26 @@
+export const externalAssets = {
+  tileset: { key: "pack-tileset", path: "external-assets/tileset.png" },
+  grass: { key: "village-grass", path: "external-assets/GRASS TILE - DAY.png" },
+  dirt: { key: "village-dirt", path: "external-assets/GROUND TILE - DAY.png" },
+  water: { key: "village-water", path: "external-assets/WATER TILE - DAY.png" },
+  grassDetail1: { key: "village-grass-detail-1", path: "external-assets/GRASS DETAIL 1 - DAY.png" },
+  grassDetail2: { key: "village-grass-detail-2", path: "external-assets/GRASS DETAIL 2 - DAY.png" },
+  groundDetail1: { key: "village-ground-detail-1", path: "external-assets/GROUND DETAIL 1 - DAY.png" },
+  groundDetail2: { key: "village-ground-detail-2", path: "external-assets/GROUND DETAIL 2 - DAY.png" },
+  house1: { key: "village-house-1", path: "external-assets/HOUSE 1 - DAY.png" },
+  house2: { key: "village-house-2", path: "external-assets/HOUSE 2 - DAY.png" },
+  church: { key: "village-church", path: "external-assets/CHURCH - DAY.png" },
+  tree1: { key: "village-tree-1", path: "external-assets/TREE 1 - DAY.png" },
+  tree2: { key: "village-tree-2", path: "external-assets/TREE 2 - DAY.png" },
+  tree3: { key: "village-tree-3", path: "external-assets/TREE 3 - DAY.png" },
+  fence1: { key: "village-fence-1", path: "external-assets/FENCE 1 - DAY.png" },
+  fence2: { key: "village-fence-2", path: "external-assets/FENCE 2 - DAY.png" },
+  bridge: { key: "village-bridge", path: "external-assets/BRIDGE - DAY.png" },
+  terrain3: { key: "village-terrain-3", path: "external-assets/TERRAIN SET 3 - DAY.png" },
+  terrain4: { key: "village-terrain-4", path: "external-assets/TERRAIN SET 4 - DAY.png" },
+  stairs: { key: "village-stairs", path: "external-assets/STAIRS - DAY.png" },
+  waterDetail1: { key: "village-water-detail-1", path: "external-assets/WATER DETAIL 1 - DAY.png" },
+  waterDetail2: { key: "village-water-detail-2", path: "external-assets/WATER DETAIL 2 - DAY.png" },
+} as const;
+
+export const externalAssetList = Object.values(externalAssets);

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">The Goblin Road thumbnail</title>
+  <desc id="desc">A bright fantasy road with a knight, goblins, a glowing key, and a ruined tower.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#9bdc72"/>
+      <stop offset="1" stop-color="#4d8f54"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="24" fill="url(#sky)"/>
+  <path d="M-20 260 C120 145 198 306 335 210 C436 140 518 173 666 98 L680 360 L-20 360 Z" fill="#d49a55"/>
+  <path d="M-20 292 C119 180 207 330 347 231 C456 155 548 188 666 124" fill="none" stroke="#edbd72" stroke-width="56" stroke-linecap="round"/>
+  <g fill="#2f7c3e">
+    <circle cx="82" cy="76" r="40"/><circle cx="116" cy="88" r="33"/><rect x="94" y="93" width="18" height="55" rx="8" fill="#6b4427"/>
+    <circle cx="516" cy="246" r="45"/><circle cx="556" cy="248" r="36"/><rect x="536" y="266" width="20" height="56" rx="8" fill="#6b4427"/>
+  </g>
+  <g transform="translate(420 58)">
+    <rect x="28" y="42" width="58" height="162" rx="12" fill="#6f7376"/>
+    <rect x="18" y="194" width="82" height="20" rx="8" fill="#535b57"/>
+    <polygon points="26,42 57,8 88,42" fill="#bb4d42"/>
+    <circle cx="58" cy="82" r="10" fill="#ffd86b"/>
+  </g>
+  <g transform="translate(238 188)">
+    <ellipse cx="32" cy="55" rx="31" ry="9" fill="#1d2b20" opacity=".26"/>
+    <rect x="20" y="22" width="25" height="31" rx="9" fill="#2d73c9"/>
+    <circle cx="32" cy="18" r="14" fill="#ffd8a8"/>
+    <rect x="42" y="28" width="16" height="22" rx="7" fill="#d9e5ec"/>
+    <path d="M18 32 L4 52" stroke="#f1c85b" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(334 196)">
+    <ellipse cx="29" cy="48" rx="25" ry="8" fill="#1d2b20" opacity=".24"/>
+    <rect x="17" y="20" width="25" height="25" rx="9" fill="#64a63c"/>
+    <circle cx="29" cy="18" r="14" fill="#64a63c"/>
+    <polygon points="16,15 4,8 16,24" fill="#64a63c"/>
+    <polygon points="42,15 54,8 42,24" fill="#64a63c"/>
+    <rect x="15" y="7" width="28" height="8" rx="4" fill="#f0d165"/>
+  </g>
+  <g transform="translate(130 210)">
+    <circle cx="24" cy="20" r="18" fill="#ffe58a" opacity=".35"/>
+    <circle cx="14" cy="20" r="8" fill="none" stroke="#f8bc2e" stroke-width="6"/>
+    <path d="M22 20 H50 M42 20 V29 M50 20 V27" stroke="#f8bc2e" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <text x="36" y="58" font-family="Georgia, serif" font-size="38" fill="#fff1ba" stroke="#422e20" stroke-width="5">The Goblin Road</text>
+</svg>

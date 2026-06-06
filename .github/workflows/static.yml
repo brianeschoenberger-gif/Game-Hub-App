@@ -31,6 +31,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            games/The-Goblin-Road/package-lock.json
+      - name: Build The Goblin Road
+        run: |
+          npm ci --prefix games/The-Goblin-Road
+          npm run build --prefix games/The-Goblin-Road
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Prepare static site artifact
