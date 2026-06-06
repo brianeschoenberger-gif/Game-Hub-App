@@ -2,7 +2,8 @@ import { findGame, loadGames } from './data.js';
 import { resolveGamePath } from './paths.js';
 import { escapeHtml } from './sanitize.js';
 import { emptyState } from './ui.js';
-import { APP_VERSION } from './app-version.js';
+
+const APP_VERSION = new URL(import.meta.url).searchParams.get('v') ?? 'local';
 
 function withVersion(url, enabled = true) {
   if (!enabled) {
