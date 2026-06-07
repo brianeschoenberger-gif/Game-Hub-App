@@ -121,6 +121,7 @@ export class DungeonScene extends Phaser.Scene {
   private pressurePlate!: Phaser.GameObjects.Rectangle;
   private bossDoorSprite?: Phaser.GameObjects.Rectangle;
   private bossBar!: Phaser.GameObjects.Graphics;
+  private roomFog!: Phaser.GameObjects.Graphics;
   private torchLights: Phaser.GameObjects.Arc[] = [];
   private hudText!: Phaser.GameObjects.Text;
   private objectiveText!: Phaser.GameObjects.Text;
@@ -137,6 +138,7 @@ export class DungeonScene extends Phaser.Scene {
   private attacking = false;
   private lastAttackAt = -999;
   private roomGraceUntil = 0;
+  private doorCooldownUntil = 0;
   private completed = false;
   private solved = {
     guard: false,
@@ -174,6 +176,7 @@ export class DungeonScene extends Phaser.Scene {
     this.enemies = this.physics.add.group();
 
     this.drawDungeon();
+    this.createRoomFog();
     this.createDoors();
     this.createPuzzle();
     this.createChests();
@@ -195,6 +198,7 @@ export class DungeonScene extends Phaser.Scene {
     this.updateEnemies(time);
     this.updatePuzzle();
     this.updateRoom();
+    this.updateRoomFog();
     this.updateBossBar();
     this.updateHud();
   }
@@ -229,6 +233,31 @@ export class DungeonScene extends Phaser.Scene {
     }
   }
 
+  private createRoomFog(): void {
+    this.roomFog = this.add.graphics().setDepth(8800);
+    this.updateRoomFog();
+  }
+
+  private updateRoomFog(): void {
+    if (!this.roomFog) return;
+    const room = roomOrigins[this.currentRoom];
+    const margin = 34;
+    const left = Math.max(0, room.x + margin);
+    const top = Math.max(0, room.y + margin);
+    const right = Math.min(WORLD_W, room.x + ROOM_W - margin);
+    const bottom = Math.min(WORLD_H, room.y + ROOM_H - margin);
+
+    this.roomFog.clear();
+    this.roomFog.fillStyle(0x07100f, 0.93);
+    this.roomFog.fillRect(0, 0, WORLD_W, top);
+    this.roomFog.fillRect(0, bottom, WORLD_W, WORLD_H - bottom);
+    this.roomFog.fillRect(0, top, left, bottom - top);
+    this.roomFog.fillRect(right, top, WORLD_W - right, bottom - top);
+    this.roomFog.fillStyle(0x000000, 0.2);
+    this.roomFog.fillRect(left, top, right - left, 28);
+    this.roomFog.fillRect(left, bottom - 32, right - left, 32);
+  }
+
   private decorateRoom(id: RoomId): void {
     const room = roomOrigins[id];
     const add = (key: string, x: number, y: number, scale = 2, depthOffset = 0) => {
@@ -261,6 +290,8 @@ export class DungeonScene extends Phaser.Scene {
       this.addWaterChannel(room.x + 80, room.y + 118, 145, 245);
       this.addGear(room.x + 142, room.y + 210);
       this.addPressurePlateGlow(room.x + 455, room.y + 220);
+      this.addRoomHint(room.x + 455, room.y + 168, "Stand on blue plate\nor push crate here");
+      this.addRoomHint(room.x + 142, room.y + 282, "Waterwheel gate");
       this.addRubble(room.x + 518, room.y + 310, 6);
     }
     if (id === "flooded") {
@@ -539,7 +570,7 @@ export class DungeonScene extends Phaser.Scene {
   private doorTriggerBounds(def: DoorDef): Phaser.Geom.Rectangle {
     const verticalDoor = def.height > def.width;
     const paddingAlongDoor = 18;
-    const approachDepth = 78;
+    const approachDepth = 42;
     if (verticalDoor) {
       return new Phaser.Geom.Rectangle(def.x - approachDepth / 2, def.y - paddingAlongDoor, def.width + approachDepth, def.height + paddingAlongDoor * 2);
     }
@@ -548,11 +579,12 @@ export class DungeonScene extends Phaser.Scene {
 
   private createPuzzle(): void {
     const room = roomOrigins.puzzle;
-    this.pressurePlate = this.add.rectangle(room.x + 455, room.y + 220, 54, 34, 0x2aa7ff, 0.55).setDepth(room.y + 190);
+    this.pressurePlate = this.add.rectangle(room.x + 455, room.y + 220, 86, 60, 0x2aa7ff, 0.55).setDepth(room.y + 190);
     this.physics.add.existing(this.pressurePlate, true);
-    this.pushBlock = this.physics.add.sprite(room.x + 220, room.y + 220, TEXTURES.crate).setImmovable(false);
+    this.pushBlock = this.physics.add.sprite(room.x + 270, room.y + 220, TEXTURES.crate).setImmovable(false);
     this.pushBlock.setDepth(room.y + 220);
-    this.pushBlock.body.setSize(40, 40);
+    this.pushBlock.body.setSize(46, 46);
+    this.pushBlock.setDrag(650, 650);
   }
 
   private createChests(): void {
@@ -804,6 +836,7 @@ export class DungeonScene extends Phaser.Scene {
   }
 
   private tryDoor(rect: Phaser.GameObjects.Rectangle): void {
+    if (this.time.now < this.doorCooldownUntil) return;
     const def = rect.getData("door") as DoorDef;
     if (this.currentRoom !== def.room) return;
     if (!this.canOpenDoor(def)) return;
@@ -816,6 +849,7 @@ export class DungeonScene extends Phaser.Scene {
     this.player.body.reset(def.targetX, def.targetY);
     this.player.body.setVelocity(0, 0);
     this.roomGraceUntil = this.time.now + 700;
+    this.doorCooldownUntil = this.time.now + 550;
     this.currentRoom = def.to;
     this.cameras.main.pan(roomOrigins[def.to].x + ROOM_W / 2, roomOrigins[def.to].y + ROOM_H / 2, 220);
   }
@@ -869,11 +903,16 @@ export class DungeonScene extends Phaser.Scene {
 
   private updatePuzzle(): void {
     if (this.solved.puzzle) return;
-    const solved = Phaser.Geom.Rectangle.Contains(this.pressurePlate.getBounds(), this.pushBlock.x, this.pushBlock.y);
+    const plateBounds = Phaser.Geom.Rectangle.Inflate(this.pressurePlate.getBounds(), 18, 16);
+    const solvedByCrate = Phaser.Geom.Rectangle.Overlaps(plateBounds, this.pushBlock.getBounds());
+    const solvedByPlayer = this.currentRoom === "puzzle" && Phaser.Geom.Rectangle.Contains(plateBounds, this.player.x, this.player.y);
+    const solved = solvedByCrate || solvedByPlayer;
     if (solved) {
       this.solved.puzzle = true;
       this.pressurePlate.setFillStyle(0x58d66d, 0.75);
       this.objective = "The water gate opened. Take the flooded corridor.";
+      this.hint = "The blue plate powered the waterwheel. Use the lower doorway to continue.";
+      this.floatText(this.pressurePlate.x, this.pressurePlate.y - 38, "Waterwheel unlocked", "#bff3ff");
       this.cameras.main.flash(180, 180, 255, 210, false);
     }
   }
@@ -923,6 +962,11 @@ export class DungeonScene extends Phaser.Scene {
   }
 
   private updateGuidance(): void {
+    if (this.currentRoom === "puzzle" && !this.solved.puzzle) {
+      this.objective = "Power the waterwheel to open the lower water gate.";
+      this.hint = "Stand on the glowing blue plate, or push the crate onto it.";
+      return;
+    }
     if (this.openedDoors.has("entrance-puzzle")) return;
     if (!this.solved.guard) {
       if (this.currentRoom === "guard") {

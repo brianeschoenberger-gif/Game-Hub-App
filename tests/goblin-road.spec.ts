@@ -171,3 +171,29 @@ test('The Sunken Watchtower entrance side door can be entered by walking into it
   expect(state.player.hp).toBeGreaterThan(0);
   expect(state.objective).toContain('guard goblins');
 });
+
+test('The Sunken Watchtower waterwheel plate opens the lower gate', async ({ page }) => {
+  await page.goto('/games/The-Goblin-Road/dist/index.html');
+  await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+  await page.mouse.click(640, 570);
+  await page.waitForFunction(() => typeof window.render_game_to_text === 'function');
+
+  const state = await page.evaluate(async () => {
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const game = window.goblinRoadGame!;
+    game.scene.start('DungeonScene');
+    await sleep(500);
+    const scene = game.scene.getScene('DungeonScene') as any;
+    scene.currentRoom = 'puzzle';
+    scene.solved.puzzle = false;
+    scene.player.setPosition(1095, 640);
+    scene.player.body.reset(1095, 640);
+    scene.updatePuzzle();
+    await sleep(150);
+    return JSON.parse(window.render_game_to_text!());
+  });
+
+  expect(state.room).toBe('puzzle');
+  expect(state.solved.puzzle).toBe(true);
+  expect(state.objective).toContain('water gate opened');
+});
