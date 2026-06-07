@@ -26,3 +26,4 @@ Original prompt: Build a playable browser game prototype inspired by classic top
 - Bumped the hub cache version so GitHub Pages iframe URLs refresh to the hint-enabled build.
 - Fixed dungeon doorway usability: door triggers are now larger invisible activation zones separate from the visible door art, and room transitions include a short grace window so entering the Guard Room is reliable and fair.
 - Improved stage-two dungeon readability: added current-room fog so the map no longer reads as an exposed grid, tightened door trigger depth/cooldowns, made the waterwheel puzzle readable, and made the blue plate solve the gate reliably by standing on it or pushing the crate onto it.
+- Overall improvement roadmap pass: restored Shift dash and stamina in the dungeon, added a visited-room minimap, clarified Flooded Corridor objectives, removed the water-goblin ambush from that navigation room, and added test coverage for dungeon dash/Flooded Corridor guidance.

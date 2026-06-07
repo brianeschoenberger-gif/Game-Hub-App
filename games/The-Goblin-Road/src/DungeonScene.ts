@@ -52,6 +52,9 @@ const ROOM_H = 420;
 const WORLD_W = ROOM_W * 4;
 const WORLD_H = ROOM_H * 3;
 const PLAYER_MAX_HP = 8;
+const DUNGEON_MAX_STAMINA = 100;
+const DUNGEON_PLAYER_SPEED = 175;
+const DUNGEON_DASH_SPEED = 365;
 const VIEW_W = 1280;
 const VIEW_H = 720;
 
@@ -126,17 +129,22 @@ export class DungeonScene extends Phaser.Scene {
   private hudText!: Phaser.GameObjects.Text;
   private objectiveText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
+  private staminaHud!: Phaser.GameObjects.Graphics;
+  private minimap!: Phaser.GameObjects.Graphics;
   private roomText!: Phaser.GameObjects.Text;
   private centerText!: Phaser.GameObjects.Text;
   private soundHooks = new SoundHooks();
   private facing = new Phaser.Math.Vector2(1, 0);
   private currentRoom: RoomId = "entrance";
   private hp = PLAYER_MAX_HP;
+  private stamina = DUNGEON_MAX_STAMINA;
   private coins = 0;
   private smallKeys = 0;
   private bossKey = false;
   private attacking = false;
   private lastAttackAt = -999;
+  private dashUntil = 0;
+  private dashCooldownUntil = 0;
   private roomGraceUntil = 0;
   private doorCooldownUntil = 0;
   private completed = false;
@@ -149,6 +157,7 @@ export class DungeonScene extends Phaser.Scene {
   };
   private openedChests = new Set<string>();
   private openedDoors = new Set<string>();
+  private visitedRooms = new Set<RoomId>(["entrance"]);
   private objective = "Small Key: go east, defeat the guard goblins, then touch the chest.";
   private hint = "Walk into the right-hand doorway to reach the Goblin Guard Room. Chests open when you touch them.";
 
@@ -298,6 +307,9 @@ export class DungeonScene extends Phaser.Scene {
       this.add.tileSprite(room.x + 320, room.y + 210, 510, 270, externalAssets.water.key).setDepth(-80).setAlpha(0.82);
       for (const point of [[160, 180], [330, 260], [480, 155]]) add(externalAssets.waterDetail2.key, point[0], point[1], 2.2, -20);
       this.addWaterEdges(room.x + 66, room.y + 78, 510, 270);
+      this.addRoomHint(room.x + 318, room.y + 122, "Flooded Corridor\nDash helps in water");
+      this.addRoomHint(room.x + 515, room.y + 236, "Exit east ->\nMap Room");
+      this.addCurrentArrow(room.x + 510, room.y + 210, 0);
       this.addSpikeRow(room.x + 235, room.y + 205, 5);
       this.addRubble(room.x + 480, room.y + 320, 5);
     }
@@ -544,6 +556,16 @@ export class DungeonScene extends Phaser.Scene {
     label.setLineSpacing(1);
   }
 
+  private addCurrentArrow(x: number, y: number, rotation: number): void {
+    const arrow = this.add.graphics().setDepth(y + 30);
+    arrow.fillStyle(0xffd86b, 0.88);
+    arrow.fillTriangle(x + 26, y, x - 18, y - 22, x - 18, y + 22);
+    arrow.lineStyle(3, 0x3a2414, 0.8);
+    arrow.strokeTriangle(x + 26, y, x - 18, y - 22, x - 18, y + 22);
+    arrow.setRotation(rotation);
+    this.tweens.add({ targets: arrow, x: x + 10, yoyo: true, repeat: -1, duration: 520 });
+  }
+
   private addWall(x: number, y: number, width: number, height: number): void {
     const wall = this.add.rectangle(x + width / 2, y + height / 2, width, height, 0x172022, 0.01);
     this.physics.add.existing(wall, true);
@@ -607,7 +629,6 @@ export class DungeonScene extends Phaser.Scene {
   private createEnemies(): void {
     this.addEnemy("storage", 250, 180, "goblin", "Storage Goblin");
     for (const point of [[210, 160], [330, 240], [470, 165]]) this.addEnemy("guard", point[0], point[1], "goblin", "Guard Goblin");
-    for (const point of [[170, 170], [420, 250]]) this.addEnemy("flooded", point[0], point[1], "goblin", "Water Goblin");
     for (const point of [[210, 190], [430, 190], [320, 285]]) this.addEnemy("chapel", point[0], point[1], "goblin", "Chapel Ambusher");
     this.addEnemy("boss", 320, 210, "boss", "Goblin Bellkeeper");
   }
@@ -691,12 +712,14 @@ export class DungeonScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setVisible(false)
       .setDepth(10000);
+    this.staminaHud = this.add.graphics().setScrollFactor(0).setDepth(10000);
+    this.minimap = this.add.graphics().setScrollFactor(0).setDepth(10000);
     this.bossBar = this.add.graphics().setScrollFactor(0).setDepth(10000);
   }
 
   private createInput(): void {
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.keys = this.input.keyboard!.addKeys("W,A,S,D,SPACE,R") as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys("W,A,S,D,SPACE,SHIFT,R") as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       const world = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
       this.facing = new Phaser.Math.Vector2(world.x - this.player.x, world.y - this.player.y).normalize();
@@ -725,8 +748,23 @@ export class DungeonScene extends Phaser.Scene {
       direction.normalize();
       this.facing = direction.clone();
     }
-    const waterSlow = this.currentRoom === "flooded" ? 0.62 : 1;
-    this.player.body.setVelocity(direction.x * 175 * waterSlow, direction.y * 175 * waterSlow);
+    this.stamina = Math.min(DUNGEON_MAX_STAMINA, this.stamina + 0.42);
+    if (
+      Phaser.Input.Keyboard.JustDown(this.keys.SHIFT) &&
+      direction.lengthSq() > 0 &&
+      time > this.dashCooldownUntil &&
+      this.stamina >= 26
+    ) {
+      this.dashUntil = time + 155;
+      this.dashCooldownUntil = time + 680;
+      this.stamina -= 26;
+      this.soundHooks.play("dash");
+      this.addDashBurst(this.player.x, this.player.y);
+    }
+    const waterSlow = this.currentRoom === "flooded" ? 0.68 : 1;
+    const dashSlow = this.currentRoom === "flooded" ? 0.86 : 1;
+    const speed = time < this.dashUntil ? DUNGEON_DASH_SPEED * dashSlow : DUNGEON_PLAYER_SPEED * waterSlow;
+    this.player.body.setVelocity(direction.x * speed, direction.y * speed);
     if (direction.x !== 0) this.player.setFlipX(direction.x < 0);
     this.player.setDepth(this.player.y);
     this.playerShadow.setPosition(this.player.x, this.player.y + 19).setDepth(this.player.y - 1);
@@ -941,11 +979,25 @@ export class DungeonScene extends Phaser.Scene {
     sprite.setDepth(y);
   }
 
+  private addDashBurst(x: number, y: number): void {
+    const burst = this.add.circle(x, y + 8, 20, 0x9fe8ff, 0.24).setDepth(y - 2);
+    this.tweens.add({
+      targets: burst,
+      alpha: 0,
+      scale: 2.1,
+      duration: 220,
+      onComplete: () => burst.destroy(),
+    });
+  }
+
   private updateRoom(): void {
     const found = (Object.entries(roomOrigins) as Array<[RoomId, (typeof roomOrigins)[RoomId]]>).find(([, room]) =>
       Phaser.Geom.Rectangle.Contains(new Phaser.Geom.Rectangle(room.x, room.y, ROOM_W, ROOM_H), this.player.x, this.player.y),
     );
-    if (found) this.currentRoom = found[0];
+    if (found) {
+      this.currentRoom = found[0];
+      this.visitedRooms.add(found[0]);
+    }
     if (this.currentRoom === "exit" && this.solved.boss && !this.completed) {
       this.completed = true;
       this.centerText.setText("Dungeon Complete -\nThe Sunken Watchtower is restored.").setVisible(true);
@@ -959,12 +1011,60 @@ export class DungeonScene extends Phaser.Scene {
     this.objectiveText.setText(`Objective: ${this.objective}`);
     this.hintText.setText(`Hint: ${this.hint}`);
     this.roomText.setText(roomOrigins[this.currentRoom].title);
+    this.drawStaminaHud();
+    this.drawMinimap();
+  }
+
+  private drawStaminaHud(): void {
+    this.staminaHud.clear();
+    this.staminaHud.fillStyle(0x111923, 0.78);
+    this.staminaHud.fillRoundedRect(18, 158, 226, 22, 6);
+    this.staminaHud.fillStyle(0x2aa7ff, 0.92);
+    this.staminaHud.fillRoundedRect(24, 164, 214 * (this.stamina / DUNGEON_MAX_STAMINA), 10, 4);
+    this.staminaHud.lineStyle(2, 0xa9dfff, 0.42);
+    this.staminaHud.strokeRoundedRect(18, 158, 226, 22, 6);
+  }
+
+  private drawMinimap(): void {
+    const scale = 0.08;
+    const x = 1048;
+    const y = 22;
+    this.minimap.clear();
+    this.minimap.fillStyle(0x11110e, 0.72);
+    this.minimap.fillRoundedRect(x - 12, y - 10, 206, 132, 8);
+    for (const [id, room] of Object.entries(roomOrigins) as Array<[RoomId, (typeof roomOrigins)[RoomId]]>) {
+      const rx = x + room.x * scale;
+      const ry = y + room.y * scale;
+      const visible = this.visitedRooms.has(id);
+      const current = id === this.currentRoom;
+      this.minimap.fillStyle(current ? 0xffd86b : visible ? 0x5db7d8 : 0x2a3234, current ? 0.95 : visible ? 0.72 : 0.42);
+      this.minimap.fillRoundedRect(rx, ry, ROOM_W * scale - 8, ROOM_H * scale - 8, 4);
+      if (current) {
+        this.minimap.lineStyle(3, 0xffffff, 0.78);
+        this.minimap.strokeRoundedRect(rx - 1, ry - 1, ROOM_W * scale - 6, ROOM_H * scale - 6, 4);
+      }
+    }
   }
 
   private updateGuidance(): void {
     if (this.currentRoom === "puzzle" && !this.solved.puzzle) {
       this.objective = "Power the waterwheel to open the lower water gate.";
       this.hint = "Stand on the glowing blue plate, or push the crate onto it.";
+      return;
+    }
+    if (this.currentRoom === "flooded") {
+      this.objective = "Cross the Flooded Corridor and reach the east door.";
+      this.hint = "Water slows you down, but Shift dash still works. Avoid the spikes and follow the east exit.";
+      return;
+    }
+    if (this.currentRoom === "hub" && !this.bossKey) {
+      this.objective = "Explore from the Map Room and find the Boss Key.";
+      this.hint = "Check marked doors from this room. The chapel path eventually leads to the Boss Key.";
+      return;
+    }
+    if (this.currentRoom === "antechamber" && !this.bossKey) {
+      this.objective = "The Boss Door is sealed.";
+      this.hint = "Return to the Map Room and search the chapel route for the Boss Key.";
       return;
     }
     if (this.openedDoors.has("entrance-puzzle")) return;
@@ -1025,8 +1125,18 @@ export class DungeonScene extends Phaser.Scene {
       room: this.currentRoom,
       objective: this.objective,
       hint: this.hint,
-      player: { x: Math.round(this.player.x), y: Math.round(this.player.y), hp: this.hp, coins: this.coins, smallKeys: this.smallKeys, bossKey: this.bossKey },
+      player: {
+        x: Math.round(this.player.x),
+        y: Math.round(this.player.y),
+        hp: this.hp,
+        stamina: Math.round(this.stamina),
+        dashing: this.time.now < this.dashUntil,
+        coins: this.coins,
+        smallKeys: this.smallKeys,
+        bossKey: this.bossKey,
+      },
       solved: this.solved,
+      visitedRooms: Array.from(this.visitedRooms),
       openedChests: Array.from(this.openedChests),
       boss: boss ? { active: boss.active, hp: boss.hp, maxHp: boss.maxHp } : null,
     });

@@ -197,3 +197,39 @@ test('The Sunken Watchtower waterwheel plate opens the lower gate', async ({ pag
   expect(state.solved.puzzle).toBe(true);
   expect(state.objective).toContain('water gate opened');
 });
+
+test('The Sunken Watchtower supports dash and explains the Flooded Corridor', async ({ page }) => {
+  await page.goto('/games/The-Goblin-Road/dist/index.html');
+  await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+  await page.mouse.click(640, 570);
+  await page.waitForFunction(() => typeof window.render_game_to_text === 'function');
+
+  const before = await page.evaluate(async () => {
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const game = window.goblinRoadGame!;
+    game.scene.start('DungeonScene');
+    await sleep(500);
+    const scene = game.scene.getScene('DungeonScene') as any;
+    scene.currentRoom = 'flooded';
+    scene.player.setPosition(960, 930);
+    scene.player.body.reset(960, 930);
+    scene.stamina = 100;
+    scene.doorCooldownUntil = Number.POSITIVE_INFINITY;
+    await sleep(160);
+    return JSON.parse(window.render_game_to_text!());
+  });
+
+  await page.keyboard.down('ArrowRight');
+  await page.keyboard.down('Shift');
+  await page.waitForTimeout(90);
+  await page.keyboard.up('Shift');
+  await page.waitForTimeout(160);
+  await page.keyboard.up('ArrowRight');
+
+  const after = await page.evaluate(() => JSON.parse(window.render_game_to_text!()));
+  expect(before.room).toBe('flooded');
+  expect(before.hint).toContain('Shift dash');
+  expect(after.player.x).toBeGreaterThan(before.player.x + 20);
+  expect(after.player.stamina).toBeLessThan(before.player.stamina);
+  expect(after.visitedRooms).toContain('flooded');
+});
