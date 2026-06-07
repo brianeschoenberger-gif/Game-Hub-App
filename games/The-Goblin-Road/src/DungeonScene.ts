@@ -39,6 +39,7 @@ interface DungeonEnemy extends Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
   name: string;
   kind: "goblin" | "boss" | "minion";
   cooldown: number;
+  healthBar: Phaser.GameObjects.Graphics;
 }
 
 interface DungeonChest extends Phaser.Types.Physics.Arcade.SpriteWithStaticBody {
@@ -146,6 +147,7 @@ export class DungeonScene extends Phaser.Scene {
   private dashUntil = 0;
   private dashCooldownUntil = 0;
   private roomGraceUntil = 0;
+  private invincibleUntil = 0;
   private doorCooldownUntil = 0;
   private completed = false;
   private solved = {
@@ -205,6 +207,7 @@ export class DungeonScene extends Phaser.Scene {
     if (this.completed) return;
     this.updatePlayer(time);
     this.updateEnemies(time);
+    this.updateEnemyHealthBars();
     this.updatePuzzle();
     this.updateRoom();
     this.updateRoomFog();
@@ -645,6 +648,7 @@ export class DungeonScene extends Phaser.Scene {
     enemy.cooldown = 0;
     enemy.setDepth(room.y + y);
     enemy.body.setCircle(17, 12, 22);
+    enemy.healthBar = this.add.graphics().setDepth(7200);
   }
 
   private createPlayer(): void {
@@ -799,6 +803,7 @@ export class DungeonScene extends Phaser.Scene {
       const toEnemy = new Phaser.Math.Vector2(enemy.x - this.player.x, enemy.y - this.player.y).normalize();
       if (this.facing.dot(toEnemy) < 0.1) return true;
       enemy.hp -= 1;
+      enemy.body.velocity.add(toEnemy.scale(220));
       enemy.setTintFill(0xffffff);
       this.time.delayedCall(80, () => enemy.clearTint());
       this.floatText(enemy.x, enemy.y - 34, "-1", "#fff0a6");
@@ -809,6 +814,7 @@ export class DungeonScene extends Phaser.Scene {
 
   private defeatEnemy(enemy: DungeonEnemy): void {
     const room = enemy.room;
+    enemy.healthBar?.destroy();
     enemy.disableBody(true, true);
     if (enemy.kind !== "boss" && Phaser.Math.Between(0, 100) > 50) this.spawnPickup("coin", enemy.x, enemy.y);
     if (room === "guard" && this.roomEnemies("guard") === 0 && !this.solved.guard) {
@@ -850,6 +856,22 @@ export class DungeonScene extends Phaser.Scene {
     });
   }
 
+  private updateEnemyHealthBars(): void {
+    this.enemies.children.each((child) => {
+      const enemy = child as DungeonEnemy;
+      if (!enemy.healthBar) return true;
+      enemy.healthBar.clear();
+      if (!enemy.active || enemy.room !== this.currentRoom || enemy.hp >= enemy.maxHp) return true;
+      const width = enemy.kind === "boss" ? 58 : 34;
+      const pct = Phaser.Math.Clamp(enemy.hp / enemy.maxHp, 0, 1);
+      enemy.healthBar.fillStyle(0x1d1412, 0.82);
+      enemy.healthBar.fillRoundedRect(enemy.x - width / 2, enemy.y - 34, width, 6, 3);
+      enemy.healthBar.fillStyle(enemy.kind === "boss" ? 0xd95743 : 0xffd86b, 0.95);
+      enemy.healthBar.fillRoundedRect(enemy.x - width / 2 + 1, enemy.y - 33, (width - 2) * pct, 4, 2);
+      return true;
+    });
+  }
+
   private summonMinions(): void {
     if (this.roomEnemies("boss") > 4) return;
     const room = roomOrigins.boss;
@@ -861,10 +883,16 @@ export class DungeonScene extends Phaser.Scene {
   private damagePlayer(enemy: DungeonEnemy): void {
     if (!enemy.active || this.completed) return;
     if (this.time.now < this.roomGraceUntil) return;
+    if (this.time.now < this.invincibleUntil) return;
     if (this.time.now < enemy.cooldown) return;
     enemy.cooldown = this.time.now + 900;
+    this.invincibleUntil = this.time.now + 820;
     this.hp = Math.max(0, this.hp - (enemy.kind === "boss" ? 2 : 1));
     this.soundHooks.play("playerHit");
+    const knockback = new Phaser.Math.Vector2(this.player.x - enemy.x, this.player.y - enemy.y).normalize().scale(enemy.kind === "boss" ? 260 : 190);
+    this.player.body.velocity.add(knockback);
+    this.player.setTintFill(0xffffff);
+    this.time.delayedCall(90, () => this.player.clearTint());
     this.cameras.main.shake(70, 0.004);
     if (this.hp <= 0) {
       this.completed = true;
@@ -889,6 +917,8 @@ export class DungeonScene extends Phaser.Scene {
     this.roomGraceUntil = this.time.now + 700;
     this.doorCooldownUntil = this.time.now + 550;
     this.currentRoom = def.to;
+    this.visitedRooms.add(def.to);
+    this.showRoomToast(def.to);
     this.cameras.main.pan(roomOrigins[def.to].x + ROOM_W / 2, roomOrigins[def.to].y + ROOM_H / 2, 220);
   }
 
@@ -1007,7 +1037,7 @@ export class DungeonScene extends Phaser.Scene {
 
   private updateHud(): void {
     this.updateGuidance();
-    this.hudText.setText(`HP ${"#".repeat(this.hp).padEnd(PLAYER_MAX_HP, "-")}   Coins ${this.coins}   Keys ${this.smallKeys}   Boss Key ${this.bossKey ? "Yes" : "No"}`);
+    this.hudText.setText(`HP ${this.hp}/${PLAYER_MAX_HP}   Coins ${this.coins}   Keys ${this.smallKeys}   Boss Key ${this.bossKey ? "Yes" : "No"}`);
     this.objectiveText.setText(`Objective: ${this.objective}`);
     this.hintText.setText(`Hint: ${this.hint}`);
     this.roomText.setText(roomOrigins[this.currentRoom].title);
@@ -1111,6 +1141,30 @@ export class DungeonScene extends Phaser.Scene {
   private floatText(x: number, y: number, text: string, color: string): void {
     const label = this.add.text(x, y, text, { fontSize: "17px", color, stroke: "#201714", strokeThickness: 4 }).setOrigin(0.5).setDepth(7000);
     this.tweens.add({ targets: label, y: y - 28, alpha: 0, duration: 650, onComplete: () => label.destroy() });
+  }
+
+  private showRoomToast(roomId: RoomId): void {
+    const label = this.add
+      .text(VIEW_W / 2, VIEW_H - 92, `Entered: ${roomOrigins[roomId].title}`, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "18px",
+        color: "#fff7d6",
+        backgroundColor: "rgba(25,18,13,0.78)",
+        padding: { x: 18, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(10001)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: label,
+      alpha: 1,
+      y: VIEW_H - 80,
+      yoyo: true,
+      hold: 520,
+      duration: 220,
+      onComplete: () => label.destroy(),
+    });
   }
 
   private installHooks(): void {
