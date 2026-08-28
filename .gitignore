@@ -3,3 +3,4 @@ games/The-Goblin-Road/node_modules/
 node_modules/
 playwright-report/
 test-results/
+output/

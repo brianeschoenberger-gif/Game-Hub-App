@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540">
+  <defs><linearGradient id="g" x2="0" y2="1"><stop stop-color="#8fd477"/><stop offset="1" stop-color="#4e8d58"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-opacity=".3"/></filter></defs>
+  <rect width="960" height="540" fill="url(#g)"/><path d="M-40 360H250V175H485V390H710V250H1000" fill="none" stroke="#d4b97d" stroke-width="82" stroke-linejoin="round"/>
+  <g filter="url(#s)" transform="translate(310 285)"><circle r="61" fill="#60452f"/><g fill="#91df51"><ellipse rx="58" ry="24" transform="rotate(0) translate(42)"/><ellipse rx="58" ry="24" transform="rotate(60) translate(42)"/><ellipse rx="58" ry="24" transform="rotate(120) translate(42)"/></g><circle r="31" fill="#31582e"/><path d="M23-8h95v16H23z" fill="#eaff9b"/></g>
+  <g transform="translate(665 355)"><g fill="#ffbd3d"><ellipse rx="55" ry="25" transform="rotate(0) translate(43)"/><ellipse rx="55" ry="25" transform="rotate(45) translate(43)"/><ellipse rx="55" ry="25" transform="rotate(90) translate(43)"/><ellipse rx="55" ry="25" transform="rotate(135) translate(43)"/></g><circle r="34" fill="#784d29"/></g>
+  <g fill="#ee6b66"><ellipse cx="515" cy="160" rx="25" ry="20"/><ellipse cx="570" cy="390" rx="25" ry="20"/><ellipse cx="760" cy="250" rx="25" ry="20"/></g>
+  <rect x="48" y="40" width="445" height="126" rx="24" fill="#173334" fill-opacity=".92"/><text x="78" y="100" font-family="Arial,sans-serif" font-size="55" font-weight="900" fill="#f3ffdf">BLOOM</text><text x="78" y="151" font-family="Arial,sans-serif" font-size="55" font-weight="900" fill="#a9ec72">BASTION</text>
+</svg>

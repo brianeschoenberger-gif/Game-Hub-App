@@ -1,5 +1,24 @@
 [
   {
+    "id": "bloom-bastion-2026-08-14",
+    "slug": "bloom-bastion",
+    "title": "Bloom Bastion",
+    "releaseDate": "2026-08-14",
+    "description": "Plant a living defense, upgrade your garden, and stop ten waves before they reach the burrow.",
+    "newsTopic": "Original garden defense prototype",
+    "tags": [
+      "Strategy",
+      "Tower Defense",
+      "Arcade"
+    ],
+    "thumbnailUrl": "/assets/thumbnails/bloom-bastion.svg",
+    "bannerUrl": "",
+    "gamePath": "/games/Bloom-Bastion/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "10 min"
+  },
+  {
     "id": "the-goblin-road-2026-06-04",
     "slug": "the-goblin-road",
     "title": "The Goblin Road",
@@ -14,7 +33,7 @@
     "thumbnailUrl": "/assets/thumbnails/the-goblin-road.svg",
     "bannerUrl": "",
     "gamePath": "/games/The-Goblin-Road/dist/index.html",
-    "featured": true,
+    "featured": false,
     "status": "published",
     "durationEstimate": "4 min"
   },
@@ -51,7 +70,7 @@
     "thumbnailUrl": "/assets/thumbnails/market-maze.svg",
     "bannerUrl": "",
     "gamePath": "/games/coming-soon.html",
-    "featured": true,
+    "featured": false,
     "status": "draft",
     "durationEstimate": "6 min"
   },
@@ -164,7 +183,7 @@
     "thumbnailUrl": "/assets/thumbnails/get-muduro.svg",
     "bannerUrl": "",
     "gamePath": "/games/Get-Muduro-16Feb26/index.html",
-    "featured": false,
+    "featured": true,
     "status": "published",
     "durationEstimate": "10 min"
   },
