@@ -30,3 +30,11 @@ Original prompt: Build a playable browser game prototype inspired by classic top
 - Added another polish layer for the overall roadmap: dungeon enemies now show health bars after damage, sword hits knock enemies back, player damage has knockback plus short invulnerability, and room transitions show a room-title toast.
 - Refinement after screenshot inspection: changed dungeon HUD to numeric HP and moved the room-entry toast below the persistent room title so stage-two feedback reads cleanly.
 - Final visual tweak: room-entry toast now appears near the lower screen edge as an Entered cue, avoiding overlap with the room title and in-room signage.
+
+## 2026-08-27 — Combat Lab export
+
+- New prompt: "Export the PlayCanvas Combat Lab game so it is playable independently in the Game Hub."
+- Generated PlayCanvas static download build `#48627` from the current `Ruined Keep Blockout` scene and downloaded the 29 MB build archive.
+- Added the extracted standalone runtime under `games/Combat-Lab/`, a gameplay thumbnail, published Game Hub metadata, and a cache-version bump.
+- Added a non-visual diagnostics hook and a Playwright integration test for the Game Hub iframe.
+- Validated standalone rendering, pointer lock, movement, light attack, block, jump, two active enemies, and console output. The full 11-test Game Hub suite passes.

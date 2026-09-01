@@ -1,0 +1,60 @@
+# Agent Roles
+
+Use this file when work is split across sub-agents so ownership stays clear and handoffs stay lightweight.
+
+## Goal
+
+- Keep parallel work safe.
+- Avoid multiple agents editing the same files at the same time.
+- Make verification expectations explicit before implementation starts.
+
+## Default Split
+
+### 1. Implementation Agent
+
+- Owns gameplay or feature code changes.
+- May edit runtime scripts, tuning data, and integration points in its assigned scope.
+- Should not rewrite test harnesses unless that is explicitly part of its assignment.
+
+### 2. Test Agent
+
+- Owns automated checks, validation helpers, or reproducible test scripts.
+- May edit test files, harness files, or debug instrumentation intended for validation.
+- Should avoid changing gameplay behavior unless required to unblock testing and explicitly approved.
+
+### 3. Verification Agent
+
+- Owns runtime checking, regression review, and reporting.
+- Should prefer reporting findings over making broad code changes.
+- May make narrow fixes only if explicitly assigned.
+
+## Assignment Rules
+
+- Each agent must have a clearly named scope before work starts.
+- File ownership should be disjoint whenever possible.
+- If two tasks need the same file, one agent should own it and the other should stay read-only.
+- Agents should not revert unrelated changes made by other agents or by the user.
+
+## Task Template
+
+When spawning an agent, define:
+
+- Objective: what success looks like
+- Ownership: which files or modules the agent may edit
+- Non-ownership: which files or areas the agent must leave alone
+- Validation: what the agent must check before finishing
+- Output: what the agent should report back
+
+## Handoff Format
+
+Each agent should finish with:
+
+- Summary: what changed
+- Files changed: exact paths
+- Validation: what was run or checked
+- Risks: anything not verified or still uncertain
+
+## Repo Notes
+
+- This project is a PlayCanvas workspace mirror, so some verification may need to happen in the PlayCanvas editor or live launch rather than entirely from local files.
+- Favor changes that match the existing animation inventory. Do not invent new combat states unless the required animations exist and are bound.

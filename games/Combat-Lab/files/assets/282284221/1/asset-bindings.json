@@ -1,0 +1,428 @@
+{
+  "assetBindings": {
+    "playerModel": {
+      "playcanvasId": null,
+      "playcanvasAssetName": "Paladin WProp J Nordstrom.fbx",
+      "localFallbackPath": "Assets/Paladin WProp J Nordstrom.fbx",
+      "bindingType": "model",
+      "description": "Primary player model import used by character-controller and characterAnimator",
+      "verificationStatus": "local-mirror-present"
+    },
+    "idle": {
+      "playcanvasId": 282005713,
+      "playcanvasAssetName": "sword and shield idle.fbx",
+      "localFallbackPath": "Assets/sword and shield idle.fbx",
+      "bindingType": "animation",
+      "description": "Default locomotion idle",
+      "verificationStatus": "local-mirror-present"
+    },
+    "idleAlt1": {
+      "playcanvasId": 282005784,
+      "playcanvasAssetName": "sword and shield idle (2).fbx",
+      "localFallbackPath": "Assets/sword and shield idle (2).fbx",
+      "bindingType": "animation",
+      "description": "Idle variant 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "idleAlt2": {
+      "playcanvasId": 282005690,
+      "playcanvasAssetName": "sword and shield idle (3).fbx",
+      "localFallbackPath": "Assets/sword and shield idle (3).fbx",
+      "bindingType": "animation",
+      "description": "Idle variant 2",
+      "verificationStatus": "local-mirror-present"
+    },
+    "idleAlt3": {
+      "playcanvasId": 282005788,
+      "playcanvasAssetName": "sword and shield idle (4).fbx",
+      "localFallbackPath": "Assets/sword and shield idle (4).fbx",
+      "bindingType": "animation",
+      "description": "Idle variant 3",
+      "verificationStatus": "local-mirror-present"
+    },
+    "walk": {
+      "playcanvasId": 282211787,
+      "playcanvasAssetNames": [
+        "sword and shield walk in place.fbx",
+        "sword and shield walk in place"
+      ],
+      "localFallbackPath": "Assets/sword and shield walk.fbx",
+      "bindingType": "animation",
+      "description": "Primary forward walk, prefers in-place import when present",
+      "verificationStatus": "local-mirror-partial"
+    },
+    "walkAlt": {
+      "playcanvasId": 282005729,
+      "playcanvasAssetName": "sword and shield walk.fbx",
+      "localFallbackPath": "Assets/sword and shield walk.fbx",
+      "bindingType": "animation",
+      "description": "Alternate forward walk binding",
+      "verificationStatus": "local-mirror-present"
+    },
+    "run": {
+      "playcanvasId": 282005735,
+      "playcanvasAssetNames": [
+        "sword and shield run in place.fbx",
+        "sword and shield run in place"
+      ],
+      "localFallbackPath": "Assets/sword and shield run.fbx",
+      "bindingType": "animation",
+      "description": "Primary forward run, prefers in-place import when present",
+      "verificationStatus": "local-mirror-partial"
+    },
+    "runAlt": {
+      "playcanvasId": 282005695,
+      "playcanvasAssetName": "sword and shield run (2).fbx",
+      "localFallbackPath": "Assets/sword and shield run (2).fbx",
+      "bindingType": "animation",
+      "description": "Alternate forward run binding",
+      "verificationStatus": "local-mirror-present"
+    },
+    "jump": {
+      "playcanvasId": 282245921,
+      "playcanvasAssetNames": [
+        "Sword And Shield Jump.fbx",
+        "sword and shield jump (2).fbx"
+      ],
+      "localFallbackPath": "Assets/Sword And Shield Jump.fbx",
+      "bindingType": "animation",
+      "description": "Primary jump binding",
+      "verificationStatus": "local-mirror-present"
+    },
+    "jumpAlt": {
+      "playcanvasId": 282005786,
+      "playcanvasAssetName": "sword and shield jump (2).fbx",
+      "localFallbackPath": "Assets/sword and shield jump (2).fbx",
+      "bindingType": "animation",
+      "description": "Jump variant",
+      "verificationStatus": "local-mirror-present"
+    },
+    "walkStrafeLeft": {
+      "playcanvasId": 282245719,
+      "playcanvasAssetNames": [
+        "Sword And Shield Left Walk Strafe.fbx",
+        "sword and shield left walk strafe.fbx"
+      ],
+      "localFallbackPath": null,
+      "bindingType": "animation",
+      "description": "Left walk strafe. Expected to be imported in PlayCanvas web editor but is not present in the current local mirror snapshot.",
+      "verificationStatus": "web-only-pending-sync"
+    },
+    "walkStrafeRight": {
+      "playcanvasId": 282245723,
+      "playcanvasAssetNames": [
+        "Sword And Shield Right Walk Strafe.fbx",
+        "sword and shield right walk strafe.fbx"
+      ],
+      "localFallbackPath": "Assets/Sword And Shield Right Walk Strafe.fbx",
+      "bindingType": "animation",
+      "description": "Right walk strafe",
+      "verificationStatus": "local-mirror-present"
+    },
+    "runStrafeLeft": {
+      "playcanvasId": 282245718,
+      "playcanvasAssetNames": [
+        "Sword And Shield Left Run Strafe.fbx",
+        "Sword And Shield Left Sprint Strafe.fbx",
+        "sword and shield left run strafe.fbx",
+        "sword and shield left sprint strafe.fbx"
+      ],
+      "localFallbackPath": null,
+      "bindingType": "animation",
+      "description": "Left run or sprint strafe. Expected from PlayCanvas web imports but not present in the current local mirror snapshot.",
+      "verificationStatus": "web-only-pending-sync"
+    },
+    "runStrafeRight": {
+      "playcanvasId": 282245693,
+      "playcanvasAssetNames": [
+        "Sword And Shield Right Run Strafe.fbx",
+        "Sword And Shield Right Sprint Strafe.fbx",
+        "sword and shield right run strafe.fbx",
+        "sword and shield right sprint strafe.fbx"
+      ],
+      "localFallbackPath": null,
+      "bindingType": "animation",
+      "description": "Right run or sprint strafe. Expected from PlayCanvas web imports but not present in the current local mirror snapshot.",
+      "verificationStatus": "web-only-pending-sync"
+    },
+    "crouchToggle": {
+      "playcanvasId": 282005694,
+      "playcanvasAssetName": "sword and shield crouch.fbx",
+      "localFallbackPath": "Assets/sword and shield crouch.fbx",
+      "bindingType": "animation",
+      "description": "Crouch toggle transition",
+      "verificationStatus": "local-mirror-present"
+    },
+    "crouchIdle": {
+      "playcanvasId": 282005743,
+      "playcanvasAssetName": "sword and shield crouch idle.fbx",
+      "localFallbackPath": "Assets/sword and shield crouch idle.fbx",
+      "bindingType": "animation",
+      "description": "Crouched idle loop",
+      "verificationStatus": "local-mirror-present"
+    },
+    "crouchMove": {
+      "playcanvasId": 282005738,
+      "playcanvasAssetName": "sword and shield crouching.fbx",
+      "localFallbackPath": "Assets/sword and shield crouching.fbx",
+      "bindingType": "animation",
+      "description": "Crouched locomotion primary",
+      "verificationStatus": "local-mirror-present"
+    },
+    "crouchMoveAlt1": {
+      "playcanvasId": 282005700,
+      "playcanvasAssetName": "sword and shield crouching (2).fbx",
+      "localFallbackPath": "Assets/sword and shield crouching (2).fbx",
+      "bindingType": "animation",
+      "description": "Crouched locomotion variant 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "crouchMoveAlt2": {
+      "playcanvasId": 282005717,
+      "playcanvasAssetName": "sword and shield crouching (3).fbx",
+      "localFallbackPath": "Assets/sword and shield crouching (3).fbx",
+      "bindingType": "animation",
+      "description": "Crouched locomotion variant 2",
+      "verificationStatus": "local-mirror-present"
+    },
+    "blockEnter": {
+      "playcanvasId": 282005722,
+      "playcanvasAssetName": "sword and shield block.fbx",
+      "localFallbackPath": "Assets/sword and shield block.fbx",
+      "bindingType": "animation",
+      "description": "Block enter primary",
+      "verificationStatus": "local-mirror-present"
+    },
+    "blockEnterAlt": {
+      "playcanvasId": 282005768,
+      "playcanvasAssetName": "sword and shield block (2).fbx",
+      "localFallbackPath": "Assets/sword and shield block (2).fbx",
+      "bindingType": "animation",
+      "description": "Block enter variant",
+      "verificationStatus": "local-mirror-present"
+    },
+    "blockHold": {
+      "playcanvasId": 282005684,
+      "playcanvasAssetName": "sword and shield block idle.fbx",
+      "localFallbackPath": "Assets/sword and shield block idle.fbx",
+      "bindingType": "animation",
+      "description": "Block hold loop",
+      "verificationStatus": "local-mirror-present"
+    },
+    "crouchBlockEnter": {
+      "playcanvasId": 282005760,
+      "playcanvasAssetName": "sword and shield crouch block.fbx",
+      "localFallbackPath": "Assets/sword and shield crouch block.fbx",
+      "bindingType": "animation",
+      "description": "Crouch block enter primary",
+      "verificationStatus": "local-mirror-present"
+    },
+    "crouchBlockEnterAlt": {
+      "playcanvasId": 282005720,
+      "playcanvasAssetName": "sword and shield crouch block (2).fbx",
+      "localFallbackPath": "Assets/sword and shield crouch block (2).fbx",
+      "bindingType": "animation",
+      "description": "Crouch block enter variant",
+      "verificationStatus": "local-mirror-present"
+    },
+    "crouchBlockHold": {
+      "playcanvasId": 282005775,
+      "playcanvasAssetName": "sword and shield crouch block idle.fbx",
+      "localFallbackPath": "Assets/sword and shield crouch block idle.fbx",
+      "bindingType": "animation",
+      "description": "Crouch block hold loop",
+      "verificationStatus": "local-mirror-present"
+    },
+    "light1": {
+      "playcanvasId": 282005709,
+      "playcanvasAssetName": "sword and shield attack.fbx",
+      "localFallbackPath": "Assets/sword and shield attack.fbx",
+      "bindingType": "animation",
+      "description": "Light attack combo 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "light2": {
+      "playcanvasId": 282005781,
+      "playcanvasAssetName": "sword and shield attack (2).fbx",
+      "localFallbackPath": "Assets/sword and shield attack (2).fbx",
+      "bindingType": "animation",
+      "description": "Light attack combo 2",
+      "verificationStatus": "local-mirror-present"
+    },
+    "light3": {
+      "playcanvasId": 282005780,
+      "playcanvasAssetName": "sword and shield attack (3).fbx",
+      "localFallbackPath": "Assets/sword and shield attack (3).fbx",
+      "bindingType": "animation",
+      "description": "Light attack combo 3",
+      "verificationStatus": "local-mirror-present"
+    },
+    "light4": {
+      "playcanvasId": 282005719,
+      "playcanvasAssetName": "sword and shield attack (4).fbx",
+      "localFallbackPath": "Assets/sword and shield attack (4).fbx",
+      "bindingType": "animation",
+      "description": "Light attack combo 4",
+      "verificationStatus": "local-mirror-present"
+    },
+    "light5": {
+      "playcanvasId": 282005746,
+      "playcanvasAssetNames": [
+        "sword and shield slash.fbx",
+        "sword and shield slash (2).fbx"
+      ],
+      "localFallbackPath": "Assets/sword and shield slash.fbx",
+      "bindingType": "animation",
+      "description": "Light attack combo finisher",
+      "verificationStatus": "local-mirror-present"
+    },
+    "heavy1": {
+      "playcanvasId": 282005793,
+      "playcanvasAssetName": "sword and shield slash (2).fbx",
+      "localFallbackPath": "Assets/sword and shield slash (2).fbx",
+      "bindingType": "animation",
+      "description": "Heavy attack 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "heavy2": {
+      "playcanvasId": 282005750,
+      "playcanvasAssetName": "sword and shield slash (3).fbx",
+      "localFallbackPath": "Assets/sword and shield slash (3).fbx",
+      "bindingType": "animation",
+      "description": "Heavy attack 2",
+      "verificationStatus": "local-mirror-present"
+    },
+    "heavy3": {
+      "playcanvasId": 282005686,
+      "playcanvasAssetName": "sword and shield slash (4).fbx",
+      "localFallbackPath": "Assets/sword and shield slash (4).fbx",
+      "bindingType": "animation",
+      "description": "Heavy attack 3",
+      "verificationStatus": "local-mirror-present"
+    },
+    "heavy4": {
+      "playcanvasId": 282005732,
+      "playcanvasAssetName": "sword and shield slash (5).fbx",
+      "localFallbackPath": "Assets/sword and shield slash (5).fbx",
+      "bindingType": "animation",
+      "description": "Heavy attack 4",
+      "verificationStatus": "local-mirror-present"
+    },
+    "kick": {
+      "playcanvasId": 282005753,
+      "playcanvasAssetName": "sword and shield kick.fbx",
+      "localFallbackPath": "Assets/sword and shield kick.fbx",
+      "bindingType": "animation",
+      "description": "Kick attack",
+      "verificationStatus": "local-mirror-present"
+    },
+    "cast1": {
+      "playcanvasId": 282005766,
+      "playcanvasAssetName": "sword and shield casting.fbx",
+      "localFallbackPath": "Assets/sword and shield casting.fbx",
+      "bindingType": "animation",
+      "description": "Cast animation 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "cast2": {
+      "playcanvasId": 282005764,
+      "playcanvasAssetName": "sword and shield casting (2).fbx",
+      "localFallbackPath": "Assets/sword and shield casting (2).fbx",
+      "bindingType": "animation",
+      "description": "Cast animation 2",
+      "verificationStatus": "local-mirror-present"
+    },
+    "power": {
+      "playcanvasId": 282005778,
+      "playcanvasAssetName": "sword and shield power up.fbx",
+      "localFallbackPath": "Assets/sword and shield power up.fbx",
+      "bindingType": "animation",
+      "description": "Power-up animation",
+      "verificationStatus": "local-mirror-present"
+    },
+    "turn1": {
+      "playcanvasId": 282005795,
+      "playcanvasAssetName": "sword and shield turn.fbx",
+      "localFallbackPath": "Assets/sword and shield turn.fbx",
+      "bindingType": "animation",
+      "description": "Turn animation 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "turn2": {
+      "playcanvasId": 282005740,
+      "playcanvasAssetName": "sword and shield turn (2).fbx",
+      "localFallbackPath": "Assets/sword and shield turn (2).fbx",
+      "bindingType": "animation",
+      "description": "Turn animation 2",
+      "verificationStatus": "local-mirror-present"
+    },
+    "turn180_1": {
+      "playcanvasId": 282005712,
+      "playcanvasAssetName": "sword and shield turn.fbx",
+      "localFallbackPath": "Assets/sword and shield turn.fbx",
+      "bindingType": "animation",
+      "description": "Turn 180 animation 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "turn180_2": {
+      "playcanvasId": 282005715,
+      "playcanvasAssetName": "sword and shield turn (2).fbx",
+      "localFallbackPath": "Assets/sword and shield turn (2).fbx",
+      "bindingType": "animation",
+      "description": "Turn 180 animation 2",
+      "verificationStatus": "local-mirror-present"
+    },
+    "impact1": {
+      "playcanvasId": 282005707,
+      "playcanvasAssetName": "sword and shield impact.fbx",
+      "localFallbackPath": "Assets/sword and shield impact.fbx",
+      "bindingType": "animation",
+      "description": "Impact reaction 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "impact2": {
+      "playcanvasId": 282005757,
+      "playcanvasAssetName": "sword and shield impact (2).fbx",
+      "localFallbackPath": "Assets/sword and shield impact (2).fbx",
+      "bindingType": "animation",
+      "description": "Impact reaction 2",
+      "verificationStatus": "local-mirror-present"
+    },
+    "impact3": {
+      "playcanvasId": 282005687,
+      "playcanvasAssetName": "sword and shield impact (3).fbx",
+      "localFallbackPath": "Assets/sword and shield impact (3).fbx",
+      "bindingType": "animation",
+      "description": "Impact reaction 3",
+      "verificationStatus": "local-mirror-present"
+    },
+    "death1": {
+      "playcanvasId": 282005741,
+      "playcanvasAssetName": "sword and shield death.fbx",
+      "localFallbackPath": "Assets/sword and shield death.fbx",
+      "bindingType": "animation",
+      "description": "Death animation 1",
+      "verificationStatus": "local-mirror-present"
+    },
+    "death2": {
+      "playcanvasId": 282005728,
+      "playcanvasAssetName": "sword and shield death (2).fbx",
+      "localFallbackPath": "Assets/sword and shield death (2).fbx",
+      "bindingType": "animation",
+      "description": "Death animation 2",
+      "verificationStatus": "local-mirror-present"
+    }
+  },
+  "versionInfo": {
+    "projectName": "Combat Lab",
+    "playcanvasProjectId": "1488435",
+    "created": "2026-03-29",
+    "lastVerified": "2026-03-29",
+    "notes": [
+      "This file is the semantic source of truth for Combat Lab animation bindings.",
+      "Bindings are based on Scripts/combat-animation-library.js plus the current local Assets mirror.",
+      "Some strafe assets were added in the PlayCanvas web editor and have not yet synced into this local mirror.",
+      "Entries marked web-only-pending-sync should be updated with concrete localFallbackPath values after the mirror refreshes."
+    ]
+  }
+}

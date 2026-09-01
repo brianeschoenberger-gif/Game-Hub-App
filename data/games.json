@@ -1,5 +1,24 @@
 [
   {
+    "id": "combat-lab-2026-08-27",
+    "slug": "combat-lab",
+    "title": "Combat Lab",
+    "releaseDate": "2026-08-27",
+    "description": "Enter a ruined combat arena as a sword-and-shield knight, battle enemy knights, and master movement, blocks, and attacks.",
+    "newsTopic": "PlayCanvas knight combat prototype",
+    "tags": [
+      "Action",
+      "3D",
+      "Combat"
+    ],
+    "thumbnailUrl": "/assets/thumbnails/combat-lab.jpg",
+    "bannerUrl": "",
+    "gamePath": "/games/Combat-Lab/index.html",
+    "featured": false,
+    "status": "published",
+    "durationEstimate": "5 min"
+  },
+  {
     "id": "bloom-bastion-2026-08-14",
     "slug": "bloom-bastion",
     "title": "Bloom Bastion",

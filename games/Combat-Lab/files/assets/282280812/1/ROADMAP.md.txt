@@ -1,0 +1,118 @@
+# Combat Lab Roadmap
+
+This roadmap is the working plan for tightening the repo and fixing the locomotion/animation stack in a controlled order.
+
+## Milestone 1: Animation Ownership
+
+Goal: one runtime owner for animation assets and locomotion playback.
+
+Tasks:
+- Keep `characterAnimator` as the only animation owner.
+- Remove controller-side animation ownership and hidden fallback paths.
+- Keep locomotion tuning with the animator, not the controller.
+
+Done when:
+- `character-controller` no longer owns or binds animation assets.
+- `characterAnimator` is the only script responsible for locomotion clip selection and playback.
+
+## Milestone 2: Semantic Animation Binding
+
+Goal: one authoritative semantic binding layer for all locomotion clips.
+
+Tasks:
+- Bind clips by semantic state names such as `walkStrafeLeft` and `runStrafeRight`.
+- Stop mixing raw numeric asset IDs with ad hoc one-off exceptions.
+- Resolve imported PlayCanvas FBX child clips through one consistent lookup path.
+
+Done when:
+- Every locomotion clip resolves through one semantic binding table.
+- New clip imports can replace old bindings without scattered special cases.
+
+## Milestone 3: Strafe Diagnostics
+
+Goal: make state selection and clip binding observable.
+
+Tasks:
+- Add temporary diagnostics for selected locomotion state.
+- Add temporary diagnostics for the resolved animation asset per state.
+- Use diagnostics to separate wrong-state bugs from wrong-clip bugs.
+
+Done when:
+- It is obvious whether left/right strafe failures come from state selection, asset binding, or mislabeled source clips.
+
+## Milestone 4: Strafe Repair
+
+Goal: correct all lateral locomotion cases.
+
+Tasks:
+- Verify and fix walk-left.
+- Verify and fix walk-right.
+- Verify and fix sprint-left.
+- Verify and fix sprint-right.
+
+Done when:
+- All four lateral locomotion cases match controls and expected animation.
+
+## Milestone 5: Locomotion Math Cleanup
+
+Goal: consistent movement speed and animation speed matching.
+
+Tasks:
+- Normalize diagonal movement input.
+- Keep walk, run, and strafe playback speeds aligned with actual movement.
+- Remove tuning drift caused by duplicated logic paths.
+
+Done when:
+- Diagonal movement is not faster than cardinal movement.
+- Animation playback speed feels consistent across locomotion states.
+
+## Milestone 6: Camera and Physics Tightening
+
+Goal: reduce false positives and improve stability.
+
+Tasks:
+- Tighten camera collision checks.
+- Tighten grounded checks.
+- Make collider generation safer to rerun.
+
+Done when:
+- Camera occlusion is more stable near the player and geometry.
+- Ground checks do not produce obvious false positives.
+- Collider setup does not blindly duplicate components.
+
+## Milestone 7: Input Lifecycle Hardening
+
+Goal: prevent duplicate listeners and ghost input state.
+
+Tasks:
+- Guard desktop and mobile input enable/disable listener registration.
+- Clean up app event listeners registered by the virtual joystick.
+- Reset held movement/action states where needed on teardown.
+
+Done when:
+- Re-enabling scripts does not duplicate input listeners.
+- Joystick and input scripts clean up after themselves reliably.
+
+## Milestone 8: Validation Pass
+
+Goal: re-establish a trustworthy baseline.
+
+Tasks:
+- Manually verify idle, walk, run, strafes, crouch, block, jump, attacks, and camera collision.
+- Confirm editor-visible script ownership matches runtime ownership.
+- Remove temporary diagnostics after they have served their purpose.
+
+Done when:
+- The repo has one clear runtime path.
+- Remaining issues, if any, are isolated and well understood.
+
+## Execution Order
+
+1. Animation ownership
+2. Semantic animation binding
+3. Strafe diagnostics
+4. Strafe repair
+5. Locomotion math cleanup
+6. Camera and physics tightening
+7. Input lifecycle hardening
+8. Validation pass

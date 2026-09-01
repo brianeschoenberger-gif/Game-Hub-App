@@ -1,0 +1,104 @@
+Original prompt: strafe does not work
+
+- Investigated the full movement path from `Scripts/input.js` into `Scripts/character-controller.js` and `Scripts/character-animator.js`.
+- Confirmed controller-side lateral movement math and animator strafe state selection are wired correctly.
+- Patched desktop input to use physical key codes for `WASD`, guard duplicate listener registration, and reset held movement state when input is disabled or destroyed.
+- Added a lightweight sync marker comment to `Scripts/input.js` to force a fresh PlayCanvas bridge sync.
+- Verified in the live PlayCanvas editor on April 6, 2026 that the remote `input.js` contains the new sync marker and desktop input helpers.
+- Verified in the live launch runtime that `A` sets `inputX=-1` and `D` sets `inputX=1`, with `moving=true` and horizontal speed increasing on both sides.
+- Verified a live fallback fix on April 6, 2026: when strafe clips are unresolved in runtime, the animator now falls back to `walk`/`run` so sideways movement is visibly animated instead of remaining on `idle`.
+- Repaired live strafe asset resolution by preferring the actual child animation asset IDs imported under each strafe folder.
+- Verified in the live PlayCanvas launch on April 6, 2026 that walk-left now plays `walkStrafeLeft` and sprint-right now plays `runStrafeRight` as the active animation states.
+- Removed the temporary strafe-to-walk/run fallback path after confirming the live runtime resolves the dedicated strafe clips correctly.
+- Re-verified after cleanup in the live PlayCanvas launch on April 6, 2026 that `walkStrafeLeft` and `runStrafeRight` remain the active states during sideways movement.
+- Started enemy-combatant scaffolding:
+  - `characterActions` now supports `listenToInputEvents=false` so enemies can reuse action logic without binding player controls.
+  - Added `combatantHealth` for hp, impact, and death handling.
+  - Added `enemyMotor` to publish a controller-like runtime state that `characterAnimator` can reuse.
+  - Added `enemyBrain` for a first-pass `idle -> chase -> attack -> recover -> dead` loop.
+- Added `combatAttackWindow` to convert attack clips (`light1-5`, `heavy1-4`, `kick`) into timed melee damage against nearby opposing `combatantHealth` targets.
+- Added `combatDebugOverlay` for a lightweight HUD that shows player/enemy health, enemy AI state, active clips, and recent combat events.
+- Persisted `Enemy Knight` directly into PlayCanvas scene `2451564` on April 8, 2026 by duplicating `Character Controller`, removing player-only input/controller/camera pieces, adding `combatantHealth`, `combatAttackWindow`, `enemyMotor`, and `enemyBrain`, and placing the enemy at `[-1.25, 1, -0.5]`.
+- Persisted player-side combat setup in the same scene by adding `combatantHealth` and `combatAttackWindow` to `Character Controller`.
+- Editor setup order for the first enemy:
+  - Duplicate the player combatant entity hierarchy into `Enemy Knight`.
+  - Remove `desktopInput`, `mobileInput`, and `gamePadInput` from the enemy root.
+  - Keep `characterAnimator` and `characterActions`, but set `characterActions.listenToInputEvents` to `false`.
+  - Add `combatantHealth`, `combatAttackWindow`, `enemyMotor`, and `enemyBrain` to the enemy root.
+  - Point `enemyBrain.target` at the player `Character Controller`.
+  - Add `combatantHealth` and `combatAttackWindow` to the player root as well, and set player/enemy `team` values to different strings like `player` and `enemy`.
+  - Add `combatDebugOverlay` to a neutral root entity if you want a tuning HUD. Leave `autoDiscover=true` or assign `player` / `enemy` explicitly.
+  - Start with one enemy only and verify `idle`, `chase`, one attack, impact, death, and hp loss on both combatants before building blocking, multiple enemies, or pathfinding.
+- Combat feel pass on April 15, 2026:
+  - Confirmed the current animation set supports locomotion, crouch, block, `light1-5`, `heavy1-4`, `kick`, `cast1-2`, `power`, `turn1-2`, `turn180_1-2`, `impact1-3`, and `death1-2`.
+  - Intentionally did not add dodge, parry, guard-break, or bespoke flinch states because the current animation library does not provide them.
+  - Split attack outcomes so the attacker now emits `combat:attack-hit` and `combat:attack-blocked`, while the defender emits `combat:block-success`. This avoids the old ambiguity where both sides used `combat:blocked`.
+  - Moved combat-critical timers in `characterActions`, `characterAnimator` hitstop, `combatantHealth`, and `enemyBrain` onto per-script simulation-time accumulators instead of wall-clock `Date.now()` logic.
+  - Retuned default combat pacing toward faster exchanges:
+    - enemy defaults now attack sooner, telegraph less, strafe shorter, and recover faster;
+    - health defaults now use shorter invulnerability, narrower block arc, and a small amount of chip damage;
+    - early light attacks no longer force a full impact reaction by default, so the opening chain reads faster.
+  - Added physical pushback on hit and on blocked attacks using existing rigidbody movement rather than unsupported new animations.
+  - Updated the debug overlay to distinguish successful blocks from blocked attacks.
+  - Verified edited combat scripts parse successfully with a Node syntax pass in the local workspace.
+  - Not yet verified in a live PlayCanvas launch from this folder because this mirror is not a standalone runnable app checkout.
+- Added `AGENT_ROLES.md` on April 15, 2026 as the default coordination file for future delegated work.
+  - Use it when splitting work across implementation, test, and verification agents.
+  - Keep ownership disjoint by file whenever possible.
+- Combat feedback pass on April 15, 2026:
+  - Expanded the existing `CombatHitFeedback` path inside `Scripts/combat-attack-window.js` instead of introducing a separate FX system.
+  - Added screen-space spark bursts with different color/shape emphasis for clean hits, heavy hits, blocked hits, and kill blows.
+  - Added basic world-to-screen impact placement using the active camera when available, with a center-screen fallback if projection is unavailable.
+  - Upgraded the procedural sound layer so hit sounds vary more by blocked vs hit, light vs heavy vs kick, stagger weight, and kill blows.
+  - Added light stereo panning based on impact screen position when the browser audio API supports it.
+  - Increased kill-blow feedback intensity by scaling flash and camera response on lethal hits.
+  - Verified `Scripts/combat-attack-window.js` parses successfully after the feedback changes.
+  - Still needs a live PlayCanvas runtime pass to judge whether the sparks are too large/noisy and whether the procedural audio is pleasing versus distracting.
+- Camera impact shake pass on April 15, 2026:
+  - Upgraded `Scripts/character-controller.js` camera impulse behavior from mostly angular wobble to a stronger mixed shake with pitch, yaw, roll, and local camera position jitter.
+  - Kept the work inside the existing `applyCameraImpulse` path so all current combat hit hooks continue to work without new integration code.
+  - Replaced the old wall-clock oscillation feel with a phase-driven shake response that ramps from the existing impulse magnitude and duration values.
+  - Verified `Scripts/character-controller.js` parses successfully after the shake changes.
+  - Still needs runtime tuning in PlayCanvas to confirm the shake is strong enough on hits without becoming too noisy during repeated combos.
+- Finisher camera framing pass on April 15, 2026:
+  - Added a short-lived cinematic finisher framing state to `Scripts/character-controller.js` so lethal hits can temporarily bias the existing player camera to a more dramatic over-the-shoulder angle.
+  - Kept the effect inside the same camera rig so collision handling, player look control, and the new impact shake all continue to layer together cleanly.
+  - The finisher frame now blends yaw, pitch, roll, shoulder offset, height, and distance rather than hard-cutting to a separate cutscene camera.
+  - `Scripts/combat-attack-window.js` now triggers that finisher framing from the attacker side only on lethal, unblocked hits, using the victim position to pick the better shoulder side.
+  - Verified both edited scripts parse successfully after the finisher-camera changes.
+  - Still needs a live PlayCanvas runtime pass to tune how close the camera pushes in on light-kill versus heavy-kill situations.
+- Runtime projection compatibility fix on April 15, 2026:
+  - Fixed the hit-feedback screen projection path in `Scripts/combat-attack-window.js` after a live PlayCanvas launch showed `worldToScreen` throwing because this runtime expects a different argument shape than the one used in the local patch.
+  - Added a version-tolerant projection helper that first tries the direct out-vector signature, then falls back to the legacy width/height signature if needed.
+  - Added safer spark-position normalization so the effect can still place correctly when the runtime uses CSS pixel sizing versus backbuffer sizing.
+  - Verified `Scripts/combat-attack-window.js` parses successfully after the compatibility fix.
+- Heavy attack disable pass on April 15, 2026:
+  - Temporarily disabled live heavy-attack usage because the current heavy clips appear to carry unsupported movement/root-motion behavior in runtime.
+  - `Scripts/character-actions.js` now rejects heavy attack requests instead of starting the heavy combo chain.
+  - `Scripts/enemy-brain.js` no longer chooses heavies and now falls back to light attacks if an enemy is configured with `attackStyle='heavy'`.
+  - `Scripts/input.js` no longer exposes heavy attack input on keyboard or gamepad, and `Scripts/combat-animation-library.js` no longer includes heavy clips in the preview browser order.
+  - Intentionally kept heavy clip definitions and attack profile data in place so we can re-enable them later after fixing motion authoring.
+  - Verified all edited scripts parse successfully after the temporary heavy-disable pass.
+- Combat feedback readability pass on April 15, 2026:
+  - Verified in a live PlayCanvas launch that the feedback stack was firing, but ordinary hits were only producing very small values like `36ms` hitstop and `0.036s` camera shake, which made the effects read as if they were absent.
+  - Boosted hitstop floors and scaling in `Scripts/combat-attack-window.js` so both attacker and target freezes are more visible during normal hits and blocked exchanges.
+  - Increased camera impulse magnitude and duration in the same script so hit shake reads clearly instead of disappearing in a single frame beat.
+  - Enlarged and brightened the spark burst timing, scale, and opacity, and extended the flash fade slightly so impact feedback is easier to notice against the bright arena floor.
+  - Strengthened `Scripts/character-controller.js` camera shake amplitudes and made the finisher framing hold longer with more dramatic yaw, pitch, roll, shoulder, and push-in offsets.
+  - Verified both edited scripts parse successfully after the readability tuning pass.
+- Finisher slow-motion cinematic pass on April 15, 2026:
+  - Added real global slow-motion support for finisher hits using PlayCanvas `app.timeScale` instead of faking the effect with only camera shake and hitstop.
+  - `Scripts/character-controller.js` now manages finisher camera timing against real wall-clock time so the framing and time-scale restore do not get stuck when the game is slowed down.
+  - Strengthened the finisher framing toward a much more side-on shot with a larger yaw offset, steeper pitch, stronger roll, bigger shoulder offset, and deeper camera push-in.
+  - `Scripts/combat-attack-window.js` now requests a stronger finisher cinematic package with longer duration and explicit slow-mo scale/duration on lethal hits.
+  - Verified both edited scripts parse successfully and reloaded the live PlayCanvas launch to confirm the new runtime values were taking effect, including `app.timeScale = 0.16` on the finisher trigger.
+- Finisher slow-mo sequencing fix on April 15, 2026:
+  - Identified that the first slow-motion attempt was overlapping with kill hitstop, which made the slow-mo hard to perceive during actual finishers.
+  - Updated `Scripts/character-controller.js` so finisher slow-mo can start after a configurable real-time delay, rather than immediately when the kill hit lands.
+  - Updated `Scripts/combat-attack-window.js` to request a delayed, longer finisher slow-mo window with a stronger slowdown value after the initial impact freeze.
+  - Verified both edited scripts parse successfully and confirmed in the live PlayCanvas launch that the finisher now stays at normal speed briefly, then drops to `app.timeScale = 0.12`, before restoring back to `1`.
+- Arcadey impact exaggeration pass on April 15, 2026:
+  - Pushed `Scripts/combat-attack-window.js` spark feedback much harder with larger burst sizes, more shards, thicker rings, brighter color ramps, wider expansion, and longer travel so impacts read like overt arcade hit effects instead of grounded melee sparks.
+  - Increased both attacker-side and target-side camera impulse multipliers and durations in the same script so regular hits, blocked hits, and kill hits all kick the camera much more obviously.
+  - Strengthened `Scripts/character-controller.js` shake amplitudes for pitch, yaw, roll, and local camera jitter so those larger impulses actually translate into a bolder on-screen shake.
+  - Verified both edited scripts parse successfully after the arcadey exaggeration pass.
